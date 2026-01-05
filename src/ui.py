@@ -201,6 +201,211 @@ def load_global_css():
       #MainMenu {visibility: hidden;}
       footer {visibility: hidden;}
       header {visibility: hidden;}
+
+      /* ═══════════════════════════════════════════════════════
+         FUTURE UI/UX ENHANCEMENTS
+         ═══════════════════════════════════════════════════════ */
+
+      /* 1. Metric Cards with Pulse Animation */
+      @keyframes metric-pulse {
+        0%, 100% { 
+          box-shadow: 0 0 0 0 rgba(246,185,0,0.4);
+          transform: scale(1);
+        }
+        50% { 
+          box-shadow: 0 0 0 8px rgba(246,185,0,0);
+          transform: scale(1.02);
+        }
+      }
+
+      .ds-metric-pulse {
+        animation: metric-pulse 2s ease-in-out infinite;
+        background: linear-gradient(135deg, rgba(246,185,0,0.08) 0%, rgba(246,185,0,0.03) 100%);
+        border: 1px solid rgba(246,185,0,0.25);
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.3s ease;
+      }
+
+      .ds-metric-pulse:hover {
+        transform: scale(1.05) !important;
+        box-shadow: 0 8px 24px rgba(246,185,0,0.2) !important;
+      }
+
+      /* 2. Task Cards with Urgency Color Coding */
+      .ds-task-card {
+        background: var(--ds-card);
+        border: 1px solid var(--ds-border);
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 10px;
+        border-left: 4px solid var(--urgency-color, #888);
+        transition: all 0.2s ease;
+      }
+
+      .ds-task-card:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      }
+
+      .ds-task-low { --urgency-color: #4caf50; } /* Green */
+      .ds-task-medium { --urgency-color: #ffca28; } /* Yellow */
+      .ds-task-high { --urgency-color: #ff9800; } /* Orange */
+      .ds-task-critical { --urgency-color: #f44336; } /* Red */
+
+      /* 3. Thread Depth Limiting (max 3 levels) */
+      .ds-indent-1 { 
+        margin-left: 32px;
+        border-left: 2px solid rgba(246,185,0,0.2);
+        padding-left: 16px;
+      }
+
+      .ds-indent-2 { 
+        margin-left: 64px;
+        border-left: 2px solid rgba(246,185,0,0.15);
+        padding-left: 16px;
+      }
+
+      .ds-indent-3 { 
+        margin-left: 96px;
+        border-left: 2px solid rgba(246,185,0,0.1);
+        padding-left: 16px;
+      }
+
+      .ds-continue-thread {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(246,185,0,0.1);
+        border: 1px solid rgba(246,185,0,0.3);
+        color: #f6b900;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 8px;
+        text-decoration: none;
+      }
+
+      .ds-continue-thread:hover {
+        background: rgba(246,185,0,0.2);
+        transform: translateX(4px);
+      }
+
+      /* 4. Quote Reply Styling */
+      .ds-quote {
+        border-left: 3px solid rgba(246,185,0,0.5);
+        padding: 8px 12px;
+        margin: 8px 0;
+        background: rgba(255,255,255,0.03);
+        border-radius: 6px;
+        font-style: italic;
+        color: rgba(255,255,255,0.70);
+        font-size: 13px;
+      }
+
+      .ds-quote-author {
+        color: #f6b900;
+        font-weight: 800;
+        font-style: normal;
+        margin-bottom: 4px;
+      }
+
+      /* 5. Edit History Badge */
+      .ds-edit-history {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(33,150,243,0.1);
+        border: 1px solid rgba(33,150,243,0.3);
+        color: #2196f3;
+        font-size: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .ds-edit-history:hover {
+        background: rgba(33,150,243,0.2);
+        transform: scale(1.05);
+      }
+
+      /* 6. Deleted Comment Restore UI */
+      .ds-deleted-card {
+        opacity: 0.5;
+        border: 1px dashed rgba(255,255,255,0.2);
+        background: rgba(255,0,0,0.05);
+      }
+
+      .ds-restore-btn {
+        background: rgba(76,175,80,0.2) !important;
+        border: 1px solid rgba(76,175,80,0.4) !important;
+        color: #4caf50 !important;
+      }
+
+      .ds-restore-btn:hover {
+        background: rgba(76,175,80,0.3) !important;
+        border-color: #4caf50 !important;
+      }
+
+      /* 7. Admin Override Badge */
+      .ds-admin-badge {
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 6px rgba(233,30,99,0.3);
+      }
+
+      /* 8. Mobile Responsive Thread Collapsing */
+      @media (max-width: 768px) {
+        .ds-indent-1 { margin-left: 16px; padding-left: 12px; }
+        .ds-indent-2 { margin-left: 32px; padding-left: 12px; }
+        .ds-indent-3 { margin-left: 48px; padding-left: 12px; }
+        
+        .ds-chat-card { padding: 14px 16px; }
+      }
+
+      /* 9. Loading Skeleton for Comments */
+      @keyframes skeleton-loading {
+        0% { background-position: -200px 0; }
+        100% { background-position: calc(200px + 100%) 0; }
+      }
+
+      .ds-skeleton {
+        background: linear-gradient(
+          90deg,
+          rgba(255,255,255,0.05) 0px,
+          rgba(255,255,255,0.1) 40px,
+          rgba(255,255,255,0.05) 80px
+        );
+        background-size: 200px 100%;
+        animation: skeleton-loading 1.5s ease-in-out infinite;
+        border-radius: 8px;
+      }
+
+      /* 10. Notification Dot for New Comments */
+      .ds-new-badge {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #4caf50;
+        box-shadow: 0 0 8px rgba(76,175,80,0.6);
+        animation: pulse-dot 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse-dot {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; transform: scale(1.2); }
+      }
     </style>
     """, unsafe_allow_html=True)
 
