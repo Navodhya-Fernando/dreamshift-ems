@@ -4,23 +4,55 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 from bson.objectid import ObjectId
 import hashlib
+import streamlit as st
 
+# Load environment variables (local development)
 load_dotenv()
 
 class DreamShiftDB:
     def __init__(self):
-        """Initializes the connection to MongoDB using .env credentials."""
-        self.client = MongoClient(os.getenv("MONGODB_URI"))
-        self.db = self.client[os.getenv("DB_NAME", "dreamshift_ems")]
+        """Initializes the connection to MongoDB using .env or Streamlit secrets."""
+        # Try Streamlit secrets first (cloud deployment), then fall back to .env (local)
+        try:
+            mongodb_uri = st.secrets["MONGODB_URI"]
+            db_name = st.secrets.get("DB_NAME", "dreamshift")
+        except:
+            mongodb_uri = os.getenv("MONGODB_URI")
+            db_name = os.getenv("DB_NAME", "dreamshift")
+        
+        if not mongodb_uri:
+            raise ValueError("MONGODB_URI not found in secrets or .env file")
+        
+        # Cloud-optimized connection with timeout and retry settings
+        self.client = MongoClient(
+            mongodb_uri,
+            serverSelectionTimeoutMS=10000,  # 10 second timeout
+            connectTimeoutMS=10000,
+            socketTimeoutMS=10000,
+            retryWrites=True,
+            retryReads=True,
+            maxPoolSize=50,
+            minPoolSize=10
+        )
+        
+        self.db = self.client[db_name]
         self._ensure_indexes()
     
     def _ensure_indexes(self):
         """Create indexes for better query performance."""
-        self.db.tasks.create_index([("assignee", 1), ("status", 1)])
-        self.db.tasks.create_index([("workspace_id", 1), ("due_date", 1)])
-        self.db.notifications.create_index([("user_email", 1), ("read", 1)])
-        self.db.time_entries.create_index([("task_id", 1), ("user", 1)])
-        self.db.task_templates.create_index([("workspace_id", 1), ("is_active", 1)])
+        try:
+            # Test connection first
+            self.client.admin.command('ping')
+            
+            # Create indexes only if connection is successful
+            self.db.tasks.create_index([("assignee", 1), ("status", 1)], background=True)
+            self.db.tasks.create_index([("workspace_id", 1), ("due_date", 1)], background=True)
+            self.db.notifications.create_index([("user_email", 1), ("read", 1)], background=True)
+            self.db.time_entries.create_index([("task_id", 1), ("user", 1)], background=True)
+            self.db.task_templates.create_index([("workspace_id", 1), ("is_active", 1)], background=True)
+        except Exception as e:
+            # Log error but don't crash - indexes might already exist
+            print(f"Index creation warning: {e}")
 
     # ==========================================
     # 1. USER & AUTHENTICATION
