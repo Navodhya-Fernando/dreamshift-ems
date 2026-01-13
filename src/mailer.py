@@ -8,58 +8,77 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def _resolve_secret(key: str, default=None):
+    """Try env first, then Streamlit secrets if available."""
+    val = os.getenv(key)
+    if val:
+        return val
+    try:
+        import streamlit as st  # local import to avoid hard dependency in non-Streamlit contexts
+        return st.secrets.get(key, default)
+    except Exception:
+        return default
+
+
 def send_email(to_email, subject, html_content):
     """
     Send an email notification using SendInBlue/Brevo API
-    
-    Args:
-        to_email (str): Recipient email address
-        subject (str): Email subject
-        html_content (str): HTML content of the email
-    
-    Returns:
-        bool: True if sent successfully, False otherwise
+    Returns True on success, False on failure.
+    Surfaces configuration errors clearly so they appear in logs/UI.
     """
-    # Try both environment variable names
-    api_key = os.getenv('BREVO_API_KEY') or os.getenv('SENDINBLUE_API_KEY')
-    from_email = os.getenv('BREVO_FROM_EMAIL', 'noreply@dreamshift.app')
-    from_name = os.getenv('BREVO_FROM_NAME', 'DreamShift EMS')
-    
+    api_key = _resolve_secret('BREVO_API_KEY') or _resolve_secret('SENDINBLUE_API_KEY')
+    from_email = _resolve_secret('BREVO_FROM_EMAIL', 'noreply@dreamshift.app')
+    from_name = _resolve_secret('BREVO_FROM_NAME', 'DreamShift EMS')
+
     if not api_key:
-        print("⚠️ BREVO_API_KEY or SENDINBLUE_API_KEY not configured. Email not sent.")
-        print(f"Would have sent to {to_email}: {subject}")
+        msg = "BREVO_API_KEY / SENDINBLUE_API_KEY not configured; email not sent."
+        print(f"⚠️ {msg} Intended recipient: {to_email}, subject: {subject}")
+        try:
+            import streamlit as st
+            st.error(msg)
+        except Exception:
+            pass
         return False
-    
+
     try:
         import sib_api_v3_sdk
         from sib_api_v3_sdk.rest import ApiException
-        
-        # Configure API
+
         configuration = sib_api_v3_sdk.Configuration()
         configuration.api_key['api-key'] = api_key
-        
+
         api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
             sib_api_v3_sdk.ApiClient(configuration)
         )
-        
-        # Prepare email
+
         send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
             to=[{"email": to_email}],
             sender={"email": from_email, "name": from_name},
             subject=subject,
             html_content=html_content
         )
-        
-        # Send email
+
         api_instance.send_transac_email(send_smtp_email)
         print(f"✅ Email sent to {to_email}: {subject}")
         return True
-        
+
     except ApiException as e:
-        print(f"❌ Error sending email: {e}")
+        msg = f"Brevo API error while sending to {to_email}: {e}"
+        print(f"❌ {msg}")
+        try:
+            import streamlit as st
+            st.error(msg)
+        except Exception:
+            pass
         return False
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        msg = f"Unexpected email send error to {to_email}: {e}"
+        print(f"❌ {msg}")
+        try:
+            import streamlit as st
+            st.error(msg)
+        except Exception:
+            pass
         return False
 
 

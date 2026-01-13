@@ -35,6 +35,23 @@ h1, h2, h3, h4, h5, h6, p, label {
     color: var(--text-primary) !important;
 }
 
+/* Hide Streamlit heading anchor icons/dashes */
+[data-testid="stMarkdownContainer"] h1 a,
+[data-testid="stMarkdownContainer"] h2 a,
+[data-testid="stMarkdownContainer"] h3 a,
+[data-testid="stMarkdownContainer"] h4 a,
+[data-testid="stMarkdownContainer"] h5 a,
+[data-testid="stMarkdownContainer"] h6 a {
+    display: none !important;
+}
+
+/* Neutralize selected tab background (remove yellow fill) */
+.stTabs [aria-selected="true"]{
+    background: rgba(255,255,255,0.10) !important;
+    border-color: rgba(255,255,255,0.18) !important;
+    color: #fff !important;
+}
+
 .stMarkdown {
     color: var(--text-primary) !important;
 }

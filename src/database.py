@@ -1,5 +1,6 @@
 import os
 import datetime
+import secrets
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from bson.objectid import ObjectId
@@ -196,6 +197,47 @@ class DreamShiftDB:
         )
         
         return True
+
+    # ==========================================
+    # Session Tokens (Remember Me)
+    # ==========================================
+    def create_session_token(self, email: str, ttl_days: int = 7) -> str:
+        """Create a signed session token stored server-side (hashed)."""
+        token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        expires_at = datetime.datetime.utcnow() + datetime.timedelta(days=ttl_days)
+        self.db.sessions.insert_one({
+            "email": email,
+            "token_hash": token_hash,
+            "expires_at": expires_at,
+            "created_at": datetime.datetime.utcnow(),
+        })
+        return token
+
+    def get_session_by_token(self, token: str):
+        """Validate session token and return user if valid and not expired."""
+        if not token:
+            return None
+        token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        now = datetime.datetime.utcnow()
+        session = self.db.sessions.find_one({
+            "token_hash": token_hash,
+            "expires_at": {"$gt": now},
+        })
+        if not session:
+            return None
+        return self.get_user(session.get("email"))
+
+    def delete_session_token(self, token: str):
+        """Delete a single session token."""
+        if not token:
+            return
+        token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        self.db.sessions.delete_one({"token_hash": token_hash})
+
+    def delete_sessions_for_user(self, email: str):
+        """Delete all sessions for a user (e.g., on password change)."""
+        self.db.sessions.delete_many({"email": email})
 
     # ==========================================
     # 2. WORKSPACE & ROLE MANAGEMENT

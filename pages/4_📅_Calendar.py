@@ -41,7 +41,7 @@ if 'heatmap_enabled' not in st.session_state:
     st.session_state.heatmap_enabled = False
 
 st.markdown("""
-    <h1 style="color: #f6b900;">📅 Calendar & Task Schedule</h1>
+    <h1 style="color: #ffffff;">📅 Calendar & Task Schedule</h1>
     <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 30px;">View your tasks and deadlines in calendar format</p>
 """, unsafe_allow_html=True)
 
@@ -240,30 +240,52 @@ with col1:
 
 with col2:
     st.markdown("### 🔗 Calendar Sync")
-    
     st.markdown("""
         <div class="calendar-integration">
-            <h4 style="color: #f6b900; margin:0 0 8px 0;">Google Calendar</h4>
+            <h4 style="color: #ffffff; margin:0 0 8px 0;">Google Calendar</h4>
             <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; margin:0;">
                 Sync tasks across devices
             </p>
         </div>
     """, unsafe_allow_html=True)
-    
+
     user = db.get_user(st.session_state.user_email)
     is_connected = user.get('preferences', {}).get('google_calendar_connected', False) if user else False
-    
-    if is_connected:
-        st.success("✅ Connected")
-        if st.button("🔄 Sync Now", use_container_width=True, type="secondary"):
-            st.success("✅ Synced!")
-        if st.button("🔌 Disconnect", use_container_width=True, type="secondary"):
-            db.update_user_profile(st.session_state.user_email, {"preferences.google_calendar_connected": False})
-            st.rerun()
-    else:
-        if st.button("🔗 Connect", use_container_width=True, type="secondary"):
-            st.warning("⚠️ OAuth in progress")
-    
+    outlook_connected = user.get('preferences', {}).get('outlook_connected', False) if user else False
+
+    col_sync1, col_sync2 = st.columns(2)
+    with col_sync1:
+        if is_connected:
+            st.success("✅ Google Connected")
+            if st.button("🔄 Sync Now", use_container_width=True, type="secondary"):
+                st.success("✅ Synced!")
+            if st.button("🔌 Disconnect", use_container_width=True, type="secondary"):
+                db.update_user_profile(st.session_state.user_email, {"preferences.google_calendar_connected": False})
+                st.rerun()
+        else:
+            if st.button("🔗 Connect Google", use_container_width=True, type="secondary"):
+                st.warning("OAuth placeholder: wire Google Flow here")
+
+        st.markdown("<hr>", unsafe_allow_html=True)
+        if outlook_connected:
+            st.success("✅ Outlook Connected")
+            if st.button("🔄 Sync Outlook", use_container_width=True, type="secondary"):
+                st.info("Outlook sync placeholder")
+            if st.button("🔌 Disconnect Outlook", use_container_width=True, type="secondary"):
+                db.update_user_profile(st.session_state.user_email, {"preferences.outlook_connected": False})
+                st.rerun()
+        else:
+            if st.button("🔗 Connect Outlook", use_container_width=True, type="secondary"):
+                st.warning("OAuth placeholder: wire Microsoft Graph here")
+
+    with col_sync2:
+        st.markdown("**iCal Feed**")
+        feed_url = f"https://dreamshift.app/ical/{st.session_state.user_email}" if user else ""
+        st.code(feed_url or "Set after login", language="text")
+        st.caption("Copy to Apple Calendar / Outlook / others (placeholder)")
+        if st.button("📋 Copy iCal URL", use_container_width=True, type="secondary"):
+            st.success("Copied (placeholder)")
+
     st.markdown("---")
     st.markdown("### 📊 This Month")
     

@@ -48,6 +48,16 @@ h1,h2,h3,h4{ letter-spacing:-0.2px; color:var(--text); }
   color: var(--text) !important;
 }
 
+/* Hide heading anchor icons/dashes added by Streamlit */
+[data-testid="stMarkdownContainer"] h1 a,
+[data-testid="stMarkdownContainer"] h2 a,
+[data-testid="stMarkdownContainer"] h3 a,
+[data-testid="stMarkdownContainer"] h4 a,
+[data-testid="stMarkdownContainer"] h5 a,
+[data-testid="stMarkdownContainer"] h6 a {
+  display: none !important;
+}
+
 /* Inputs */
 .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div{
   background: var(--panel2) !important;
@@ -105,9 +115,9 @@ h1,h2,h3,h4{ letter-spacing:-0.2px; color:var(--text); }
   color: rgba(255,255,255,0.85);
 }
 .stTabs [aria-selected="true"]{
-  background: rgba(246,185,0,0.12) !important;
-  border-color: rgba(246,185,0,0.30) !important;
-  color: var(--accent) !important;
+  background: rgba(255,255,255,0.10) !important;
+  border-color: rgba(255,255,255,0.18) !important;
+  color: #fff !important;
 }
 
 /* ---------- Reusable components ---------- */
@@ -199,16 +209,16 @@ h1,h2,h3,h4{ letter-spacing:-0.2px; color:var(--text); }
   display:inline-flex;
   align-items:center;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: 10px;
   font-size: 0.78rem;
   border: 1px solid rgba(255,255,255,0.12);
   background: rgba(255,255,255,0.04);
   color: rgba(255,255,255,0.92);
 }
 .ds-badge-accent{
-  border-color: rgba(246,185,0,0.25);
-  background: rgba(246,185,0,0.10);
-  color: var(--accent);
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
 }
 
 .ds-progress{
@@ -244,16 +254,16 @@ section[data-testid="stSidebar"]{
   display:inline-flex;
   align-items:center;
   padding: 5px 10px;
-  border-radius: 999px;
+  border-radius: 10px;
   font-size: 0.75rem;
   border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.03);
   color: rgba(255,255,255,0.75);
 }
 .ds-pill-accent{
-  border-color: rgba(246,185,0,0.25);
-  background: rgba(246,185,0,0.10);
-  color: rgba(246,185,0,0.95);
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.95);
 }
 .ds-avatar{
   width: 44px;
@@ -422,272 +432,46 @@ section[data-testid="stSidebar"] .stButton:last-of-type > button:hover * {
 
 db = DreamShiftDB()
 
-# Initialize session state
-if "show_forgot_password" not in st.session_state:
-    st.session_state.show_forgot_password = False
-if "show_reset_form" not in st.session_state:
-    st.session_state.show_reset_form = False
-
-# LOGIN PAGE ONLY: Hide sidebar + narrow width
-if "user_email" not in st.session_state:
-    st.markdown("""
-    <style>
-      [data-testid="stSidebar"] { display:none; }
-      .block-container{
-        max-width: 420px !important;
-        padding-top: 3.2rem !important;
-        padding-bottom: 3rem !important;
-      }
-      
-      /* Login wrapper card */
-      .ds-login-wrap{
-        background:#411c30;
-        border:1px solid rgba(255,255,255,0.10);
-        border-radius:18px;
-        padding:22px 22px;
-        box-shadow: 0 18px 60px rgba(0,0,0,0.55);
-      }
-      .ds-login-title{
-        margin:0;
-        font-size:1.9rem;
-        font-weight: 900;
-        letter-spacing:-0.4px;
-        color:#fff;
-      }
-      .ds-login-title span{ color:#f6b900; }
-      .ds-login-sub{
-        margin:6px 0 0;
-        color: rgba(255,255,255,0.70);
-        font-size:0.95rem;
-      }
-      .ds-divider{
-        height:1px;
-        background: rgba(255,255,255,0.10);
-        margin:16px 0 16px;
-      }
-
-      /* Remove Streamlit form border/spacing */
-      div[data-testid="stForm"]{
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-      }
-    </style>
-    """, unsafe_allow_html=True)
-
-# ==========================================
-# AUTHENTICATION
-# ==========================================
-if "user_email" not in st.session_state:
-    
-    # Forgot Password Form
-    if st.session_state.show_forgot_password:
-        st.markdown('<div class="ds-login-wrap">', unsafe_allow_html=True)
-        
-        st.markdown("""
-          <h1 class="ds-login-title">DreamShift <span>EMS</span></h1>
-          <p class="ds-login-sub">Employee Management System</p>
-          <div class="ds-divider"></div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("### Reset Password")
-        st.markdown("Enter your email address and we'll send you a link to reset your password.")
-        
-        with st.form("forgot_password_form"):
-            reset_email = st.text_input("Email Address", placeholder="your.email@company.com")
-            
-            col1, col2 = st.columns(2)
-            send_btn = col1.form_submit_button("Send Reset Link", use_container_width=True)
-            cancel_btn = col2.form_submit_button("Cancel", use_container_width=True)
-            
-            if send_btn and reset_email:
-                user = db.get_user_by_email(reset_email)
-                if user:
-                    # Generate reset token
-                    reset_token = secrets.token_urlsafe(32)
-                    token_hash = hashlib.sha256(reset_token.encode()).hexdigest()
-                    expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
-                    
-                    # Save token to database
-                    db.save_reset_token(reset_email, token_hash, expiry)
-                    
-                    # Send email
-                    reset_link = f"http://localhost:8501?reset_token={reset_token}"
-                    html_content = f"""
-<html>
-<body style="font-family: Arial, sans-serif; background: #24101a; color: #ffffff; padding: 40px;">
-    <div style="max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.06); border-radius: 16px; padding: 40px; border: 1px solid rgba(255,255,255,0.1);">
-        <h1 style="color: #f6b900; text-align: center;">Password Reset</h1>
-        <p style="font-size: 16px; line-height: 1.6;">Hi {html.escape(user['name'])},</p>
-        <p style="font-size: 16px; line-height: 1.6;">We received a request to reset your password for your DreamShift EMS account.</p>
-        <p style="font-size: 16px; line-height: 1.6;">Click the button below to reset your password:</p>
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{reset_link}" style="background: #f6b900; color: #161616; padding: 15px 40px; border-radius: 12px; text-decoration: none; font-weight: 700; display: inline-block;">Reset Password</a>
-        </div>
-        <p style="font-size: 14px; color: rgba(255, 255, 255, 0.7);">Or copy this link: {reset_link}</p>
-        <p style="font-size: 14px; color: rgba(255, 255, 255, 0.7);">This link will expire in 1 hour.</p>
-        <p style="font-size: 14px; color: rgba(255, 255, 255, 0.7); margin-top: 30px;">If you didn't request this, please ignore this email.</p>
-        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <p style="color: rgba(255, 255, 255, 0.5); font-size: 12px;">DreamShift Employee Management System</p>
-        </div>
-    </div>
-</body>
-</html>
 """
-                    try:
-                        send_email(reset_email, "Password Reset - DreamShift EMS", html_content)
-                        st.success("✅ Reset link sent! Check your email.")
-                        time.sleep(2)
-                        st.session_state.show_forgot_password = False
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Failed to send email: {str(e)}")
-                else:
-                    st.error("No account found with that email address.")
-            
-            if cancel_btn:
-                st.session_state.show_forgot_password = False
-                st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Password Reset Form (from email link)
-    elif st.session_state.show_reset_form:
-        st.markdown('<div class="ds-login-wrap">', unsafe_allow_html=True)
-        
-        st.markdown("""
-          <h1 class="ds-login-title">DreamShift <span>EMS</span></h1>
-          <p class="ds-login-sub">Employee Management System</p>
-          <div class="ds-divider"></div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("### Create New Password")
-        
-        with st.form("reset_password_form"):
-            new_password = st.text_input("New Password", type="password", placeholder="Enter new password")
-            confirm_password = st.text_input("Confirm Password", type="password", placeholder="Confirm new password")
-            
-            col1, col2 = st.columns(2)
-            reset_btn = col1.form_submit_button("Reset Password", use_container_width=True)
-            cancel_btn = col2.form_submit_button("Cancel", use_container_width=True)
-            
-            if reset_btn:
-                if new_password != confirm_password:
-                    st.error("Passwords don't match!")
-                elif len(new_password) < 6:
-                    st.error("Password must be at least 6 characters.")
-                else:
-                    # Update password
-                    token = st.query_params.get("reset_token")
-                    if db.reset_password_with_token(token, new_password):
-                        st.success("✅ Password reset successful! Please login.")
-                        time.sleep(2)
-                        st.session_state.show_reset_form = False
-                        st.query_params.clear()
-                        st.rerun()
-                    else:
-                        st.error("Invalid or expired reset link.")
-            
-            if cancel_btn:
-                st.session_state.show_reset_form = False
-                st.query_params.clear()
-                st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Login Form
-    else:
-        st.markdown('<div class="ds-login-wrap">', unsafe_allow_html=True)
+Auth is now handled in a dedicated login page. Home checks for a valid session or redirects.
+"""
 
-        st.markdown("""
-          <h1 class="ds-login-title">DreamShift <span>EMS</span></h1>
-          <p class="ds-login-sub">Employee Management System</p>
-          <div class="ds-divider"></div>
-        """, unsafe_allow_html=True)
-        
-        with st.form("login_form"):
-            email = st.text_input("Email", placeholder="your.email@company.com")
-            password = st.text_input("Password", type="password", placeholder="Enter your password")
-            
-            login_btn = st.form_submit_button("Sign In", use_container_width=True)
-            
-            if login_btn:
-                user = db.authenticate_user(email, password)
-                if user:
-                    st.session_state.user_email = email
-                    st.session_state.user_name = user['name']
-                    st.success(f"Welcome back, {user['name']}!")
-                    time.sleep(0.8)
-                    st.rerun()
-                else:
-                    st.error("Invalid credentials. Please try again.")
-        
-        st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown('<div class="ds-secondary">', unsafe_allow_html=True)
-            if st.button("Forgot password?", use_container_width=True):
-                st.session_state.show_forgot_password = True
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-        with col2:
-            st.markdown('<div class="ds-secondary">', unsafe_allow_html=True)
-            if st.button("Create account", use_container_width=True):
-                st.session_state.show_signup = True
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Check for reset token in URL
-    if "reset_token" in st.query_params:
-        st.session_state.show_reset_form = True
-        st.rerun()
-    
-    # Signup Form
-    if st.session_state.get('show_signup', False) and not st.session_state.show_forgot_password:
-        st.markdown('<div class="ds-login-wrap">', unsafe_allow_html=True)
-        
-        st.markdown("""
-          <h1 class="ds-login-title">DreamShift <span>EMS</span></h1>
-          <p class="ds-login-sub">Employee Management System</p>
-          <div class="ds-divider"></div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("### Create Account")
-        
-        with st.form("signup_form"):
-            new_name = st.text_input("Full Name", placeholder="John Doe")
-            new_email = st.text_input("Email", placeholder="john.doe@company.com")
-            new_password = st.text_input("Password", type="password", placeholder="Create a strong password")
-            confirm_password = st.text_input("Confirm Password", type="password", placeholder="Re-enter password")
-            
-            col1, col2 = st.columns(2)
-            create_btn = col1.form_submit_button("Create Account", use_container_width=True)
-            cancel_btn = col2.form_submit_button("Back to Login", use_container_width=True)
-            
-            if create_btn:
-                if new_password != confirm_password:
-                    st.error("Passwords don't match!")
-                elif len(new_password) < 6:
-                    st.error("Password must be at least 6 characters long!")
-                elif db.get_user(new_email):
-                    st.error("Email already registered!")
-                else:
-                    db.create_user(new_email, new_password, new_name)
-                    st.success("Account created successfully! Please login.")
-                    st.session_state.show_signup = False
-                    time.sleep(0.8)
-                    st.rerun()
-            
-            if cancel_btn:
-                st.session_state.show_signup = False
-                st.rerun()
-        
-        st.markdown("</div>", unsafe_allow_html=True)
-    
-    st.stop()
+
+def logout():
+  """Clear session state, revoke token, and return to sign-in."""
+  token = st.session_state.get("session_token")
+  if token:
+    try:
+      db.delete_session_token(token)
+    except Exception:
+      pass
+  for key in [
+    "user_email",
+    "user_name",
+    "session_token",
+    "current_ws_id",
+    "current_ws_name",
+    "user_role",
+  ]:
+    st.session_state.pop(key, None)
+  st.query_params.clear()
+  st.switch_page("pages/0_🚪_Sign_In.py")
+
+# Auto-reauth using session token in URL
+if "user_email" not in st.session_state:
+  token = st.query_params.get("session_token")
+  if token:
+    user = db.get_session_by_token(token)
+    if user:
+      st.session_state.user_email = user["email"]
+      st.session_state.user_name = user.get("name", user["email"].split("@")[0])
+      st.session_state.session_token = token
+    else:
+      # invalid token, clear it
+      st.query_params.clear()
+      st.switch_page("pages/0_🚪_Sign_In.py")
+  else:
+    st.switch_page("pages/0_🚪_Sign_In.py")
 
 # ==========================================
 # SIDEBAR NAVIGATION
@@ -710,6 +494,9 @@ with st.sidebar:
       </div>
     </div>
     """, unsafe_allow_html=True)
+
+    if st.button("🚪 Log Out", use_container_width=True, key="sidebar_logout"):
+        logout()
 
     # Workspace card
     workspaces = db.get_user_workspaces(st.session_state.user_email)
@@ -788,8 +575,9 @@ with st.sidebar:
 # MAIN DASHBOARD
 # ==========================================
 
-# Header with Greeting
-hour = datetime.datetime.now().hour
+# Header with Greeting + local time (12-hour, AM/PM fixed)
+now = datetime.datetime.now()
+hour = now.hour
 if hour < 12:
     greeting = "Good Morning"
     emoji = "🌅"
@@ -800,11 +588,13 @@ else:
     greeting = "Good Evening"
     emoji = "🌙"
 
+time_str = now.strftime("%I:%M %p").lstrip("0")
+
 st.markdown(f"""
 <div class="ds-hero">
   <div>
     <h1>{emoji} {greeting}, {html.escape(st.session_state.get('user_name', st.session_state.user_email.split('@')[0]))}</h1>
-    <p>Here's your productivity dashboard for today</p>
+    <p>Local time: {time_str}</p>
   </div>
 </div>
 """, unsafe_allow_html=True)

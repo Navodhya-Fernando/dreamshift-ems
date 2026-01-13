@@ -35,25 +35,21 @@ def get_week_range(date_obj):
 def heat_color(task_count):
     """
     Returns background color based on task count (heatmap mode)
-    - 0 tasks: base dark
-    - 1-2: subtle golden
-    - 3-5: medium golden
-    - 6+: strong golden
+    - Neutral blues to avoid yellow backgrounds
     """
     if task_count == 0:
-        return "#24101a"
+        return "#1c2431"
     if task_count <= 2:
-        return "rgba(246,185,0,0.15)"
+        return "rgba(64, 132, 214, 0.18)"  # light blue
     if task_count <= 5:
-        return "rgba(246,185,0,0.35)"
-    return "rgba(246,185,0,0.55)"
+        return "rgba(64, 132, 214, 0.32)"  # medium blue
+    return "rgba(64, 132, 214, 0.48)"       # stronger blue
 
 
-@st.cache_data(show_spinner=False)
 def assignee_color(email):
     """
-    Assign consistent color to each team member
-    Uses hash to ensure same email always gets same color
+    Assign consistent color to each team member.
+    Cache was removed to avoid refresh cache errors; hashing keeps colors stable.
     """
-    palette = ["#f6b900", "#00ff88", "#4dd0e1", "#ff7043", "#ab47bc"]
+    palette = ["#7ec8ff", "#66ffa6", "#9c9cff", "#ff9e80", "#64b5f6"]
     return palette[hash(email) % len(palette)]

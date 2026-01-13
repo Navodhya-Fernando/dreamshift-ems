@@ -545,26 +545,26 @@ with tab_settings:
                 st.rerun()
 
 # ------------------------------------------------------------
-# Analytics tab
+# Analytics tab (aligned to start near "To Do")
 # ------------------------------------------------------------
 with tab_analytics:
-    render_html(
-        """
-<div class="ds-card-tight">
+  render_html(
+    """
+<div class="ds-card-tight" style="margin-left:12px;">
   <div style="font-weight:900; color:#fff; font-size:1.05rem;">Analytics</div>
   <div style="margin-top:6px; color:rgba(255,255,255,0.65); font-size:0.85rem;">Quick snapshot of task distribution and team performance.</div>
 </div>
 """
-    )
-    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+  )
+  st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("To Do", ws_stats["todo_tasks"])
-    with c2:
-        st.metric("In Progress", ws_stats["in_progress_tasks"])
-    with c3:
-        st.metric("Completed", ws_stats["completed_tasks"])
+  c1, c2, c3 = st.columns([1, 1, 1])
+  with c1:
+    st.metric("To Do", ws_stats["todo_tasks"])
+  with c2:
+    st.metric("In Progress", ws_stats["in_progress_tasks"])
+  with c3:
+    st.metric("Completed", ws_stats["completed_tasks"])
 
     st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
 

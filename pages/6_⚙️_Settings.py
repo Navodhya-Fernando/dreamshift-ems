@@ -24,34 +24,12 @@ tab1, tab2, tab3, tab4 = st.tabs(["🎨 Appearance", "🔔 Notifications", "🔐
 
 with tab1:
     st.markdown("### 🎨 Appearance Settings")
-    
-    st.markdown("""
-        <div class="custom-card">
-            <h4 style="color: #f6b900;">Theme</h4>
-            <p style="color: rgba(255, 255, 255, 0.7);">Choose your preferred color theme</p>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    current_theme = user.get('preferences', {}).get('theme', 'dark')
-    theme = st.radio(
-        "Select Theme",
-        options=["dark", "light"],
-        index=0 if current_theme == "dark" else 1,
-        horizontal=True
-    )
-    
-    if theme != current_theme:
-        if st.button("Apply Theme"):
-            db.update_user_profile(user['email'], {
-                "preferences.theme": theme
-            })
-            st.success("Theme updated! Refresh the page to see changes.")
-    
+    st.info("Themes are fixed for now to ensure consistency. Custom themes are disabled as requested.")
+
     st.markdown("---")
-    
     st.markdown("""
         <div class="custom-card">
-            <h4 style="color: #f6b900;">Display Options</h4>
+            <h4 style="color: #ffffff;">Display Options</h4>
             <p style="color: rgba(255, 255, 255, 0.7);">Customize your dashboard view</p>
         </div>
     """, unsafe_allow_html=True)
@@ -68,7 +46,7 @@ with tab2:
     
     st.markdown("""
         <div class="custom-card">
-            <h4 style="color: #f6b900;">Email Notifications</h4>
+            <h4 style="color: #ffffff;">Email Notifications</h4>
             <p style="color: rgba(255, 255, 255, 0.7);">Control when you receive email notifications</p>
         </div>
     """, unsafe_allow_html=True)
@@ -128,7 +106,7 @@ with tab3:
     
     st.markdown("""
         <div class="custom-card">
-            <h4 style="color: #f6b900;">Change Password</h4>
+            <h4 style="color: #ffffff;">Change Password</h4>
             <p style="color: rgba(255, 255, 255, 0.7);">Update your account password</p>
         </div>
     """, unsafe_allow_html=True)
@@ -140,23 +118,21 @@ with tab3:
         
         if st.form_submit_button("Change Password"):
             # Verify current password
-            hashed_current = hashlib.sha256(current_password.encode()).hexdigest()
-            if hashed_current != user['password']:
+            if not db.verify_user_password(user['email'], current_password):
                 st.error("Current password is incorrect!")
             elif new_password != confirm_password:
                 st.error("New passwords don't match!")
             elif len(new_password) < 6:
                 st.error("Password must be at least 6 characters long!")
             else:
-                hashed_new = hashlib.sha256(new_password.encode()).hexdigest()
-                db.update_user_profile(user['email'], {"password": hashed_new})
+                db.update_password(user['email'], new_password)
                 st.success("Password changed successfully!")
     
     st.markdown("---")
     
     st.markdown("""
         <div class="custom-card">
-            <h4 style="color: #f6b900;">Account Security</h4>
+            <h4 style="color: #ffffff;">Account Security</h4>
             <p style="color: rgba(255, 255, 255, 0.7);">Additional security options</p>
         </div>
     """, unsafe_allow_html=True)
@@ -168,7 +144,7 @@ with tab4:
     
     st.markdown("""
         <div class="custom-card">
-            <h4 style="color: #f6b900;">Calendar Sync</h4>
+            <h4 style="color: #ffffff;">Calendar Sync</h4>
             <p style="color: rgba(255, 255, 255, 0.7);">Sync your tasks with external calendars</p>
         </div>
     """, unsafe_allow_html=True)
@@ -178,30 +154,38 @@ with tab4:
     with col1:
         st.markdown("**Google Calendar**")
         st.write("Sync your task deadlines and meetings to Google Calendar")
-        
-        # Check if already connected (you would store this in user preferences)
         is_connected = user.get('preferences', {}).get('google_calendar_connected', False)
-        
         if is_connected:
             st.success("✅ Connected to Google Calendar")
             if st.button("Disconnect"):
-                db.update_user_profile(user['email'], {
-                    "preferences.google_calendar_connected": False
-                })
+                db.update_user_profile(user['email'], {"preferences.google_calendar_connected": False})
                 st.rerun()
         else:
             if st.button("🔗 Connect Google Calendar"):
-                st.info("Calendar sync will be set up. You'll be redirected to Google for authorization.")
-                # In a real implementation, you would:
-                # 1. Use Google OAuth to get credentials
-                # 2. Store refresh token in user preferences
-                # 3. Use it to sync events
-    
+                st.info("You'll be redirected to Google for authorization (placeholder).")
+
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("**Outlook**")
+        outlook_connected = user.get('preferences', {}).get('outlook_connected', False)
+        if outlook_connected:
+            st.success("✅ Connected to Outlook")
+            if st.button("Disconnect Outlook"):
+                db.update_user_profile(user['email'], {"preferences.outlook_connected": False})
+                st.rerun()
+        else:
+            if st.button("🔗 Connect Outlook"):
+                st.info("Outlook OAuth placeholder—hook up Microsoft Graph here.")
+
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("**iCal**")
+        if st.button("Generate iCal Feed URL"):
+            st.success("Use the feed URL below (placeholder).")
+
     with col2:
         st.markdown("**Status**")
-        if is_connected:
+        if is_connected or outlook_connected:
             st.write("🟢 Active")
-            st.caption("Last synced: Just now")
+            st.caption("Last synced: pending real integration")
         else:
             st.write("⚪ Not connected")
     
@@ -209,7 +193,7 @@ with tab4:
     
     st.markdown("""
         <div class="custom-card">
-            <h4 style="color: #f6b900;">Slack Integration</h4>
+            <h4 style="color: #ffffff;">Slack Integration</h4>
             <p style="color: rgba(255, 255, 255, 0.7);">Get notifications in Slack</p>
         </div>
     """, unsafe_allow_html=True)

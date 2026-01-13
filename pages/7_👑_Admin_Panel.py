@@ -372,7 +372,38 @@ with tab4:
     
     if st.button("📊 Generate Report", use_container_width=True):
         st.success("✅ Report generated!")
-        st.info("💾 Export to CSV functionality will be available soon")
+
+        # Build CSV for tasks in range (workspace scoped)
+        tasks = db.get_tasks_with_urgency({"workspace_id": ws_id})
+        rows = [
+            [
+                t.get("title", ""),
+                t.get("status", ""),
+                t.get("priority", ""),
+                t.get("assignee", ""),
+                t.get("project_name", ""),
+                (t.get("due_date") or datetime.datetime.min).strftime("%Y-%m-%d"),
+            ]
+            for t in tasks
+            if t.get("due_date") and start_date <= t["due_date"].date() <= end_date
+        ]
+        header = ["Title", "Status", "Priority", "Assignee", "Project", "Due Date"]
+
+        import io, csv
+
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(header)
+        writer.writerows(rows)
+        csv_bytes = buf.getvalue().encode("utf-8")
+
+        st.download_button(
+            label="💾 Download CSV",
+            data=csv_bytes,
+            file_name="dreamshift_report.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
         
         # Show preview based on report type
         if report_type == "Workspace Summary":

@@ -24,9 +24,9 @@ st.markdown(
     .p-avatar {
       width: 44px; height: 44px; border-radius: 12px;
       display:grid; place-items:center;
-      font-weight: 900; color: #f6b900;
-      background: rgba(246,185,0,0.10);
-      border: 1px solid rgba(246,185,0,0.22);
+      font-weight: 900; color: #ffffff;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
       flex: 0 0 auto;
     }
     .p-title { font-size: 18px; font-weight: 900; color: rgba(255,255,255,0.95); line-height: 1.2; }
@@ -59,11 +59,11 @@ st.markdown(
     .p-row-title { font-weight: 850; color: rgba(255,255,255,0.92); font-size: 14px; }
     .p-row-sub { margin-top: 2px; font-size: 12px; color: rgba(255,255,255,0.55); }
     .p-pill {
-      padding: 6px 10px; border-radius: 999px;
-      border: 1px solid rgba(246,185,0,0.22);
-      background: rgba(246,185,0,0.08);
-      color: #f6b900;
-      font-size: 12px; font-weight: 900;
+      padding: 6px 10px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.05);
+      color: #ffffff;
+      font-size: 12px; font-weight: 800;
       white-space: nowrap;
     }
     .p-muted { color: rgba(255,255,255,0.55); font-size: 12px; }

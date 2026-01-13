@@ -38,9 +38,9 @@ def load_global_css():
       .ds-row { display:flex; gap:10px; flex-wrap: wrap; align-items:center; }
       .ds-pill {
         display:inline-flex; gap:8px; align-items:center;
-        padding: 7px 10px; border-radius: 999px;
+        padding: 7px 10px; border-radius: 10px;
         border: 1px solid var(--ds-border);
-        background: rgba(255,255,255,0.04);
+        background: rgba(255,255,255,0.03);
         color: var(--ds-muted); font-size: 12px; font-weight: 600;
       }
       .ds-pill b { color: #fff; font-weight: 800; }
@@ -161,22 +161,32 @@ def load_global_css():
       }
       
       .ds-react button {
-        background: rgba(255,255,255,0.06) !important;
-        border: 1px solid rgba(255,255,255,0.12) !important;
-        border-radius: 999px !important;
-        padding: 7px 14px !important;
-        min-height: 36px !important;
-        color: rgba(255,255,255,0.85) !important;
+        background: rgba(255,255,255,0.05) !important;
+        border: 1px solid rgba(255,255,255,0.10) !important;
+        border-radius: 12px !important;
+        padding: 6px 10px !important;
+        min-height: 30px !important;
+        color: rgba(255,255,255,0.82) !important;
         font-weight: 800 !important;
-        font-size: 13px !important;
-        transition: all 0.2s ease !important;
+        font-size: 12px !important;
+        transition: all 0.18s ease !important;
       }
       
       .ds-react button:hover {
-        background: rgba(246,185,0,0.15) !important;
-        border-color: rgba(246,185,0,0.5) !important;
-        color: #f6b900 !important;
-        transform: scale(1.05);
+        background: rgba(255,255,255,0.08) !important;
+        border-color: rgba(255,255,255,0.18) !important;
+        color: #fff !important;
+        transform: scale(1.02);
+      }
+
+      /* Hide heading anchor icons/dashes added by Streamlit */
+      [data-testid="stMarkdownContainer"] h1 a,
+      [data-testid="stMarkdownContainer"] h2 a,
+      [data-testid="stMarkdownContainer"] h3 a,
+      [data-testid="stMarkdownContainer"] h4 a,
+      [data-testid="stMarkdownContainer"] h5 a,
+      [data-testid="stMarkdownContainer"] h6 a {
+        display: none !important;
       }
 
       /* Form Buttons - Gold Primary Style */
