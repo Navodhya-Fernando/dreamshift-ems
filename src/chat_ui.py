@@ -181,15 +181,12 @@ def render_comment(
     # Build card classes
     deleted_class = ' ds-deleted-card' if (is_deleted and not can_restore) else ''
 
-    # Render comment card with modern structure
+    # Render comment card (ClickUp-style: clean header with just author + time)
     card_html = (
         f"<div class='ds-chat-card{indent_class}{deleted_class}'>"
         "<div class='ds-chat-header'>"
         f"<div class='ds-chat-author'>{author_safe}</div>"
-        "<div class='ds-chat-meta'>"
-        f"<span class='ds-chat-time'>{fmt_ts(c.get('created_at'))}</span>"
-        f"{edited_badge_html}{edit_history_html}{pinned_badge_html}"
-        "</div>"
+        f"<div class='ds-chat-time'>{fmt_ts(c.get('created_at'))}</div>"
         "</div>"
         f"{quote_html}"
         f"<div class='ds-chat-body'>{body_html}</div>"
@@ -205,7 +202,14 @@ def render_comment(
         )
         return  # Stop rendering deeper comments
 
-    # Action buttons row
+    # Compact action row (ClickUp-style)
+    st.markdown("<div class='ds-actions-row'>", unsafe_allow_html=True)
+    
+    # Show badges in action row instead of card header
+    badge_row = f"{pinned_badge_html}{edited_badge_html}{edit_history_html}"
+    if badge_row.strip():
+        st.markdown(badge_row, unsafe_allow_html=True)
+    
     col1, col2, col3, col4 = st.columns([1, 1, 5, 1.5])
 
     with col1:
@@ -221,8 +225,9 @@ def render_comment(
                 db.toggle_pin_comment(cid, current_user_email, (not is_pinned))
                 st.rerun()
 
-    # Reactions in col3
+    # Reactions as compact chips
     with col3:
+        st.markdown("<div class='ds-react'>", unsafe_allow_html=True)
         reactions = c.get("reactions", {}) or {}
         rcols = st.columns(len(REACTION_ORDER))
         
@@ -235,6 +240,7 @@ def render_comment(
                 if st.button(label, key=f"react_{cid}_{emoji}", use_container_width=True):
                     db.toggle_reaction(cid, emoji, current_user_email)
                     st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # Edit/Delete/Restore for author or admin
     with col4:
@@ -267,6 +273,8 @@ def render_comment(
                 if st.button("🔨", key=f"admin_del_{cid}", use_container_width=True, help="Admin Delete"):
                     db.delete_comment(cid, current_user_email, is_admin_action=True)
                     st.rerun()
+    
+    st.markdown("</div>", unsafe_allow_html=True)  # Close ds-actions-row
 
     # Inline edit
     if st.session_state.get("edit_comment_id") == cid and is_author and not is_deleted:

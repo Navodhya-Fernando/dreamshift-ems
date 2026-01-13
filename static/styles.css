@@ -931,59 +931,51 @@ section[data-testid="stSidebar"] a[href*="task_templates"] {
   font-size: 12px;
 }
 
-/* ========== Modern Chat/Comment Cards ========== */
+/* ========== ClickUp-style Comment Cards ========== */
 .ds-chat-card{
   background: rgba(17, 24, 39, 0.55);
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 18px;
-  padding: 16px 18px;
-  margin: 12px 0 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-  backdrop-filter: blur(10px);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin: 10px 0 6px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.20);
 }
 
 .ds-chat-header{
   display:flex;
-  align-items:flex-start;
   justify-content:space-between;
+  align-items:flex-start;
   gap:12px;
-  margin-bottom: 10px;
 }
 
 .ds-chat-author{
   font-weight: 750;
-  font-size: 15px;
-  letter-spacing: 0.2px;
-  color: rgba(255,255,255,0.95);
-}
-
-.ds-chat-meta{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  white-space: nowrap;
-  font-size: 12px;
-  color: rgba(255,255,255,0.6);
+  font-size: 14px;
+  color: rgba(255,255,255,0.94);
 }
 
 .ds-chat-time{
+  font-size: 12px;
   color: rgba(255,255,255,0.55);
+  white-space: nowrap;
 }
 
 /* Message body */
 .ds-chat-body{
+  margin-top: 8px;
   font-size: 14px;
   line-height: 1.45;
   color: rgba(255,255,255,0.88);
   word-break: break-word;
 }
 
-/* Mention pill */
+/* Mention chip */
 .ds-mention{
-  display:inline-block;
+  display:inline-flex;
+  align-items:center;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(245, 158, 11, 0.18);
+  background: rgba(245, 158, 11, 0.16);
   border: 1px solid rgba(245, 158, 11, 0.25);
   color: #fbbf24;
   font-weight: 650;
@@ -1016,18 +1008,20 @@ section[data-testid="stSidebar"] a[href*="task_templates"] {
 }
 
 .ds-deleted{
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.60);
   font-style: italic;
 }
 
-/* Badges (pinned, edited, edit history) */
+/* Badges (pinned, edited, edit history) - now inline in action row */
 .ds-pin-badge, .ds-edited, .ds-edit-history{
+  display: inline-block;
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid rgba(255,255,255,0.10);
   background: rgba(255,255,255,0.06);
   color: rgba(255,255,255,0.75);
+  margin-right: 6px;
 }
 
 /* Thread depth indentation */
@@ -1064,17 +1058,43 @@ section[data-testid="stSidebar"] a[href*="task_templates"] {
   color: rgba(255,255,255,0.85);
 }
 
-/* Make chat action buttons more compact */
-div[data-testid="column"] button[kind="secondary"]{
-  border-radius: 14px !important;
-  padding: 8px 10px !important;
+/* ========== Compact Action Row (ClickUp-style) ========== */
+.ds-actions-row{
+  margin: 6px 0 12px;
+}
+
+/* Make all buttons in action row compact and subtle */
+.ds-actions-row button{
+  border-radius: 10px !important;
+  padding: 6px 10px !important;
   font-weight: 650 !important;
   box-shadow: none !important;
   font-size: 13px !important;
 }
 
-/* Reduce spacing around button rows */
-div[data-testid="column"]{
+/* Secondary buttons = subtle chip style */
+.ds-actions-row button[kind="secondary"]{
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  color: rgba(255,255,255,0.88) !important;
+}
+
+.ds-actions-row button[kind="secondary"]:hover{
+  background: rgba(255,255,255,0.10) !important;
+  border-color: rgba(255,255,255,0.16) !important;
+}
+
+/* Reaction buttons = even more compact chips */
+.ds-actions-row .ds-react button{
+  padding: 5px 8px !important;
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+}
+
+/* Reduce column padding in action row */
+.ds-actions-row div[data-testid="column"]{
   padding-top: 0px !important;
+  padding-bottom: 0px !important;
 }
 
