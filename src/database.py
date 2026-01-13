@@ -58,7 +58,7 @@ class DreamShiftDB:
     # ==========================================
     # 1. USER & AUTHENTICATION
     # ==========================================
-    def create_user(self, email, password, name, role="Employee"):
+    def create_user(self, email, password, name, role="employee"):
         """Create a new user account."""
         hashed_pw = hashlib.sha256(password.encode()).hexdigest()
         user = {
@@ -598,19 +598,18 @@ class DreamShiftDB:
         members = ws.get("members", []) or []
         return [m.get("email") for m in members if m.get("email")]
     
-    def get_workspace_members_for_mentions(self, workspace_id: str):
-        """Get workspace members with name/email for mention autocomplete."""
-        emails = self.get_workspace_member_emails(workspace_id)
+    def get_all_users_for_mentions(self):
+        """Get all users in the system for mentions and assignees (not just workspace members)."""
+        users = list(self.db.users.find({}, {"email": 1, "name": 1}).sort("name", 1))
         out = []
-        for e in emails:
-            u = self.get_user(e)
-            if u:
-                out.append({"email": e, "name": u.get("name") or e})
-            else:
-                out.append({"email": e, "name": e})
-        # Sort by name
-        out.sort(key=lambda x: (x["name"] or "").lower())
+        for u in users:
+            out.append({"email": u.get("email"), "name": u.get("name") or u.get("email")})
         return out
+
+    def get_workspace_members_for_mentions(self, workspace_id: str = None):
+        """Get all users (not just workspace members) for mention autocomplete."""
+        # Return all users in the system instead of just workspace members
+        return self.get_all_users_for_mentions()
     
     def add_comment(self, entity_type, entity_id, user_email, text, workspace_id=None, project_id=None, task_id=None, parent_comment_id=None):
         """Add comment to task or project with reactions, pin support, and threading."""

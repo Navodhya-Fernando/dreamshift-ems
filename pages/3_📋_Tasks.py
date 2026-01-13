@@ -56,21 +56,15 @@ def _member_options(db: DreamShiftDB, ws_id: str, user_email: str):
       options: list[str] labels for selectbox
       label_to_email: dict[label] = email
     """
-    ws = _get_workspace_doc(db, ws_id, user_email) or {}
-    members = ws.get("members", []) or []
+    # Get all users from database instead of just workspace members
+    all_users = db.get_all_users_for_mentions()
 
-    # If your DB stores members differently, adapt here
-    # expected: [{"email": "...", "role": "..."}]
     labels = []
     label_to_email = {}
 
-    for m in members:
-        email = m.get("email")
-        if not email:
-            continue
-
-        u = db.get_user(email)  # you already have this in other pages
-        name = (u.get("name") if u else None) or email.split("@")[0]
+    for u in all_users:
+        email = u.get("email")
+        name = u.get("name") or email.split("@")[0]
 
         # avoid name collisions by including email in the label
         label = f"{name} · {email}"
