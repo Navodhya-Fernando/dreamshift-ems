@@ -4,6 +4,7 @@ import time
 import secrets
 import hashlib
 import html
+import os
 from src.database import DreamShiftDB
 from src.mailer import send_email
 
