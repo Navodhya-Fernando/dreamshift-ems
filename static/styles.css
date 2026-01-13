@@ -467,46 +467,7 @@ h1, h2, h3, h4, h5, h6, p, label {
 }
 
 /* Streamlit specific overrides */
-.stButton > button,
-.stButton button,
-.stFormSubmitButton > button,
-.stFormSubmitButton button {
-    background: var(--accent-primary) !important;
-    color: #411c30 !important;
-    border: none !important;
-    border-radius: 12px !important;
-    font-weight: 700 !important;
-    padding: 0.75rem 1.5rem !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    box-shadow: 0 4px 12px rgba(246, 185, 0, 0.3) !important;
-    letter-spacing: 0.3px !important;
-}
 
-.stButton > button:hover,
-.stButton button:hover,
-.stFormSubmitButton > button:hover,
-.stFormSubmitButton button:hover {
-    background: #ffe500 !important;
-    color: #411c30 !important;
-    box-shadow: 0 8px 24px rgba(255, 229, 0, 0.5) !important;
-    transform: translateY(-2px) !important;
-}
-
-.stButton > button:active,
-.stFormSubmitButton > button:active {
-    transform: translateY(0) !important;
-}
-
-/* Force button inner elements (spans/divs) to dark text */
-.stButton button *,
-.stFormSubmitButton button * {
-    color: #411c30 !important;
-}
-
-.stButton button:hover *,
-.stFormSubmitButton button:hover * {
-    color: #411c30 !important;
-}
 
 .stTextInput > div > div > input,
 .stTextArea > div > div > textarea,
