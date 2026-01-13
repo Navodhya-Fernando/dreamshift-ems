@@ -161,7 +161,11 @@ if st.session_state.show_forgot_password:
                 token_hash = hashlib.sha256(reset_token.encode()).hexdigest()
                 expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
                 db.save_reset_token(reset_email, token_hash, expiry)
-                reset_link = f"http://localhost:8501?reset_token={reset_token}"
+                
+                # Build reset link using environment variable or Streamlit's deployed URL
+                base_url = os.getenv('APP_BASE_URL', 'http://localhost:8501')
+                reset_link = f"{base_url}?reset_token={reset_token}"
+                
                 html_content = f"""
 <html>
 <body style=\"font-family: Arial, sans-serif; background: #24101a; color: #ffffff; padding: 40px;\">
