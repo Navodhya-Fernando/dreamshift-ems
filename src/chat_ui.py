@@ -22,10 +22,19 @@ def strip_html_tags(text: str) -> str:
     """Remove any HTML tags from text (for cleaning old data)."""
     if not text:
         return ""
-    # Unescape first so encoded tags like &lt;div&gt; are removed too
-    unescaped = html.unescape(text)
-    clean = re.sub(r'<[^>]+>', '', unescaped)
-    return clean
+    # Fully unescape (handles double-encoded content) then strip tags/entities
+    s = text
+    for _ in range(5):  # iterate to resolve nested encodings
+        new_s = html.unescape(s)
+        if new_s == s:
+            break
+        s = new_s
+
+    # Remove real HTML tags
+    s = re.sub(r"<[^>]+>", "", s)
+    # Remove any encoded tags that might remain (e.g., &lt;div&gt;)
+    s = re.sub(r"&lt;[^&]*&gt;", "", s, flags=re.IGNORECASE)
+    return s
 
 def safe_text_with_mentions(text: str) -> str:
     """
@@ -37,7 +46,7 @@ def safe_text_with_mentions(text: str) -> str:
     cleaned = strip_html_tags(text or "")
     
     # Escape the cleaned text
-    escaped = html.escape(cleaned)
+    escaped = html.escape(cleaned).replace("`", "&#96;")  # neutralize backticks so markdown won't code-wrap
     
     # Highlight mentions (supports both @email and @user formats)
     highlighted = re.sub(
@@ -123,9 +132,12 @@ def render_comment(
             hours_since_delete = (datetime.datetime.utcnow() - deleted_at).total_seconds() / 3600
             can_restore = hours_since_delete <= 24
 
-    # Hide deleted comments for everyone except author (within restore window) or admin
-    if is_deleted and not can_restore and not is_admin and not is_author:
-        return
+    # Hide deleted comments unless author/admin can still restore
+    if is_deleted:
+        if not can_restore:
+            return
+        if not (is_author or is_admin):
+            return
 
     # Body (escape user text, then highlight mentions)
     body_html = (
