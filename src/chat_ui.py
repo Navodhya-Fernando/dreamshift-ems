@@ -4,7 +4,6 @@ import html
 import re
 import textwrap
 import streamlit as st
-import streamlit.components.v1 as components
 
 REACTION_ORDER = ["👍", "❤️", "🎉", "👀", "✅"]
 
@@ -181,7 +180,7 @@ def render_comment(
     if is_deleted and not can_restore:
         card_class += " ds-deleted-card"
 
-        # Render comment card with raw HTML to bypass markdown parsing that could show code pills
+        # Render comment card with raw HTML to bypass markdown parsing (no iframe)
         card_html = textwrap.dedent(
                 f"""
                 <div class="{card_class}">
@@ -199,7 +198,7 @@ def render_comment(
                 </div>
                 """
         ).strip()
-        components.html(card_html, height=160, scrolling=False)
+        st.html(card_html)
 
     # Depth limiting: Show "Continue thread" if depth >= 3
     if depth >= 3:
