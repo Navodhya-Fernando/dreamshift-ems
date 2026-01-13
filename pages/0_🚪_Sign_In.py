@@ -26,11 +26,6 @@ if st.session_state.get("user_email"):
     st.switch_page("🏠_Home.py")
     st.stop()
 
-# Check for reset token FIRST (before auto-login with session token)
-reset_token_param = st.query_params.get("reset_token")
-if reset_token_param:
-    st.session_state.show_reset_form = True
-
 # Auto-login if session token comes from a shared link
 incoming_token = st.query_params.get("session_token")
 if incoming_token and "user_email" not in st.session_state:
@@ -134,6 +129,10 @@ for key, default in {
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
+
+# Check for reset token in URL and preserve it even if session state was initialized
+if st.query_params.get("reset_token"):
+    st.session_state.show_reset_form = True
 
 
 def render_header():
