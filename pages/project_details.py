@@ -107,18 +107,26 @@ else:
 
         st.markdown(f"""
         <div class="ds-card" style="margin-bottom:10px;">
-          <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
-            <div style="flex:1;">
-              <div style="font-weight:800; color:#fff;">{title}</div>
-              <div style="margin-top:6px;" class="ds-row">
-                <span class="ds-pill">Status: <b>{st_status}</b></span>
-                <span class="ds-pill">Priority: <b>{prio}</b></span>
-                <span class="ds-pill">Assignee: <b>{assignee_name}</b></span>
-              </div>
+            <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+                <div style="flex:1;">
+                    <div style="font-weight:800; color:#fff;">
+                        {title}
+                    </div>
+
+                    <div style="margin-top:6px;" class="ds-row">
+                        <span class="ds-pill">
+                        Status: <b>{st_status}</b>
+                        </span>
+                        <span class="ds-pill">
+                        Priority: <b>{prio}</b>
+                        </span>
+                        <span class="ds-pill">
+                        Assignee: <b>{assignee_name}</b>
+                        </span>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+        </div> """, unsafe_allow_html=True)
 
         if st.button("Open task", key=f"open_{tid}"):
             st.session_state.selected_task_id = tid
