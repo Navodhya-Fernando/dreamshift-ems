@@ -16,9 +16,9 @@ def render_html(html_str: str):
 # ------------------------------------------------------------
 st.set_page_config(page_title="Workspaces | DreamShift EMS", page_icon="🏢", layout="wide")
 
-# Load base CSS (your global theme)
-with open("static/styles.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+# Load custom CSS
+from src.ui import load_global_css
+load_global_css()
 
 # Page-specific modern minimal CSS
 st.markdown(

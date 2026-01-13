@@ -17,8 +17,8 @@ from components.calendar import (
 st.set_page_config(page_title="📅 Calendar", page_icon="📅", layout="wide")
 
 # Load custom CSS
-with open('static/styles.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+from src.ui import load_global_css
+load_global_css()
 
 db = DreamShiftDB()
 

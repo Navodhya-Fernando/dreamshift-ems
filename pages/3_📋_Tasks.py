@@ -109,8 +109,8 @@ def status_badge(s: str):
 # ---------- page ----------
 st.set_page_config(page_title="Tasks - DreamShift", page_icon="✅", layout="wide")
 
-with open("static/styles.css", "r", encoding="utf-8") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+from src.ui import load_global_css
+load_global_css()
 
 # Extra minimal CSS (kept inside this page so you can paste once and go)
 render_html("""

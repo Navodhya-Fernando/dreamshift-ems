@@ -14,10 +14,19 @@ class DreamShiftDB:
     def __init__(self):
         """Initializes the connection to MongoDB using .env or Streamlit secrets."""
         # Try Streamlit secrets first (cloud deployment), then fall back to .env (local)
+        mongodb_uri = None
+        db_name = "dreamshift"
+        
+        # Safely try to access Streamlit secrets
         try:
-            mongodb_uri = st.secrets["MONGODB_URI"]
-            db_name = st.secrets.get("DB_NAME", "dreamshift")
-        except:
+            if hasattr(st, 'secrets') and st.secrets:
+                mongodb_uri = st.secrets.get("MONGODB_URI")
+                db_name = st.secrets.get("DB_NAME", "dreamshift")
+        except Exception:
+            pass
+        
+        # Fall back to environment variables if secrets not available
+        if not mongodb_uri:
             mongodb_uri = os.getenv("MONGODB_URI")
             db_name = os.getenv("DB_NAME", "dreamshift")
         
