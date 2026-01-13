@@ -931,3 +931,150 @@ section[data-testid="stSidebar"] a[href*="task_templates"] {
   font-size: 12px;
 }
 
+/* ========== Modern Chat/Comment Cards ========== */
+.ds-chat-card{
+  background: rgba(17, 24, 39, 0.55);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin: 12px 0 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  backdrop-filter: blur(10px);
+}
+
+.ds-chat-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom: 10px;
+}
+
+.ds-chat-author{
+  font-weight: 750;
+  font-size: 15px;
+  letter-spacing: 0.2px;
+  color: rgba(255,255,255,0.95);
+}
+
+.ds-chat-meta{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  white-space: nowrap;
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+}
+
+.ds-chat-time{
+  color: rgba(255,255,255,0.55);
+}
+
+/* Message body */
+.ds-chat-body{
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.88);
+  word-break: break-word;
+}
+
+/* Mention pill */
+.ds-mention{
+  display:inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  font-weight: 650;
+}
+
+/* Quote block */
+.ds-quote{
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-left: 3px solid rgba(245,158,11,0.7);
+  background: rgba(0,0,0,0.18);
+  border-radius: 12px;
+}
+
+.ds-quote-author{
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 4px;
+}
+
+.ds-quote-text{
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+}
+
+/* Deleted comment styling */
+.ds-deleted-card{
+  opacity: 0.75;
+  border-style: dashed;
+}
+
+.ds-deleted{
+  color: rgba(255,255,255,0.6);
+  font-style: italic;
+}
+
+/* Badges (pinned, edited, edit history) */
+.ds-pin-badge, .ds-edited, .ds-edit-history{
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.75);
+}
+
+/* Thread depth indentation */
+.ds-indent-1{
+  margin-left: 28px;
+}
+
+.ds-indent-2{
+  margin-left: 56px;
+}
+
+.ds-indent-3{
+  margin-left: 84px;
+}
+
+/* Continue thread link */
+.ds-continue-thread{
+  display: inline-block;
+  margin: 8px 0 0 28px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.70);
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.ds-continue-thread:hover{
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.85);
+}
+
+/* Make chat action buttons more compact */
+div[data-testid="column"] button[kind="secondary"]{
+  border-radius: 14px !important;
+  padding: 8px 10px !important;
+  font-weight: 650 !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+}
+
+/* Reduce spacing around button rows */
+div[data-testid="column"]{
+  padding-top: 0px !important;
+}
+

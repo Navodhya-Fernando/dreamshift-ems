@@ -2,7 +2,6 @@
 import datetime
 import html
 import re
-import textwrap
 import streamlit as st
 
 REACTION_ORDER = ["👍", "❤️", "🎉", "👀", "✅"]
@@ -179,23 +178,21 @@ def render_comment(
     else:
         indent_class = " ds-indent-3"
 
-    # Add deleted card styling if needed
-    card_class = "ds-chat-card" + indent_class
-    if is_deleted and not can_restore:
-        card_class += " ds-deleted-card"
+    # Build card classes
+    deleted_class = ' ds-deleted-card' if (is_deleted and not can_restore) else ''
 
-    # Render comment card (build without triple-quote indentation to avoid markdown parsing issues)
+    # Render comment card with modern structure
     card_html = (
-        f"<div class='{card_class}'>"
-        "<div class='ds-chat-top'>"
+        f"<div class='ds-chat-card{indent_class}{deleted_class}'>"
+        "<div class='ds-chat-header'>"
         f"<div class='ds-chat-author'>{author_safe}</div>"
         "<div class='ds-chat-meta'>"
-        f"<span>{fmt_ts(c.get('created_at'))}</span>"
+        f"<span class='ds-chat-time'>{fmt_ts(c.get('created_at'))}</span>"
         f"{edited_badge_html}{edit_history_html}{pinned_badge_html}"
         "</div>"
         "</div>"
         f"{quote_html}"
-        f"<div class='ds-chat-text'>{body_html}</div>"
+        f"<div class='ds-chat-body'>{body_html}</div>"
         "</div>"
     )
     st.markdown(card_html, unsafe_allow_html=True)
