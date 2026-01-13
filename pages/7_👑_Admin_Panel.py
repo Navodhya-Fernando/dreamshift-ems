@@ -460,8 +460,9 @@ with tab5:
         
         members = workspace.get("members", [])
         member_emails = [m["email"] for m in members if m.get("email")]
-        users = [db.get_user(e) for e in member_emails]
-        users = [u for u in users if u]
+        # Get ALL users from database instead of just workspace members
+        all_users = db.get_all_users_for_mentions()
+        users = all_users if all_users else []
         
         if users:
             name_to_email = {u["name"]: u["email"] for u in users}

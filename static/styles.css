@@ -1156,3 +1156,370 @@ section[data-testid="stSidebar"] a[href*="task_templates"] {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   UI COMPONENT STYLING - CONSOLIDATED FROM ui.py
+   All styling centralized here for single-source-of-truth maintenance
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Base dark theme variables */
+:root {
+  --ds-bg: #0b1220;
+  --ds-card: rgba(255,255,255,0.06);
+  --ds-border: rgba(255,255,255,0.12);
+  --ds-text: rgba(255,255,255,0.88);
+  --ds-muted: rgba(255,255,255,0.60);
+  --ds-accent: #411c30;
+}
+
+.block-container { 
+  padding-top: 1.2rem; 
+  padding-bottom: 2rem; 
+  max-width: 1200px; 
+}
+
+/* Cards */
+.ds-card {
+  background: var(--ds-card);
+  border: 1px solid var(--ds-border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.ds-title { font-size: 22px; font-weight: 800; color: #fff; margin: 0; }
+.ds-subtitle { color: var(--ds-muted); margin-top: 6px; font-size: 14px; }
+
+.ds-row { display:flex; gap:10px; flex-wrap: wrap; align-items:center; }
+.ds-pill {
+  display:inline-flex; gap:8px; align-items:center;
+  padding: 7px 10px; border-radius: 10px;
+  border: 1px solid var(--ds-border);
+  background: rgba(255,255,255,0.03);
+  color: var(--ds-muted); font-size: 12px; font-weight: 600;
+}
+.ds-pill b { color: #fff; font-weight: 800; }
+
+/* Chat Cards - Modern Dark Theme */
+.ds-chat-card { 
+  background: #411c30 !important;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px; 
+  padding: 18px 20px; 
+  margin-bottom: 14px;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.28);
+  transition: all 0.2s ease;
+}
+.ds-chat-card:hover {
+  border-color: rgba(246,185,0,0.20);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+}
+
+.ds-indent { 
+  margin-left: 32px;
+  border-left: 2px solid rgba(246,185,0,0.2);
+  padding-left: 16px;
+}
+
+.ds-chat-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ds-chat-author { 
+  color: #fff; 
+  font-weight: 900; 
+  font-size: 14px;
+  letter-spacing: 0.3px;
+}
+
+.ds-chat-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: rgba(255,255,255,0.50);
+  font-size: 12px;
+}
+
+.ds-chat-text { 
+  color: rgba(255,255,255,0.92); 
+  font-size: 14px; 
+  line-height: 1.65;
+  margin-bottom: 14px;
+}
+
+.ds-pin-badge {
+  padding: 4px 10px; 
+  border-radius: 999px;
+  background: linear-gradient(135deg, #411c30 0%, #2d1420 100%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(65,28,48,0.3);
+}
+
+.ds-edited {
+  color: rgba(255,255,255,0.45);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.ds-deleted {
+  color: rgba(255,255,255,0.45);
+  font-style: italic;
+}
+
+.ds-mention {
+  color: #f6b900 !important;
+  font-weight: 900;
+  background: rgba(246,185,0,0.12);
+  border: 1px solid rgba(246,185,0,0.25);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROFESSIONAL BUTTON STYLING (Modern & Consistent)
+   ═══════════════════════════════════════════════════════ */
+
+/* Base button styling - applies to all buttons */
+.stButton > button,
+.stFormSubmitButton > button,
+.stForm button {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Secondary buttons (default - all non-primary) */
+.stButton > button:not([kind="primary"]),
+.stFormSubmitButton > button:not([kind="primary"]),
+.stForm button:not([kind="primary"]) {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: rgba(255,255,255,0.88) !important;
+  padding: 10px 18px !important;
+}
+
+.stButton > button:not([kind="primary"]):hover,
+.stFormSubmitButton > button:not([kind="primary"]):hover,
+.stForm button:not([kind="primary"]):hover {
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.08) 100%) !important;
+  border-color: rgba(255,255,255,0.18) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Primary buttons (CTA - purple gradient) */
+.stButton > button[kind="primary"],
+.stFormSubmitButton > button[kind="primary"],
+.stForm button[kind="primary"] {
+  background: linear-gradient(135deg, #411c30 0%, #2d1420 100%) !important;
+  border: 1px solid rgba(65,28,48,0.4) !important;
+  color: #ffffff !important;
+  padding: 11px 24px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(65,28,48,0.25) !important;
+}
+
+.stButton > button[kind="primary"]:hover,
+.stFormSubmitButton > button[kind="primary"]:hover,
+.stForm button[kind="primary"]:hover {
+  background: linear-gradient(135deg, #6b3a50 0%, #411c30 100%) !important;
+  border-color: rgba(65,28,48,0.5) !important;
+  box-shadow: 0 6px 18px rgba(65,28,48,0.35) !important;
+  transform: translateY(-1px);
+}
+
+.stButton > button[kind="primary"]:active,
+.stFormSubmitButton > button[kind="primary"]:active,
+.stForm button[kind="primary"]:active {
+  transform: translateY(0px) !important;
+  box-shadow: 0 2px 8px rgba(65,28,48,0.2) !important;
+}
+
+/* Compact icon buttons (in action rows) */
+.stButton > button:has(span:only-child) {
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 16px !important;
+}
+
+/* Reaction buttons - compact chips */
+.ds-react button {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 12px !important;
+  padding: 6px 10px !important;
+  min-height: 30px !important;
+  color: rgba(255,255,255,0.82) !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
+}
+
+.ds-react button:hover {
+  background: rgba(255,255,255,0.10) !important;
+  border-color: rgba(255,255,255,0.18) !important;
+  color: #ffffff !important;
+}
+
+/* Hide heading anchor icons/dashes added by Streamlit */
+[data-testid="stMarkdownContainer"] h1 a,
+[data-testid="stMarkdownContainer"] h2 a,
+[data-testid="stMarkdownContainer"] h3 a,
+[data-testid="stMarkdownContainer"] h4 a,
+[data-testid="stMarkdownContainer"] h5 a,
+[data-testid="stMarkdownContainer"] h6 a {
+  display: none !important;
+}
+
+/* Hide Streamlit Branding */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATION & ENHANCEMENT EFFECTS
+   ═══════════════════════════════════════════════════════ */
+
+/* Metric Cards with Pulse Animation */
+@keyframes metric-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(65,28,48,0.4);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 0 8px rgba(65,28,48,0);
+    transform: scale(1.02);
+  }
+}
+
+.ds-metric-pulse {
+  animation: metric-pulse 2s ease-in-out infinite;
+  background: linear-gradient(135deg, rgba(246,185,0,0.08) 0%, rgba(246,185,0,0.03) 100%);
+  border: 1px solid rgba(246,185,0,0.25);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.ds-metric-pulse:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 8px 24px rgba(65,28,48,0.2) !important;
+}
+
+/* Task Cards with Urgency Color Coding */
+.ds-task-card {
+  background: var(--ds-card);
+  border: 1px solid var(--ds-border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  border-left: 4px solid var(--urgency-color, #888);
+  transition: all 0.2s ease;
+}
+
+.ds-task-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.ds-task-low { --urgency-color: #4caf50; } /* Green */
+.ds-task-medium { --urgency-color: #ffca28; } /* Yellow */
+.ds-task-high { --urgency-color: #ff9800; } /* Orange */
+.ds-task-critical { --urgency-color: #f44336; } /* Red */
+
+/* Thread Depth Limiting (max 3 levels) */
+.ds-indent-1 { 
+  margin-left: 32px;
+  border-left: 2px solid rgba(246,185,0,0.2);
+  padding-left: 16px;
+}
+
+.ds-indent-2 { 
+  margin-left: 64px;
+  border-left: 2px solid rgba(246,185,0,0.15);
+  padding-left: 16px;
+}
+
+.ds-indent-3 { 
+  margin-left: 96px;
+  border-left: 2px solid rgba(246,185,0,0.1);
+  padding-left: 16px;
+}
+
+.ds-continue-thread {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(65,28,48,0.1);
+  border: 1px solid rgba(65,28,48,0.3);
+  color: #411c30;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+  text-decoration: none;
+}
+
+.ds-continue-thread:hover {
+  background: rgba(246,185,0,0.2);
+  transform: translateX(4px);
+}
+
+/* Quote Reply Styling */
+.ds-quote {
+  border-left: 3px solid rgba(246,185,0,0.5);
+  padding: 8px 12px;
+  margin: 8px 0;
+  background: rgba(255,255,255,0.03);
+  border-radius: 6px;
+  font-style: italic;
+  color: rgba(255,255,255,0.70);
+  font-size: 13px;
+}
+
+.ds-quote-author {
+  color: #411c30;
+  font-weight: 800;
+  font-style: normal;
+  margin-bottom: 4px;
+}
+
+/* Edit History Badge */
+.ds-edit-history {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(33,150,243,0.1);
+  border: 1px solid rgba(33,150,243,0.3);
+  color: #2196f3;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ds-edit-history:hover {
+  background: rgba(33,150,243,0.2);
+}
+

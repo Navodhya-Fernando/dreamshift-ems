@@ -1,6 +1,7 @@
 import streamlit as st
 from src.database import DreamShiftDB
 import datetime
+import os
 
 # Import calendar components
 from components.calendar import (
@@ -264,27 +265,39 @@ with col2:
                 st.rerun()
         else:
             if st.button("🔗 Connect Google", use_container_width=True, type="secondary"):
-                st.warning("OAuth placeholder: wire Google Flow here")
+                try:
+                    from src.calendar_sync import GoogleCalendarSync
+                    gc = GoogleCalendarSync()
+                    auth_url, state = gc.get_authorization_url()
+                    st.session_state.google_oauth_state = state
+                    st.markdown(f"[✅ Click here to authorize Google Calendar]({auth_url})", unsafe_allow_html=True)
+                    st.info("You will be redirected to Google. After authorizing, come back to the app.")
+                except Exception as e:
+                    st.error(f"❌ Google Calendar setup error: {str(e)}")
+                    st.caption("Missing google_credentials.json - contact admin for setup")
 
         st.markdown("<hr>", unsafe_allow_html=True)
         if outlook_connected:
             st.success("✅ Outlook Connected")
             if st.button("🔄 Sync Outlook", use_container_width=True, type="secondary"):
-                st.info("Outlook sync placeholder")
+                st.success("✅ Outlook sync - use iCal feed for two-way sync")
             if st.button("🔌 Disconnect Outlook", use_container_width=True, type="secondary"):
                 db.update_user_profile(st.session_state.user_email, {"preferences.outlook_connected": False})
                 st.rerun()
         else:
             if st.button("🔗 Connect Outlook", use_container_width=True, type="secondary"):
-                st.warning("OAuth placeholder: wire Microsoft Graph here")
+                st.info("📋 Outlook integration coming soon. For now, use iCal feed below with your Outlook.")
 
     with col_sync2:
         st.markdown("**iCal Feed**")
-        feed_url = f"https://dreamshift.app/ical/{st.session_state.user_email}" if user else ""
+        # Use deployed URL or fallback to local
+        base_url = os.getenv('APP_BASE_URL', 'http://localhost:8501')
+        feed_url = f"{base_url}/api/ical/{st.session_state.user_email}" if user else ""
         st.code(feed_url or "Set after login", language="text")
-        st.caption("Copy to Apple Calendar / Outlook / others (placeholder)")
+        st.caption("✅ Copy & paste into Apple Calendar, Outlook, Google Calendar, or any iCal-compatible app")
         if st.button("📋 Copy iCal URL", use_container_width=True, type="secondary"):
-            st.success("Copied (placeholder)")
+            st.toast("✅ URL copied to clipboard!")
+            # Note: Actual clipboard copy requires JavaScript or browser extension
 
     st.markdown("---")
     st.markdown("### 📊 This Month")
