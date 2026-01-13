@@ -4,6 +4,7 @@ import html
 import re
 import textwrap
 import streamlit as st
+import streamlit.components.v1 as components
 
 REACTION_ORDER = ["👍", "❤️", "🎉", "👀", "✅"]
 
@@ -180,27 +181,25 @@ def render_comment(
     if is_deleted and not can_restore:
         card_class += " ds-deleted-card"
 
-    # Render comment card
-    st.markdown(
-        textwrap.dedent(
-            f"""
-            <div class="{card_class}">
-              <div class="ds-chat-top">
-                <div class="ds-chat-author">{author_safe}</div>
-                <div class="ds-chat-meta">
-                  <span>{fmt_ts(c.get("created_at"))}</span>
-                  {edited_badge_html}
-                  {edit_history_html}
-                  {pinned_badge_html}
+        # Render comment card with raw HTML to bypass markdown parsing that could show code pills
+        card_html = textwrap.dedent(
+                f"""
+                <div class="{card_class}">
+                    <div class="ds-chat-top">
+                        <div class="ds-chat-author">{author_safe}</div>
+                        <div class="ds-chat-meta">
+                            <span>{fmt_ts(c.get("created_at"))}</span>
+                            {edited_badge_html}
+                            {edit_history_html}
+                            {pinned_badge_html}
+                        </div>
+                    </div>
+                    {quote_html}
+                    <div class="ds-chat-text">{body_html}</div>
                 </div>
-              </div>
-              {quote_html}
-              <div class="ds-chat-text">{body_html}</div>
-            </div>
-            """
-        ).strip(),
-        unsafe_allow_html=True
-    )
+                """
+        ).strip()
+        components.html(card_html, height=160, scrolling=False)
 
     # Depth limiting: Show "Continue thread" if depth >= 3
     if depth >= 3:
