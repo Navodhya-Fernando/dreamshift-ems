@@ -147,17 +147,21 @@ def render_comment(
         else safe_text_with_mentions(c.get("text", ""))
     )
 
-    # Quoted text if present
+    # Quoted text if present (build without triple-quote indentation to avoid markdown parsing issues)
     quoted_text = c.get("quoted_text")
     quoted_author = c.get("quoted_author")
     quote_html = ""
     if quoted_text and not is_deleted:
-        quote_html = f"""
-        <div class='ds-quote'>
-          <div class='ds-quote-author'>@{html.escape(quoted_author or 'Someone')} said:</div>
-          <div class='ds-quote-text'>{html.escape(quoted_text[:100])}{'...' if len(quoted_text) > 100 else ''}</div>
-        </div>
-        """
+        q_author = html.escape(quoted_author or "Someone")
+        q_text = html.escape(quoted_text[:100])
+        if len(quoted_text) > 100:
+            q_text += "..."
+        quote_html = (
+            "<div class='ds-quote'>"
+            f"<div class='ds-quote-author'>@{q_author} said:</div>"
+            f"<div class='ds-quote-text'>{q_text}</div>"
+            "</div>"
+        )
 
     # Badges (ensure proper escaping)
     pinned_badge_html = "<span class='ds-pin-badge'>Pinned</span>" if is_pinned else ""
@@ -180,36 +184,26 @@ def render_comment(
     if is_deleted and not can_restore:
         card_class += " ds-deleted-card"
 
-        # Render comment card with raw HTML to bypass markdown parsing (no iframe)
-        card_html = textwrap.dedent(
-                f"""
-                <div class="{card_class}">
-                    <div class="ds-chat-top">
-                        <div class="ds-chat-author">{author_safe}</div>
-                        <div class="ds-chat-meta">
-                            <span>{fmt_ts(c.get("created_at"))}</span>
-                            {edited_badge_html}
-                            {edit_history_html}
-                            {pinned_badge_html}
-                        </div>
-                    </div>
-                    {quote_html}
-                    <div class="ds-chat-text">{body_html}</div>
-                </div>
-                """
-        ).strip()
-        st.html(card_html)
+    # Render comment card (build without triple-quote indentation to avoid markdown parsing issues)
+    card_html = (
+        f"<div class='{card_class}'>"
+        "<div class='ds-chat-top'>"
+        f"<div class='ds-chat-author'>{author_safe}</div>"
+        "<div class='ds-chat-meta'>"
+        f"<span>{fmt_ts(c.get('created_at'))}</span>"
+        f"{edited_badge_html}{edit_history_html}{pinned_badge_html}"
+        "</div>"
+        "</div>"
+        f"{quote_html}"
+        f"<div class='ds-chat-text'>{body_html}</div>"
+        "</div>"
+    )
+    st.markdown(card_html, unsafe_allow_html=True)
 
     # Depth limiting: Show "Continue thread" if depth >= 3
     if depth >= 3:
         st.markdown(
-            textwrap.dedent(
-                """
-                <a href="#" class="ds-continue-thread" onclick="return false;">
-                  💬 Continue thread →
-                </a>
-                """
-            ).strip(),
+            "<a href='#' class='ds-continue-thread' onclick='return false;'>💬 Continue thread →</a>",
             unsafe_allow_html=True
         )
         return  # Stop rendering deeper comments
