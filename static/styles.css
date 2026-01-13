@@ -4,7 +4,7 @@
 :root {
     --bg-main: #24101a;
     --bg-container: #411c30;
-    --accent-primary: #f6b900;
+    --accent-primary: #411c30;
     --text-primary: #ffffff;
     --text-secondary: #cccccc;
     --danger-color: #ff4444;
@@ -1032,17 +1032,26 @@ section[data-testid="stSidebar"] a[href*="task_templates"] {
   margin-right: 6px;
 }
 
-/* Thread depth indentation */
-.ds-indent-1{
-  margin-left: 28px;
+/* Thread depth indentation with arrows */
+.ds-indent-1::before{
+  content: "↳ ";
+  color: #411c30;
+  font-weight: bold;
+  margin-right: 8px;
 }
 
-.ds-indent-2{
-  margin-left: 56px;
+.ds-indent-2::before{
+  content: "↳ ";
+  color: #411c30;
+  font-weight: bold;
+  margin-right: 8px;
 }
 
-.ds-indent-3{
-  margin-left: 84px;
+.ds-indent-3::before{
+  content: "↳ ";
+  color: #411c30;
+  font-weight: bold;
+  margin-right: 8px;
 }
 
 /* Continue thread link */

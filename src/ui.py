@@ -15,7 +15,7 @@ def load_global_css():
         --ds-border: rgba(255,255,255,0.12);
         --ds-text: rgba(255,255,255,0.88);
         --ds-muted: rgba(255,255,255,0.60);
-        --ds-accent: #f6b900;
+        --ds-accent: #411c30;
       }
 
       .block-container { 
@@ -99,7 +99,7 @@ def load_global_css():
       .ds-pin-badge {
         padding: 4px 10px; 
         border-radius: 999px;
-        background: linear-gradient(135deg, #f6b900 0%, #d49d00 100%);
+        background: linear-gradient(135deg, #411c30 0%, #2d1420 100%);
         color: #000;
         font-size: 10px;
         font-weight: 900;
@@ -120,9 +120,9 @@ def load_global_css():
       }
       
       .ds-mention {
-        color: #f6b900;
+        color: #411c30;
         font-weight: 900;
-        background: rgba(246,185,0,0.12);
+        background: rgba(65,28,48,0.12);
         padding: 2px 6px;
         border-radius: 4px;
       }
@@ -148,20 +148,20 @@ def load_global_css():
         transform: none !important;
       }
 
-      /* Primary buttons only - yellow CTA */
+      /* Primary buttons only - purple CTA */
       .stButton > button[kind="primary"],
       .stFormSubmitButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #f6b900 0%, #d49d00 100%) !important;
-        border: 1px solid rgba(246,185,0,0.35) !important;
-        color: #000 !important;
+        background: linear-gradient(135deg, #411c30 0%, #2d1420 100%) !important;
+        border: 1px solid rgba(65,28,48,0.35) !important;
+        color: #fff !important;
         font-weight: 800 !important;
-        box-shadow: 0 6px 18px rgba(246,185,0,0.22) !important;
+        box-shadow: 0 6px 18px rgba(65,28,48,0.22) !important;
       }
       
       .stButton > button[kind="primary"]:hover,
       .stFormSubmitButton > button[kind="primary"]:hover {
-        background: linear-gradient(135deg, #ffca28 0%, #f6b900 100%) !important;
-        box-shadow: 0 10px 26px rgba(246,185,0,0.32) !important;
+        background: linear-gradient(135deg, #6b3a50 0%, #411c30 100%) !important;
+        box-shadow: 0 10px 26px rgba(65,28,48,0.32) !important;
       }
 
       /* Reaction buttons - compact chips */
@@ -302,9 +302,9 @@ def load_global_css():
         gap: 6px;
         padding: 6px 12px;
         border-radius: 999px;
-        background: rgba(246,185,0,0.1);
-        border: 1px solid rgba(246,185,0,0.3);
-        color: #f6b900;
+        background: rgba(65,28,48,0.1);
+        border: 1px solid rgba(65,28,48,0.3);
+        color: #411c30;
         font-size: 12px;
         font-weight: 700;
         cursor: pointer;
@@ -331,7 +331,7 @@ def load_global_css():
       }
 
       .ds-quote-author {
-        color: #f6b900;
+        color: #411c30;
         font-weight: 800;
         font-style: normal;
         margin-bottom: 4px;
