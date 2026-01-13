@@ -5,74 +5,38 @@ from src.database import DreamShiftDB
 
 st.set_page_config(page_title="Profile", page_icon="👤", layout="wide")
 
-# Load base CSS
-with open("static/styles.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-# Minimal, modern layer for this page only
-st.markdown(
-    """
-    <style>
-    .p-wrap { max-width: 1120px; margin: 0 auto; }
-    .p-header {
-      display:flex; justify-content:space-between; align-items:center; gap:16px;
-      padding: 16px 18px; border-radius: 14px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.07);
-    }
-    .p-left { display:flex; align-items:center; gap:12px; min-width: 0; }
-    .p-avatar {
-      width: 44px; height: 44px; border-radius: 12px;
-      display:grid; place-items:center;
-      font-weight: 900; color: #ffffff;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.16);
-      flex: 0 0 auto;
-    }
-    .p-title { font-size: 18px; font-weight: 900; color: rgba(255,255,255,0.95); line-height: 1.2; }
-    .p-sub { margin-top: 2px; font-size: 12px; color: rgba(255,255,255,0.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .p-dot { margin: 0 8px; color: rgba(255,255,255,0.25); }
-    .p-actions { display:flex; gap:10px; align-items:center; }
-    .p-chip {
-      padding: 6px 10px; border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.10);
-      background: rgba(255,255,255,0.02);
-      color: rgba(255,255,255,0.72);
-      font-size: 12px; font-weight: 800;
-      white-space: nowrap;
-    }
-    .p-card {
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 14px;
-      padding: 14px 14px;
-      margin-bottom: 10px;
-    }
-    .p-row {
-      display:flex; justify-content:space-between; align-items:center; gap:14px;
-      padding: 12px 12px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.07);
-      margin-bottom: 10px;
-    }
-    .p-row-title { font-weight: 850; color: rgba(255,255,255,0.92); font-size: 14px; }
-    .p-row-sub { margin-top: 2px; font-size: 12px; color: rgba(255,255,255,0.55); }
-    .p-pill {
-      padding: 6px 10px; border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.05);
-      color: #ffffff;
-      font-size: 12px; font-weight: 800;
-      white-space: nowrap;
-    }
-    .p-muted { color: rgba(255,255,255,0.55); font-size: 12px; }
-    .p-section { margin: 14px 0 10px; font-weight: 900; color: rgba(255,255,255,0.85); }
-    .p-footer { text-align:center; margin-top: 18px; color: rgba(255,255,255,0.55); font-size: 12px; }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# Load base CSS from Home page for consistency
+st.markdown("""
+<style>
+:root{
+  --bg:#24101a;
+  --panel:#411c30;
+  --panel2:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.10);
+  --muted:rgba(255,255,255,0.70);
+  --text:#ffffff;
+  --accent:#f6b900;
+  --accent2:#ffc933;
+  --danger:#ff4d4d;
+  --warn:#ffb020;
+  --ok:#2fe37a;
+}
+.stApp{ background:var(--bg)!important; }
+.block-container{ max-width: 100% !important; padding: 1.8rem 2.5rem !important; }
+h1,h2,h3,h4{ letter-spacing:-0.2px; color:var(--text); }
+.stMarkdown p, .stMarkdown span, .stMarkdown div{ color: var(--text) !important; }
+[data-testid="stMarkdownContainer"] h1 a, [data-testid="stMarkdownContainer"] h2 a, [data-testid="stMarkdownContainer"] h3 a, [data-testid="stMarkdownContainer"] h4 a, [data-testid="stMarkdownContainer"] h5 a, [data-testid="stMarkdownContainer"] h6 a { display: none !important; }
+.stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div{ background: var(--panel2) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; color: var(--text) !important; }
+.stTextInput input:focus, .stTextArea textarea:focus{ border-color: rgba(246,185,0,0.55) !important; box-shadow: 0 0 0 2px rgba(246,185,0,0.18) !important; }
+.stButton button, .stFormSubmitButton button{ background: var(--accent) !important; color: #411c30 !important; border: 0 !important; border-radius: 12px !important; padding: 0.72rem 1rem !important; font-weight: 850 !important; box-shadow:none !important; transition: all 0.18s ease !important; }
+.stButton button:hover, .stFormSubmitButton button:hover{ background: #ffe500 !important; color: #411c30 !important; transform: translateY(-1px); box-shadow: 0 10px 26px rgba(255,229,0,0.35) !important; }
+.stTabs [data-baseweb="tab-list"]{ gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.stTabs [data-baseweb="tab"]{ background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; padding: 10px 14px; color: rgba(255,255,255,0.85); }
+.stTabs [aria-selected="true"]{ background: rgba(255,255,255,0.10) !important; border-color: rgba(255,255,255,0.18) !important; color: #fff !important; }
+section[data-testid="stSidebar"]{ background: var(--bg) !important; border-right: 1px solid rgba(255,255,255,0.08); }
+.custom-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+</style>
+""", unsafe_allow_html=True)
 
 db = DreamShiftDB()
 
@@ -114,8 +78,6 @@ profile = user.get("profile", {})
 photo_url = profile.get("photo_url", "")
 role_title = profile.get("role_title", "")
 date_joined = profile.get("date_joined", None)
-
-st.markdown("<div class='p-wrap'>", unsafe_allow_html=True)
 
 # Header (minimal)
 st.markdown(
@@ -273,6 +235,5 @@ with tab_security:
     st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<div class='p-footer'>Need help? Contact your workspace admin.</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
 
 

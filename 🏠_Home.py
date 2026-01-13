@@ -516,6 +516,9 @@ with st.sidebar:
         st.session_state.current_ws_name = current_ws_name
 
         role = db.get_user_role(st.session_state.current_ws_id, st.session_state.user_email)
+        if role is None:
+            # User is not a member of this workspace - shouldn't happen but handle gracefully
+            role = "No Access"
         st.session_state.user_role = role
 
         st.markdown(f"""

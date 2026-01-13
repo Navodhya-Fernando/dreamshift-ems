@@ -5,9 +5,41 @@ import pandas as pd
 
 st.set_page_config(page_title="👑 Admin Panel", page_icon="👑", layout="wide")
 
-# Load custom CSS
-with open('static/styles.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+# Load global CSS for consistency
+st.markdown("""
+<style>
+:root{
+  --bg:#24101a;
+  --panel:#411c30;
+  --panel2:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.10);
+  --muted:rgba(255,255,255,0.70);
+  --text:#ffffff;
+  --accent:#f6b900;
+  --accent2:#ffc933;
+  --danger:#ff4d4d;
+  --warn:#ffb020;
+  --ok:#2fe37a;
+}
+.stApp{ background:var(--bg)!important; }
+.block-container{ max-width: 100% !important; padding: 1.8rem 2.5rem !important; }
+h1,h2,h3,h4{ letter-spacing:-0.2px; color:var(--text); }
+.stMarkdown p, .stMarkdown span, .stMarkdown div{ color: var(--text) !important; }
+[data-testid="stMarkdownContainer"] h1 a, [data-testid="stMarkdownContainer"] h2 a, [data-testid="stMarkdownContainer"] h3 a, [data-testid="stMarkdownContainer"] h4 a, [data-testid="stMarkdownContainer"] h5 a, [data-testid="stMarkdownContainer"] h6 a { display: none !important; }
+.stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div{ background: var(--panel2) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; color: var(--text) !important; }
+.stTextInput input:focus, .stTextArea textarea:focus{ border-color: rgba(246,185,0,0.55) !important; box-shadow: 0 0 0 2px rgba(246,185,0,0.18) !important; }
+.stButton button, .stFormSubmitButton button{ background: var(--accent) !important; color: #411c30 !important; border: 0 !important; border-radius: 12px !important; padding: 0.72rem 1rem !important; font-weight: 850 !important; box-shadow:none !important; transition: all 0.18s ease !important; }
+.stButton button:hover, .stFormSubmitButton button:hover{ background: #ffe500 !important; color: #411c30 !important; transform: translateY(-1px); box-shadow: 0 10px 26px rgba(255,229,0,0.35) !important; }
+.stTabs [data-baseweb="tab-list"]{ gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.stTabs [data-baseweb="tab"]{ background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10); border-radius: 12px; padding: 10px 14px; color: rgba(255,255,255,0.85); }
+.stTabs [aria-selected="true"]{ background: rgba(255,255,255,0.10) !important; border-color: rgba(255,255,255,0.18) !important; color: #fff !important; }
+section[data-testid="stSidebar"]{ background: var(--bg) !important; border-right: 1px solid rgba(255,255,255,0.08); }
+.metric-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10); border-radius: 16px; padding: 14px; }
+.metric-label { color: var(--muted); font-size: 0.76rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.metric-value { color: var(--text); font-size: 1.55rem; font-weight: 900; margin-top: 6px; }
+.custom-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+</style>
+""", unsafe_allow_html=True)
 
 db = DreamShiftDB()
 

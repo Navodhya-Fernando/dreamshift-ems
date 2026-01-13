@@ -210,6 +210,9 @@ with st.sidebar:
     st.session_state.current_ws_name = selected_name
 
     role = db.get_user_role(ws_id, user_email)
+    if role is None:
+        st.error("⚠️ You are not a member of this workspace. Please contact the workspace owner to be added.")
+        st.stop()
     st.session_state.user_role = role
 
     st.markdown(

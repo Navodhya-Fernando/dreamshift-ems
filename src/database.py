@@ -255,11 +255,14 @@ class DreamShiftDB:
         return list(self.db.workspaces.find({"members.email": email}))
 
     def get_user_role(self, workspace_id, email):
+        """Get user's role in a workspace. Returns None if not a member."""
         ws = self.db.workspaces.find_one(
             {"_id": ObjectId(workspace_id), "members.email": email},
             {"members.$": 1}
         )
-        return ws['members'][0]['role'] if ws else "Employee"
+        if ws and ws.get('members') and len(ws['members']) > 0:
+            return ws['members'][0].get('role', 'Employee')
+        return None
 
     def add_member(self, ws_id, email, role="Employee"):
         return self.db.workspaces.update_one(
@@ -285,6 +288,20 @@ class DreamShiftDB:
         """Get all members of a workspace."""
         ws = self.db.workspaces.find_one({"_id": ObjectId(ws_id)})
         return ws.get('members', []) if ws else []
+    
+    def get_workspace_members_with_names(self, ws_id):
+        """Get workspace members with their full user details for UI displays."""
+        members = self.get_workspace_members(ws_id)
+        result = []
+        for member in members:
+            user = self.get_user(member.get("email"))
+            if user:
+                result.append({
+                    "email": member.get("email"),
+                    "name": user.get("name", member.get("email").split("@")[0]),
+                    "role": member.get("role", "Employee")
+                })
+        return result
     
     def get_workspace_member(self, workspace_id, email):
         """Get a specific member from workspace by email."""

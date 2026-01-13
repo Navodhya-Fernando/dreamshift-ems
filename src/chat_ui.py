@@ -143,9 +143,9 @@ def render_comment(
         </div>
         """
 
-    # Badges
+    # Badges (ensure proper escaping)
     pinned_badge_html = "<span class='ds-pin-badge'>Pinned</span>" if is_pinned else ""
-    edited_badge_html = f"<span class='ds-edited'>Edited</span>" if edited_at else ""
+    edited_badge_html = "<span class='ds-edited'>Edited</span>" if edited_at else ""
     edit_history_html = f"<span class='ds-edit-history' title='Click to view edit history'>✏️ {edit_count} edit{'s' if edit_count != 1 else ''}</span>" if edit_count > 0 else ""
 
     # Depth-based indentation class
