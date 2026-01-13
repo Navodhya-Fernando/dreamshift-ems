@@ -139,7 +139,7 @@ def render_comment(
         quote_html = f"""
         <div class='ds-quote'>
           <div class='ds-quote-author'>@{html.escape(quoted_author or 'Someone')} said:</div>
-          {html.escape(quoted_text[:100])}{'...' if len(quoted_text) > 100 else ''}
+          <div class='ds-quote-text'>{html.escape(quoted_text[:100])}{'...' if len(quoted_text) > 100 else ''}</div>
         </div>
         """
 
