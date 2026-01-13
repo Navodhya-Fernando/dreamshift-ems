@@ -127,39 +127,44 @@ def load_global_css():
         border-radius: 4px;
       }
 
-      /* Modern Button Overrides - Subtle, Professional */
-      div[data-testid="column"] > div > div > div > button {
-        background: rgba(255,255,255,0.08) !important;
-        border: 1px solid rgba(255,255,255,0.15) !important;
-        color: rgba(255,255,255,0.88) !important;
+      /* Modern Button Overrides - Subtle, Professional (ClickUp-style) */
+      .stButton > button,
+      .stFormSubmitButton > button {
+        background: rgba(255,255,255,0.06) !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+        color: rgba(255,255,255,0.92) !important;
         border-radius: 10px !important;
-        font-weight: 700 !important;
+        font-weight: 650 !important;
         font-size: 13px !important;
-        padding: 10px 16px !important;
+        padding: 0.5rem 0.9rem !important;
         transition: all 0.2s ease !important;
         box-shadow: none !important;
       }
       
-      div[data-testid="column"] > div > div > div > button:hover {
-        background: rgba(255,255,255,0.14) !important;
-        border-color: rgba(246,185,0,0.4) !important;
-        color: #f6b900 !important;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
-      }
-      
-      div[data-testid="column"] > div > div > div > button:active {
-        transform: translateY(0);
+      .stButton > button:hover,
+      .stFormSubmitButton > button:hover {
+        background: rgba(255,255,255,0.10) !important;
+        border-color: rgba(255,255,255,0.18) !important;
+        transform: none !important;
       }
 
-      /* Reaction Chips - Modern Pills */
-      .ds-react {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 10px;
+      /* Primary buttons only - yellow CTA */
+      .stButton > button[kind="primary"],
+      .stFormSubmitButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #f6b900 0%, #d49d00 100%) !important;
+        border: 1px solid rgba(246,185,0,0.35) !important;
+        color: #000 !important;
+        font-weight: 800 !important;
+        box-shadow: 0 6px 18px rgba(246,185,0,0.22) !important;
       }
       
+      .stButton > button[kind="primary"]:hover,
+      .stFormSubmitButton > button[kind="primary"]:hover {
+        background: linear-gradient(135deg, #ffca28 0%, #f6b900 100%) !important;
+        box-shadow: 0 10px 26px rgba(246,185,0,0.32) !important;
+      }
+
+      /* Reaction buttons - compact chips */
       .ds-react button {
         background: rgba(255,255,255,0.05) !important;
         border: 1px solid rgba(255,255,255,0.10) !important;
@@ -189,11 +194,11 @@ def load_global_css():
         display: none !important;
       }
 
-      /* Form Buttons - Gold Primary Style */
-      div[data-testid="stForm"] button[kind="primary"],
-      div[data-testid="stForm"] button:first-of-type {
+      /* Form Buttons - Only Primary is Yellow */
+      .stForm button[kind="primary"],
+      .stFormSubmitButton button[kind="primary"] {
         background: linear-gradient(135deg, #f6b900 0%, #d49d00 100%) !important;
-        border: none !important;
+        border: 1px solid rgba(246,185,0,0.35) !important;
         color: #000 !important;
         font-weight: 900 !important;
         border-radius: 10px !important;
@@ -201,10 +206,19 @@ def load_global_css():
         box-shadow: 0 4px 12px rgba(246,185,0,0.3) !important;
       }
       
-      div[data-testid="stForm"] button[kind="primary"]:hover {
+      .stForm button[kind="primary"]:hover,
+      .stFormSubmitButton button[kind="primary"]:hover {
         background: linear-gradient(135deg, #ffca28 0%, #f6b900 100%) !important;
         box-shadow: 0 6px 16px rgba(246,185,0,0.4) !important;
         transform: translateY(-2px);
+      }
+
+      /* Secondary form buttons - subtle */
+      .stForm button:not([kind="primary"]),
+      .stFormSubmitButton button:not([kind="primary"]) {
+        background: rgba(255,255,255,0.06) !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+        color: rgba(255,255,255,0.92) !important;
       }
 
       /* Hide Streamlit Branding */
