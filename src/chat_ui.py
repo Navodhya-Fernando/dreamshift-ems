@@ -181,39 +181,39 @@ def render_comment(
         card_class += " ds-deleted-card"
 
     # Render comment card
-        st.markdown(
-                textwrap.dedent(
-                        f"""
-                        <div class="{card_class}">
-                            <div class="ds-chat-top">
-                                <div class="ds-chat-author">{author_safe}</div>
-                                <div class="ds-chat-meta">
-                                    <span>{fmt_ts(c.get("created_at"))}</span>
-                                    {edited_badge_html}
-                                    {edit_history_html}
-                                    {pinned_badge_html}
-                                </div>
-                            </div>
-                            {quote_html}
-                            <div class="ds-chat-text">{body_html}</div>
-                        </div>
-                        """
-                ).strip(),
-                unsafe_allow_html=True
-        )
+    st.markdown(
+        textwrap.dedent(
+            f"""
+            <div class="{card_class}">
+              <div class="ds-chat-top">
+                <div class="ds-chat-author">{author_safe}</div>
+                <div class="ds-chat-meta">
+                  <span>{fmt_ts(c.get("created_at"))}</span>
+                  {edited_badge_html}
+                  {edit_history_html}
+                  {pinned_badge_html}
+                </div>
+              </div>
+              {quote_html}
+              <div class="ds-chat-text">{body_html}</div>
+            </div>
+            """
+        ).strip(),
+        unsafe_allow_html=True
+    )
 
     # Depth limiting: Show "Continue thread" if depth >= 3
     if depth >= 3:
-                st.markdown(
-                        textwrap.dedent(
-                                """
-                                <a href="#" class="ds-continue-thread" onclick="return false;">
-                                    💬 Continue thread →
-                                </a>
-                                """
-                        ).strip(),
-                        unsafe_allow_html=True
-                )
+        st.markdown(
+            textwrap.dedent(
+                """
+                <a href="#" class="ds-continue-thread" onclick="return false;">
+                  💬 Continue thread →
+                </a>
+                """
+            ).strip(),
+            unsafe_allow_html=True
+        )
         return  # Stop rendering deeper comments
 
     # Action buttons row
