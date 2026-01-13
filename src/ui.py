@@ -47,17 +47,17 @@ def load_global_css():
 
       /* Chat Cards - Modern Dark Theme */
       .ds-chat-card { 
-        background: linear-gradient(135deg, rgba(22,33,62,0.8) 0%, rgba(26,38,68,0.6) 100%);
-        border: 1px solid rgba(246,185,0,0.15);
+        background: #411c30 !important;
+        border: 1px solid rgba(255,255,255,0.10);
         border-radius: 16px; 
         padding: 18px 20px; 
         margin-bottom: 14px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        box-shadow: 0 8px 22px rgba(0,0,0,0.28);
         transition: all 0.2s ease;
       }
       .ds-chat-card:hover {
-        border-color: rgba(246,185,0,0.25);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        border-color: rgba(246,185,0,0.20);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.35);
       }
       
       .ds-indent { 
@@ -120,11 +120,12 @@ def load_global_css():
       }
       
       .ds-mention {
-        color: #411c30;
+        color: #f6b900 !important;
         font-weight: 900;
-        background: rgba(65,28,48,0.12);
-        padding: 2px 6px;
-        border-radius: 4px;
+        background: rgba(246,185,0,0.12);
+        border: 1px solid rgba(246,185,0,0.25);
+        padding: 2px 8px;
+        border-radius: 999px;
       }
 
       /* Modern Button Overrides - Subtle, Professional (ClickUp-style) */

@@ -1033,25 +1033,40 @@ section[data-testid="stSidebar"] a[href*="task_templates"] {
 }
 
 /* Thread depth indentation with arrows */
-.ds-indent-1::before{
-  content: "↳ ";
-  color: #411c30;
-  font-weight: bold;
-  margin-right: 8px;
+.ds-indent-1, .ds-indent-2, .ds-indent-3{
+  position: relative;
+  margin-top: 8px;
 }
 
-.ds-indent-2::before{
-  content: "↳ ";
-  color: #411c30;
-  font-weight: bold;
-  margin-right: 8px;
-}
+.ds-indent-1{ margin-left: 34px; }
+.ds-indent-2{ margin-left: 68px; }
+.ds-indent-3{ margin-left: 102px; }
 
+/* Connector "arrow" */
+.ds-indent-1::before,
+.ds-indent-2::before,
 .ds-indent-3::before{
-  content: "↳ ";
-  color: #411c30;
-  font-weight: bold;
-  margin-right: 8px;
+  content: "↳";
+  position: absolute;
+  left: -22px;
+  top: 14px;
+  color: rgba(246,185,0,0.75);
+  font-weight: 900;
+  font-size: 16px;
+}
+
+/* Optional faint vertical line like ClickUp thread */
+.ds-indent-1::after,
+.ds-indent-2::after,
+.ds-indent-3::after{
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: -10px;
+  bottom: -10px;
+  width: 2px;
+  background: rgba(246,185,0,0.15);
+  border-radius: 2px;
 }
 
 /* Continue thread link */
