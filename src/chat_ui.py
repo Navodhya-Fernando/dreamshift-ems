@@ -202,79 +202,75 @@ def render_comment(
         )
         return  # Stop rendering deeper comments
 
-    # Compact action row (ClickUp-style)
-    st.markdown("<div class='ds-actions-row'>", unsafe_allow_html=True)
-    
-    # Show badges in action row instead of card header
+    # Show badges above action bar
     badge_row = f"{pinned_badge_html}{edited_badge_html}{edit_history_html}"
     if badge_row.strip():
         st.markdown(badge_row, unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns([1, 1, 5, 1.5])
 
-    with col1:
-        if st.button("💬 Reply", key=f"reply_{cid}", disabled=is_deleted, use_container_width=True, type="secondary"):
+    # ===== ClickUp-style action bar (icon buttons + reaction popover) =====
+    a1, a2, a3, a4, a5 = st.columns([0.55, 0.55, 0.55, 0.55, 6.8])
+
+    with a1:
+        if st.button("↩︎", key=f"reply_{cid}", disabled=is_deleted, help="Reply", type="secondary"):
             st.session_state.reply_to_comment_id = cid
             st.session_state.edit_comment_id = None
             st.rerun()
 
-    with col2:
+    with a2:
         if can_pin:
-            pin_label = "📌 Unpin" if is_pinned else "📍 Pin"
-            if st.button(pin_label, key=f"pin_{cid}", use_container_width=True, type="secondary"):
+            pin_icon = "📌" if is_pinned else "📍"
+            pin_help = "Unpin" if is_pinned else "Pin"
+            if st.button(pin_icon, key=f"pin_{cid}", help=pin_help, type="secondary"):
                 db.toggle_pin_comment(cid, current_user_email, (not is_pinned))
                 st.rerun()
 
-    # Reactions as compact chips
-    with col3:
-        st.markdown("<div class='ds-react'>", unsafe_allow_html=True)
-        reactions = c.get("reactions", {}) or {}
-        rcols = st.columns(len(REACTION_ORDER))
-        
-        for i, emoji in enumerate(REACTION_ORDER):
-            users = reactions.get(emoji, []) or []
-            count = len(users)
-            label = f"{emoji} {count}" if count else emoji
-            
-            with rcols[i]:
-                if st.button(label, key=f"react_{cid}_{emoji}", use_container_width=True, type="secondary"):
-                    db.toggle_reaction(cid, emoji, current_user_email)
-                    st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+    with a3:
+        # One reaction button -> popover menu (closest to ClickUp possible in Streamlit)
+        with st.popover("😊", use_container_width=False):
+            st.markdown("React")
+            reactions = c.get("reactions", {}) or {}
 
-    # Edit/Delete/Restore for author or admin
-    with col4:
-        action_cols = st.columns(3 if (can_restore or is_admin) else 2)
-        
-        # Author actions
+            r1, r2, r3, r4, r5 = st.columns(5)
+            for col, emoji in zip([r1, r2, r3, r4, r5], REACTION_ORDER):
+                users = reactions.get(emoji, []) or []
+                count = len(users)
+                label = f"{emoji} {count}" if count else emoji
+                with col:
+                    if st.button(label, key=f"react_{cid}_{emoji}", type="secondary"):
+                        db.toggle_reaction(cid, emoji, current_user_email)
+                        st.rerun()
+
+    with a4:
+        # Edit (only author + not deleted)
         if is_author and not is_deleted:
-            with action_cols[0]:
-                if st.button("✏️", key=f"edit_{cid}", use_container_width=True, help="Edit", type="secondary"):
-                    st.session_state.edit_comment_id = cid
-                    st.session_state.reply_to_comment_id = None
-                    st.rerun()
-            with action_cols[1]:
-                if st.button("🗑️", key=f"del_{cid}", use_container_width=True, help="Delete", type="secondary"):
+            if st.button("✏️", key=f"edit_{cid}", help="Edit", type="secondary"):
+                st.session_state.edit_comment_id = cid
+                st.session_state.reply_to_comment_id = None
+                st.rerun()
+
+    with a5:
+        # Delete / Restore / Admin delete on right (keep compact)
+        right = st.columns([0.6, 0.6, 0.6, 6.2])
+
+        if is_author and not is_deleted:
+            with right[0]:
+                if st.button("🗑️", key=f"del_{cid}", help="Delete", type="secondary"):
                     db.delete_comment(cid, current_user_email)
                     st.session_state.edit_comment_id = None
                     st.session_state.reply_to_comment_id = None
                     st.rerun()
-        
-        # Restore button (within 24 hours)
+
         if can_restore:
-            with action_cols[2 if is_author else 0]:
-                if st.button("♻️", key=f"restore_{cid}", use_container_width=True, help="Restore", type="secondary"):
+            with right[1]:
+                if st.button("♻️", key=f"restore_{cid}", help="Restore", type="secondary"):
                     db.restore_comment(cid, current_user_email)
                     st.rerun()
-        
-        # Admin override delete
+
         if is_admin and not is_author:
-            with action_cols[2 if can_restore else 0]:
-                if st.button("🔨", key=f"admin_del_{cid}", use_container_width=True, help="Admin Delete", type="secondary"):
+            with right[2]:
+                if st.button("🔨", key=f"admin_del_{cid}", help="Admin delete", type="secondary"):
                     db.delete_comment(cid, current_user_email, is_admin_action=True)
                     st.rerun()
-    
-    st.markdown("</div>", unsafe_allow_html=True)  # Close ds-actions-row
 
     # Inline edit
     if st.session_state.get("edit_comment_id") == cid and is_author and not is_deleted:

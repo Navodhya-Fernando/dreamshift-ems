@@ -1106,3 +1106,29 @@ section[data-testid="stSidebar"] a[href*="task_templates"] {
   padding-bottom: 0px !important;
 }
 
+/* ===== Icon-only button styling (ClickUp action bar) ===== */
+/* Make icon buttons compact and square-ish */
+.stButton > button {
+  min-height: 34px !important;
+  height: 34px !important;
+  border-radius: 8px !important;
+}
+
+/* Icon-only buttons: smaller and centered (38x38) */
+.stButton > button:has(span:only-child) {
+  width: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 14px !important;
+}
+
+/* Fallback for browsers without :has() support */
+@supports not selector(:has()) {
+  .stButton > button[kind="secondary"] {
+    padding: 0 8px !important;
+  }
+}
+
