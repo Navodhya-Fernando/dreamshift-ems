@@ -100,12 +100,12 @@ def load_global_css():
         padding: 4px 10px; 
         border-radius: 999px;
         background: linear-gradient(135deg, #411c30 0%, #2d1420 100%);
-        color: #000;
+        color: #fff;
         font-size: 10px;
         font-weight: 900;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        box-shadow: 0 2px 6px rgba(246,185,0,0.3);
+        box-shadow: 0 2px 6px rgba(65,28,48,0.3);
       }
       
       .ds-edited {
@@ -194,22 +194,22 @@ def load_global_css():
         display: none !important;
       }
 
-      /* Form Buttons - Only Primary is Yellow */
+      /* Form Buttons - Only Primary is Purple */
       .stForm button[kind="primary"],
       .stFormSubmitButton button[kind="primary"] {
-        background: linear-gradient(135deg, #f6b900 0%, #d49d00 100%) !important;
-        border: 1px solid rgba(246,185,0,0.35) !important;
-        color: #000 !important;
+        background: linear-gradient(135deg, #411c30 0%, #2d1420 100%) !important;
+        border: 1px solid rgba(65,28,48,0.35) !important;
+        color: #fff !important;
         font-weight: 900 !important;
         border-radius: 10px !important;
         padding: 12px 20px !important;
-        box-shadow: 0 4px 12px rgba(246,185,0,0.3) !important;
+        box-shadow: 0 4px 12px rgba(65,28,48,0.3) !important;
       }
       
       .stForm button[kind="primary"]:hover,
       .stFormSubmitButton button[kind="primary"]:hover {
-        background: linear-gradient(135deg, #ffca28 0%, #f6b900 100%) !important;
-        box-shadow: 0 6px 16px rgba(246,185,0,0.4) !important;
+        background: linear-gradient(135deg, #6b3a50 0%, #411c30 100%) !important;
+        box-shadow: 0 6px 16px rgba(65,28,48,0.4) !important;
         transform: translateY(-2px);
       }
 
@@ -233,11 +233,11 @@ def load_global_css():
       /* 1. Metric Cards with Pulse Animation */
       @keyframes metric-pulse {
         0%, 100% { 
-          box-shadow: 0 0 0 0 rgba(246,185,0,0.4);
+          box-shadow: 0 0 0 0 rgba(65,28,48,0.4);
           transform: scale(1);
         }
         50% { 
-          box-shadow: 0 0 0 8px rgba(246,185,0,0);
+          box-shadow: 0 0 0 8px rgba(65,28,48,0);
           transform: scale(1.02);
         }
       }
@@ -253,7 +253,7 @@ def load_global_css():
 
       .ds-metric-pulse:hover {
         transform: scale(1.05) !important;
-        box-shadow: 0 8px 24px rgba(246,185,0,0.2) !important;
+        box-shadow: 0 8px 24px rgba(65,28,48,0.2) !important;
       }
 
       /* 2. Task Cards with Urgency Color Coding */
