@@ -22,10 +22,9 @@ def strip_html_tags(text: str) -> str:
     """Remove any HTML tags from text (for cleaning old data)."""
     if not text:
         return ""
-    # Remove HTML tags
-    clean = re.sub(r'<[^>]+>', '', text)
-    # Decode HTML entities that might exist
-    clean = html.unescape(clean)
+    # Unescape first so encoded tags like &lt;div&gt; are removed too
+    unescaped = html.unescape(text)
+    clean = re.sub(r'<[^>]+>', '', unescaped)
     return clean
 
 def safe_text_with_mentions(text: str) -> str:
@@ -123,6 +122,10 @@ def render_comment(
         if deleted_at:
             hours_since_delete = (datetime.datetime.utcnow() - deleted_at).total_seconds() / 3600
             can_restore = hours_since_delete <= 24
+
+    # Hide deleted comments for everyone except author (within restore window) or admin
+    if is_deleted and not can_restore and not is_admin and not is_author:
+        return
 
     # Body (escape user text, then highlight mentions)
     body_html = (
