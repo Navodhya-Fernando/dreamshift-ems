@@ -178,82 +178,95 @@ render_html(f"""
 st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
 
 # ------------------------------------------------------------
-# Two-column layout: left list, right actions
-# ------------------------------------------------------------
-left, right = st.columns([2.3, 1.1], gap="large")
-
-# Get templates
+# Get workspace projects (check if we have ANY content)
+projects = db.get_workspace_projects(ws_id)
 templates = db.get_task_templates(ws_id)
-# ------------------------------------------------------------
-# RIGHT: Actions Panel
-# ------------------------------------------------------------
-with right:
-    render_html("""
-    <div class="ds-card">
-      <div class="ds-card-title">Actions</div>
-      <div class="ds-card-sub">Create projects and manage filters</div>
-    </div>
-    """)
-    
-    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-    
-    # Filters
-    render_html('<div class="ds-card">')
-    render_html('<div class="ds-card-title">Filters</div>')
-    
-    search = st.text_input("Search", placeholder="Search projects...", label_visibility="collapsed")
-    status_filter = st.selectbox("Status", ["All", "Active", "On Hold", "Completed", "Cancelled"])
-    sort_by = st.selectbox("Sort", ["Newest", "Oldest", "Deadline (soonest)", "Deadline (latest)", "Name (A-Z)"])
-    
-    render_html("</div>")
-    
-    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-    
-    # Create Project
-    if user_role in ["Owner", "Workspace Admin"]:
+
+# Determine if we should show the full two-column layout
+# Show it if user can create projects or if there are items
+show_layout = user_role in ["Owner", "Workspace Admin"] or len(projects) > 0
+
+# Initialize filter variables
+search = ""
+status_filter = "All"
+sort_by = "Newest"
+
+if show_layout:
+    # Two-column layout: left list, right actions
+    left, right = st.columns([2.3, 1.1], gap="large")
+else:
+    left = st.container()
+    right = None
+
+# RIGHT: Actions Panel (only if show_layout)
+if right:
+    with right:
+        render_html("""
+        <div class="ds-card">
+          <div class="ds-card-title">Actions</div>
+          <div class="ds-card-sub">Create projects and manage filters</div>
+        </div>
+        """)
+        
+        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+        
+        # Filters
         render_html('<div class="ds-card">')
-        render_html('<div class="ds-card-title">Create Project</div>')
-        render_html('<div class="ds-card-sub">Service/Package is optional. Templates can auto-create tasks.</div>')
+        render_html('<div class="ds-card-title">Filters</div>')
         
-        tpl_map = {"No template": None}
-        for t in templates:
-            tpl_map[t.get("name", "Untitled Template")] = str(t["_id"])
+        search = st.text_input("Search", placeholder="Search projects...", label_visibility="collapsed")
+        status_filter = st.selectbox("Status", ["All", "Active", "On Hold", "Completed", "Cancelled"])
+        sort_by = st.selectbox("Sort", ["Newest", "Oldest", "Deadline (soonest)", "Deadline (latest)", "Name (A-Z)"])
         
-        with st.form("create_project_form", clear_on_submit=False):
-            proj_name = st.text_input("Project name", placeholder="e.g., CV Writing - Shane")
-            proj_desc = st.text_area("Description (optional)", placeholder="Short overview, goals, notes...")
-            proj_service = st.text_input("Service/Package (optional)", placeholder="Leave blank if not needed")
+        render_html("</div>")
+        
+        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+        
+        # Create Project
+        if user_role in ["Owner", "Workspace Admin"]:
+            render_html('<div class="ds-card">')
+            render_html('<div class="ds-card-title">Create Project</div>')
+            render_html('<div class="ds-card-sub">Service/Package is optional. Templates can auto-create tasks.</div>')
             
-            col_a, col_b = st.columns(2)
-            with col_a:
-                deadline_enabled = st.checkbox("Set a deadline", value=True)
-            with col_b:
-                proj_status = st.selectbox("Status", ["Active", "On Hold", "Completed", "Cancelled"], index=0)
+            tpl_map = {"No template": None}
+            for t in templates:
+                tpl_map[t.get("name", "Untitled Template")] = str(t["_id"])
             
-            proj_deadline = None
-            if deadline_enabled:
-                d = st.date_input("Deadline", min_value=datetime.date.today())
-                proj_deadline = datetime.datetime.combine(d, datetime.time())
-            
-            selected_tpl_name = st.selectbox("Task template", list(tpl_map.keys()), index=0)
-            selected_tpl_id = tpl_map[selected_tpl_name]
-            
-            submitted = st.form_submit_button("Create Project", use_container_width=True)
-            if submitted:
-                if not proj_name.strip():
-                    st.error("Project name is required.")
-                else:
-                    project_id = db.create_project(
-                        workspace_id=ws_id,
-                        name=proj_name.strip(),
-                        description=proj_desc.strip(),
-                        service=(proj_service.strip() if proj_service.strip() else None),
-                        deadline=proj_deadline,
-                        status=proj_status,
-                        created_by=user_email,
-                        template_id=(selected_tpl_id if selected_tpl_id else None),
-                        template_name=(selected_tpl_name if selected_tpl_id else None),
-                    )
+            with st.form("create_project_form", clear_on_submit=False):
+                proj_name = st.text_input("Project name", placeholder="e.g., CV Writing - Shane")
+                proj_desc = st.text_area("Description (optional)", placeholder="Short overview, goals, notes...")
+                proj_service = st.text_input("Service/Package (optional)", placeholder="Leave blank if not needed")
+                
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    deadline_enabled = st.checkbox("Set a deadline", value=True)
+                with col_b:
+                    proj_status = st.selectbox("Status", ["Active", "On Hold", "Completed", "Cancelled"], index=0)
+                
+                proj_deadline = None
+                if deadline_enabled:
+                    d = st.date_input("Deadline", min_value=datetime.date.today())
+                    proj_deadline = datetime.datetime.combine(d, datetime.time())
+                
+                selected_tpl_name = st.selectbox("Task template", list(tpl_map.keys()), index=0)
+                selected_tpl_id = tpl_map[selected_tpl_name]
+                
+                submitted = st.form_submit_button("Create Project", use_container_width=True)
+                if submitted:
+                    if not proj_name.strip():
+                        st.error("Project name is required.")
+                    else:
+                        project_id = db.create_project(
+                            workspace_id=ws_id,
+                            name=proj_name.strip(),
+                            description=proj_desc.strip(),
+                            service=(proj_service.strip() if proj_service.strip() else None),
+                            deadline=proj_deadline,
+                            status=proj_status,
+                            created_by=user_email,
+                            template_id=(selected_tpl_id if selected_tpl_id else None),
+                            template_name=(selected_tpl_name if selected_tpl_id else None),
+                        )
                     
                     # Apply template tasks
                     if selected_tpl_id:
@@ -274,13 +287,15 @@ with right:
         # Manage Templates button
         if st.button("🎯 Manage Task Templates", use_container_width=True, type="secondary"):
             st.switch_page("pages/task_templates.py")
-    else:
-        render_html("""
-        <div class="ds-card">
-          <div class="ds-card-title">Create Project</div>
-          <div class="ds-card-sub">Only Owners or Workspace Admins can create projects.</div>
-        </div>
-        """)
+        
+        # Show message if user cannot create projects
+        if user_role not in ["Owner", "Workspace Admin"]:
+            render_html("""
+            <div class="ds-card">
+              <div class="ds-card-title">Create Project</div>
+              <div class="ds-card-sub">Only Owners or Workspace Admins can create projects.</div>
+            </div>
+            """)
 
 # ------------------------------------------------------------
 # LEFT: Projects List

@@ -207,70 +207,81 @@ def render_comment(
     if badge_row.strip():
         st.markdown(badge_row, unsafe_allow_html=True)
 
-    # ===== ClickUp-style action bar (icon buttons + reaction popover) =====
-    a1, a2, a3, a4, a5 = st.columns([0.55, 0.55, 0.55, 0.55, 6.8])
+    # Check if there are ANY actions available before rendering action bar
+    has_actions = (
+        True or  # Reply always available unless deleted
+        can_pin or
+        (is_author and not is_deleted) or
+        can_restore or
+        (is_admin and not is_author)
+    )
 
-    with a1:
-        if st.button("↩︎", key=f"reply_{cid}", disabled=is_deleted, help="Reply", type="secondary"):
-            st.session_state.reply_to_comment_id = cid
-            st.session_state.edit_comment_id = None
-            st.rerun()
+    # Only render action bar if there are actions
+    if has_actions and not is_deleted:
+        # ===== ClickUp-style action bar (icon buttons + reaction popover) =====
+        a1, a2, a3, a4, a5 = st.columns([0.55, 0.55, 0.55, 0.55, 6.8])
 
-    with a2:
-        if can_pin:
-            pin_icon = "📌" if is_pinned else "📍"
-            pin_help = "Unpin" if is_pinned else "Pin"
-            if st.button(pin_icon, key=f"pin_{cid}", help=pin_help, type="secondary"):
-                db.toggle_pin_comment(cid, current_user_email, (not is_pinned))
+        with a1:
+            if st.button("↩︎", key=f"reply_{cid}", disabled=is_deleted, help="Reply", type="secondary"):
+                st.session_state.reply_to_comment_id = cid
+                st.session_state.edit_comment_id = None
                 st.rerun()
 
-    with a3:
-        # One reaction button -> popover menu (closest to ClickUp possible in Streamlit)
-        with st.popover("😊", use_container_width=False):
-            st.markdown("React")
-            reactions = c.get("reactions", {}) or {}
+        with a2:
+            if can_pin:
+                pin_icon = "📌" if is_pinned else "📍"
+                pin_help = "Unpin" if is_pinned else "Pin"
+                if st.button(pin_icon, key=f"pin_{cid}", help=pin_help, type="secondary"):
+                    db.toggle_pin_comment(cid, current_user_email, (not is_pinned))
+                    st.rerun()
 
-            r1, r2, r3, r4, r5 = st.columns(5)
-            for col, emoji in zip([r1, r2, r3, r4, r5], REACTION_ORDER):
-                users = reactions.get(emoji, []) or []
-                count = len(users)
-                label = f"{emoji} {count}" if count else emoji
-                with col:
-                    if st.button(label, key=f"react_{cid}_{emoji}", type="secondary"):
-                        db.toggle_reaction(cid, emoji, current_user_email)
-                        st.rerun()
+        with a3:
+            # One reaction button -> popover menu (closest to ClickUp possible in Streamlit)
+            with st.popover("😊", use_container_width=False):
+                st.markdown("React")
+                reactions = c.get("reactions", {}) or {}
 
-    with a4:
-        # Edit (only author + not deleted)
-        if is_author and not is_deleted:
-            if st.button("✏️", key=f"edit_{cid}", help="Edit", type="secondary"):
-                st.session_state.edit_comment_id = cid
-                st.session_state.reply_to_comment_id = None
-                st.rerun()
+                r1, r2, r3, r4, r5 = st.columns(5)
+                for col, emoji in zip([r1, r2, r3, r4, r5], REACTION_ORDER):
+                    users = reactions.get(emoji, []) or []
+                    count = len(users)
+                    label = f"{emoji} {count}" if count else emoji
+                    with col:
+                        if st.button(label, key=f"react_{cid}_{emoji}", type="secondary"):
+                            db.toggle_reaction(cid, emoji, current_user_email)
+                            st.rerun()
 
-    with a5:
-        # Delete / Restore / Admin delete on right (keep compact)
-        right = st.columns([0.6, 0.6, 0.6, 6.2])
-
-        if is_author and not is_deleted:
-            with right[0]:
-                if st.button("🗑️", key=f"del_{cid}", help="Delete", type="secondary"):
-                    db.delete_comment(cid, current_user_email)
-                    st.session_state.edit_comment_id = None
+        with a4:
+            # Edit (only author + not deleted)
+            if is_author and not is_deleted:
+                if st.button("✏️", key=f"edit_{cid}", help="Edit", type="secondary"):
+                    st.session_state.edit_comment_id = cid
                     st.session_state.reply_to_comment_id = None
                     st.rerun()
 
-        if can_restore:
-            with right[1]:
-                if st.button("♻️", key=f"restore_{cid}", help="Restore", type="secondary"):
-                    db.restore_comment(cid, current_user_email)
-                    st.rerun()
+        with a5:
+            # Delete / Restore / Admin delete on right (keep compact)
+            right = st.columns([0.6, 0.6, 0.6, 6.2])
 
-        if is_admin and not is_author:
-            with right[2]:
-                if st.button("🔨", key=f"admin_del_{cid}", help="Admin delete", type="secondary"):
-                    db.delete_comment(cid, current_user_email, is_admin_action=True)
-                    st.rerun()
+            if is_author and not is_deleted:
+                with right[0]:
+                    if st.button("🗑️", key=f"del_{cid}", help="Delete", type="secondary"):
+                        db.delete_comment(cid, current_user_email)
+                        st.session_state.edit_comment_id = None
+                        st.session_state.reply_to_comment_id = None
+                        st.rerun()
+
+            if can_restore:
+                with right[1]:
+                    if st.button("♻️", key=f"restore_{cid}", help="Restore", type="secondary"):
+                        db.restore_comment(cid, current_user_email)
+                        st.rerun()
+
+            if is_admin and not is_author:
+                with right[2]:
+                    if st.button("🔨", key=f"admin_del_{cid}", help="Admin delete", type="secondary"):
+                        db.delete_comment(cid, current_user_email, is_admin_action=True)
+                        st.rerun()
 
     # Inline edit
     if st.session_state.get("edit_comment_id") == cid and is_author and not is_deleted:

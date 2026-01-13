@@ -634,84 +634,95 @@ tab1, tab2, tab3 = st.tabs(["📝 My Tasks", "🔥 Urgent", "📊 Activity"])
 with tab1:
     st.markdown("### My Active Tasks")
     
-    # Filter options
-    st.markdown('<div class="ds-filters">', unsafe_allow_html=True)
-    
-    filter_col1, filter_col2, filter_col3 = st.columns([2, 1, 1])
-    with filter_col1:
-        search = st.text_input("", placeholder="🔍 Search tasks...", label_visibility="collapsed")
-    with filter_col2:
-        status_filter = st.selectbox("", ["All", "To Do", "In Progress", "Completed"], label_visibility="collapsed")
-    with filter_col3:
-        sort_by = st.selectbox("", ["Due Date", "Priority", "Created"], label_visibility="collapsed")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Get tasks
+    # Get tasks FIRST before rendering filters
     query = {"assignee": st.session_state.user_email}
-    if status_filter != "All":
-        query["status"] = status_filter
-    
     tasks = db.get_tasks_with_urgency(query)
     
-    # Apply search filter
-    if search:
-        tasks = [t for t in tasks if search.lower() in t['title'].lower() or search.lower() in t.get('description', '').lower()]
-    
-    if not tasks:
-        st.info("🎉 No tasks found. You're all caught up!")
-    else:
-        for task in tasks:
-            if task['urgency_color'] == "#DC3545":
-                urgency_cls = "urgent"
-            elif task['urgency_color'] == "#FFC107":
-                urgency_cls = "warn"
-            else:
-                urgency_cls = "ok"
+    # Only show filters if there are tasks
+    if tasks:
+        st.markdown('<div class="ds-filters">', unsafe_allow_html=True)
+        
+        filter_col1, filter_col2, filter_col3 = st.columns([2, 1, 1])
+        with filter_col1:
+            search = st.text_input("", placeholder="🔍 Search tasks...", label_visibility="collapsed")
+        with filter_col2:
+            status_filter = st.selectbox("", ["All", "To Do", "In Progress", "Completed"], label_visibility="collapsed")
+        with filter_col3:
+            sort_by = st.selectbox("", ["Due Date", "Priority", "Created"], label_visibility="collapsed")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Apply filters
+        if status_filter != "All":
+            tasks = [t for t in tasks if t.get('status') == status_filter]
+        
+        # Apply search filter
+        if search:
+            tasks = [t for t in tasks if search.lower() in t['title'].lower() or search.lower() in t.get('description', '').lower()]
+        
+        # Render tasks
+        if not tasks:
+            st.info("🎉 No tasks match your filters. Great work!")
+        else:
+            for task in tasks:
+                if task['urgency_color'] == "#DC3545":
+                    urgency_cls = "urgent"
+                elif task['urgency_color'] == "#FFC107":
+                    urgency_cls = "warn"
+                else:
+                    urgency_cls = "ok"
 
-            title = html.escape(task['title'])
-            project = html.escape(task.get('project_name', 'No Project'))
-            priority = html.escape(task.get('priority', 'N/A'))
-            status = html.escape(task.get('status', 'To Do'))
-            due = task['due_date'].strftime('%B %d, %Y') if task.get('due_date') else "No due date"
-            pct = int(task.get('completion_pct', 0))
+                title = html.escape(task['title'])
+                project = html.escape(task.get('project_name', 'No Project'))
+                priority = html.escape(task.get('priority', 'N/A'))
+                status = html.escape(task.get('status', 'To Do'))
+                due = task['due_date'].strftime('%B %d, %Y') if task.get('due_date') else "No due date"
+                pct = int(task.get('completion_pct', 0))
 
-            st.markdown(f"""
-            <div class="ds-task {urgency_cls}">
-              <div class="ds-task-top">
-                <div style="flex:1;">
-                  <p class="ds-task-title">{title}</p>
-                  <div class="ds-badges">
-                    <span class="ds-badge">{project}</span>
-                    <span class="ds-badge ds-badge-accent">{status}</span>
-                    <span class="ds-badge">{priority}</span>
+                st.markdown(f"""
+                <div class="ds-task {urgency_cls}">
+                  <div class="ds-task-top">
+                    <div style="flex:1;">
+                      <p class="ds-task-title">{title}</p>
+                      <div class="ds-badges">
+                        <span class="ds-badge">{project}</span>
+                        <span class="ds-badge ds-badge-accent">{status}</span>
+                        <span class="ds-badge">{priority}</span>
+                      </div>
+                      <div class="ds-task-sub">Due: {due} • Progress: {pct}%</div>
+                      <div class="ds-progress"><div style="width:{pct}%;"></div></div>
+                    </div>
                   </div>
-                  <div class="ds-task-sub">Due: {due} • Progress: {pct}%</div>
-                  <div class="ds-progress"><div style="width:{pct}%;"></div></div>
                 </div>
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
-            c1, c2, c3, c4 = st.columns(4)
-            with c1:
-                if st.button("View Details", key=f"view_{task['_id']}", use_container_width=True):
-                    st.session_state.selected_task_id = str(task['_id'])
-                    st.switch_page("pages/task_details.py")
-            with c2:
-                if status != "Completed":
-                    if st.button("Mark Complete", key=f"complete_{task['_id']}", use_container_width=True):
-                        db.update_task_status(str(task['_id']), "Completed")
-                        st.rerun()
-            with c3:
-                if status == "To Do":
-                    if st.button("Start", key=f"start_{task['_id']}", use_container_width=True):
-                        db.update_task_status(str(task['_id']), "In Progress")
-                        st.rerun()
-            with c4:
-                st.markdown('<div class="ds-secondary">', unsafe_allow_html=True)
-                st.button("Track Time", key=f"time_{task['_id']}", use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
+                # Only create action columns if there are actions to show
+                actions_available = True
+                action_cols = st.columns([1, 1, 1, 1])
+                
+                with action_cols[0]:
+                    if st.button("View Details", key=f"view_{task['_id']}", use_container_width=True):
+                        st.session_state.selected_task_id = str(task['_id'])
+                        st.switch_page("pages/task_details.py")
+                
+                with action_cols[1]:
+                    if status != "Completed":
+                        if st.button("Mark Complete", key=f"complete_{task['_id']}", use_container_width=True):
+                            db.update_task_status(str(task['_id']), "Completed")
+                            st.rerun()
+                
+                with action_cols[2]:
+                    if status == "To Do":
+                        if st.button("Start", key=f"start_{task['_id']}", use_container_width=True):
+                            db.update_task_status(str(task['_id']), "In Progress")
+                            st.rerun()
+                
+                with action_cols[3]:
+                    st.markdown('<div class="ds-secondary">', unsafe_allow_html=True)
+                    st.button("Track Time", key=f"time_{task['_id']}", use_container_width=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.info("🎉 No tasks found. You're all caught up!")
 
 with tab2:
     st.markdown("### 🔥 Urgent & Overdue Tasks")
@@ -723,6 +734,7 @@ with tab2:
         st.success("✨ Great! No urgent tasks at the moment.")
     else:
         st.warning(f"⚠️ You have {len(urgent_tasks)} urgent/overdue tasks!")
+        
         for task in urgent_tasks:
             is_overdue = task.get('due_date', datetime.datetime.max) < datetime.datetime.utcnow()
             title = html.escape(task['title'])

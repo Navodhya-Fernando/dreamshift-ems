@@ -1523,3 +1523,32 @@ header {visibility: hidden;}
   background: rgba(33,150,243,0.2);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYOUT DENSITY FIXES - Remove Phantom Spacing
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Remove empty Streamlit block spacing */
+div[data-testid="stVerticalBlock"]:empty {
+  display: none !important;
+}
+
+/* Tighten layout - remove excessive margins */
+.block-container > div {
+  margin-bottom: 0 !important;
+}
+
+/* Reduce markdown wrapper spacing */
+[data-testid="stMarkdownContainer"] {
+  margin-bottom: 0.25rem !important;
+}
+
+/* Reduce column spacing */
+.stColumn {
+  gap: 0.5rem !important;
+}
+
+/* Tighten expander spacing */
+[data-testid="stExpander"] {
+  margin-bottom: 0.5rem !important;
+}
+
