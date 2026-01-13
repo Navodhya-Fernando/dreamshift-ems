@@ -124,15 +124,10 @@ def set_session(user_email: str, user_name: str):
 # Initialize toggles
 for key, default in {
     "show_forgot_password": False,
-    "show_reset_form": False,
     "show_signup": False,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
-
-# Check for reset token in URL and preserve it even if session state was initialized
-if st.query_params.get("reset_token"):
-    st.session_state.show_reset_form = True
 
 
 def render_header():
@@ -169,7 +164,7 @@ if st.session_state.show_forgot_password:
                 
                 # Build reset link using environment variable or Streamlit's deployed URL
                 base_url = os.getenv('APP_BASE_URL', 'http://localhost:8501')
-                reset_link = f"{base_url}?reset_token={reset_token}"
+                reset_link = f"{base_url}/password_reset?reset_token={reset_token}"
                 
                 html_content = f"""
 <html>
@@ -210,38 +205,8 @@ if st.session_state.show_forgot_password:
     st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
-# Reset form via link
-if st.session_state.show_reset_form:
-    st.markdown('<div class="ds-login-wrap">', unsafe_allow_html=True)
-    render_header()
-    st.markdown("### Create New Password")
-    with st.form("reset_password_form"):
-        new_password = st.text_input("New Password", type="password", placeholder="Enter new password")
-        confirm_password = st.text_input("Confirm Password", type="password", placeholder="Confirm new password")
-        col1, col2 = st.columns(2)
-        reset_btn = col1.form_submit_button("Reset Password", use_container_width=True)
-        cancel_btn = col2.form_submit_button("Cancel", use_container_width=True)
-        if reset_btn:
-            if new_password != confirm_password:
-                st.error("Passwords don't match!")
-            elif len(new_password) < 6:
-                st.error("Password must be at least 6 characters.")
-            else:
-                token = st.query_params.get("reset_token")
-                if db.reset_password_with_token(token, new_password):
-                    st.success("✅ Password reset successful! Please login.")
-                    time.sleep(2)
-                    st.session_state.show_reset_form = False
-                    st.query_params.clear()
-                    st.rerun()
-                else:
-                    st.error("Invalid or expired reset link.")
-        if cancel_btn:
-            st.session_state.show_reset_form = False
-            st.query_params.clear()
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.stop()
+# Reset form is now handled in a separate page (pages/password_reset.py)
+# This section removed as password reset flow uses dedicated page
 
 # Signup form
 if st.session_state.get('show_signup', False):
