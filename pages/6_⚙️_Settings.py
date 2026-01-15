@@ -67,8 +67,10 @@ with tab1:
     compact_view = st.checkbox("Use compact view for task lists", value=False)
     show_avatars = st.checkbox("Show user avatars", value=True)
     
-    if st.button("Save Display Settings"):
-        st.success("Display settings saved!")
+    col_btn, col_spacer = st.columns([1, 5])
+    with col_btn:
+        if st.button("Save Display Settings"):
+            st.success("Display settings saved!")
 
 with tab2:
     st.markdown("### 🔔 Notification Settings")
@@ -120,15 +122,17 @@ with tab2:
         notify_recurring = st.checkbox("Recurring task reminders", value=True)
         notify_overdue = st.checkbox("Overdue task alerts", value=True)
     
-    if st.button("Save Notification Settings"):
-        db.update_user_profile(user['email'], {
-            "preferences": {
-                "email_notifications": email_notifications,
-                "notification_frequency": notification_frequency,
-                "theme": user.get('preferences', {}).get('theme', 'light')
-            }
-        })
-        st.success("Notification settings saved!")
+    col_btn2, col_spacer2 = st.columns([1, 5])
+    with col_btn2:
+        if st.button("Save Notification Settings"):
+            db.update_user_profile(user['email'], {
+                "preferences": {
+                    "email_notifications": email_notifications,
+                    "notification_frequency": notification_frequency,
+                    "theme": user.get('preferences', {}).get('theme', 'light')
+                }
+            })
+            st.success("Notification settings saved!")
 
 with tab3:
     st.markdown("### 🔐 Security Settings")
@@ -145,17 +149,19 @@ with tab3:
         new_password = st.text_input("New Password", type="password")
         confirm_password = st.text_input("Confirm New Password", type="password")
         
-        if st.form_submit_button("Change Password"):
-            # Verify current password
-            if not db.verify_user_password(user['email'], current_password):
-                st.error("Current password is incorrect!")
-            elif new_password != confirm_password:
-                st.error("New passwords don't match!")
-            elif len(new_password) < 6:
-                st.error("Password must be at least 6 characters long!")
-            else:
-                db.update_password(user['email'], new_password)
-                st.success("Password changed successfully!")
+        col_btn3, col_spacer3 = st.columns([1, 5])
+        with col_btn3:
+            if st.form_submit_button("Change Password"):
+                # Verify current password
+                if not db.verify_user_password(user['email'], current_password):
+                    st.error("Current password is incorrect!")
+                elif new_password != confirm_password:
+                    st.error("New passwords don't match!")
+                elif len(new_password) < 6:
+                    st.error("Password must be at least 6 characters long!")
+                else:
+                    db.update_password(user['email'], new_password)
+                    st.success("Password changed successfully!")
     
     st.markdown("---")
     
@@ -186,29 +192,39 @@ with tab4:
         is_connected = user.get('preferences', {}).get('google_calendar_connected', False)
         if is_connected:
             st.success("✅ Connected to Google Calendar")
-            if st.button("Disconnect"):
-                db.update_user_profile(user['email'], {"preferences.google_calendar_connected": False})
-                st.rerun()
+            col_btn4, col_spacer4 = st.columns([1, 5])
+            with col_btn4:
+                if st.button("Disconnect"):
+                    db.update_user_profile(user['email'], {"preferences.google_calendar_connected": False})
+                    st.rerun()
         else:
-            if st.button("🔗 Connect Google Calendar"):
-                st.info("You'll be redirected to Google for authorization (placeholder).")
+            col_btn5, col_spacer5 = st.columns([1, 5])
+            with col_btn5:
+                if st.button("🔗 Connect Google Calendar"):
+                    st.info("You'll be redirected to Google for authorization (placeholder).")
 
         st.markdown("<hr>", unsafe_allow_html=True)
         st.markdown("**Outlook**")
         outlook_connected = user.get('preferences', {}).get('outlook_connected', False)
         if outlook_connected:
             st.success("✅ Connected to Outlook")
-            if st.button("Disconnect Outlook"):
-                db.update_user_profile(user['email'], {"preferences.outlook_connected": False})
-                st.rerun()
+            col_btn6, col_spacer6 = st.columns([1, 5])
+            with col_btn6:
+                if st.button("Disconnect Outlook"):
+                    db.update_user_profile(user['email'], {"preferences.outlook_connected": False})
+                    st.rerun()
         else:
-            if st.button("🔗 Connect Outlook"):
-                st.info("Outlook OAuth placeholder—hook up Microsoft Graph here.")
+            col_btn7, col_spacer7 = st.columns([1, 5])
+            with col_btn7:
+                if st.button("🔗 Connect Outlook"):
+                    st.info("Outlook OAuth placeholder—hook up Microsoft Graph here.")
 
         st.markdown("<hr>", unsafe_allow_html=True)
         st.markdown("**iCal**")
-        if st.button("Generate iCal Feed URL"):
-            st.success("Use the feed URL below (placeholder).")
+        col_btn8, col_spacer8 = st.columns([1, 5])
+        with col_btn8:
+            if st.button("Generate iCal Feed URL"):
+                st.success("Use the feed URL below (placeholder).")
 
     with col2:
         st.markdown("**Status**")
@@ -244,8 +260,10 @@ with tab4:
     st.code(feed_url, language="text")
     st.caption("Copy this URL and add it as a calendar subscription in your calendar app (Apple Calendar, Outlook, etc.)")
     
-    if st.button("📋 Copy Feed URL"):
-        st.success("URL copied to clipboard! (In production)")
+    col_btn9, col_spacer9 = st.columns([1, 5])
+    with col_btn9:
+        if st.button("📋 Copy Feed URL"):
+            st.success("URL copied to clipboard! (In production)")
 
 # Danger Zone
 st.markdown("---")
@@ -262,11 +280,13 @@ with st.expander("🗑️ Delete Account", expanded=False):
     
     confirm_text = st.text_input("Type 'DELETE' to confirm")
     
-    if st.button("Delete My Account", type="primary"):
-        if confirm_text == "DELETE":
-            st.error("Account deletion is not yet implemented. Please contact your administrator.")
-        else:
-            st.error("Please type 'DELETE' to confirm")
+    col_btn10, col_spacer10 = st.columns([1, 5])
+    with col_btn10:
+        if st.button("Delete My Account", type="primary"):
+            if confirm_text == "DELETE":
+                st.error("Account deletion is not yet implemented. Please contact your administrator.")
+            else:
+                st.error("Please type 'DELETE' to confirm")
 
 # Footer
 st.markdown("---")

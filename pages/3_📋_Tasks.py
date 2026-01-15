@@ -173,15 +173,21 @@ with left:
     </div>
     """)
 with right:
-    c1, c2 = st.columns(2)
-    with c1:
+    col_btn, col_spacer = st.columns([1, 5])
+    with col_btn:
         if st.button("Board", use_container_width=True):
             st.session_state.task_view = "board"
             st.rerun()
-    with c2:
+    with col_spacer:
+        st.empty()
+    
+    col_btn2, col_spacer2 = st.columns([1, 5])
+    with col_btn2:
         if st.button("List", use_container_width=True):
             st.session_state.task_view = "list"
             st.rerun()
+    with col_spacer2:
+        st.empty()
 
 # ---------- sidebar timer ----------
 with st.sidebar:
@@ -197,21 +203,25 @@ with st.sidebar:
         st.session_state.is_running = False
 
     if not st.session_state.is_running:
-        if st.button("Start", use_container_width=True):
-            st.session_state.is_running = True
-            st.session_state.start_time = time.time()
-            st.rerun()
+        col_btn3, col_spacer3 = st.columns([1, 5])
+        with col_btn3:
+            if st.button("Start", use_container_width=True):
+                st.session_state.is_running = True
+                st.session_state.start_time = time.time()
+                st.rerun()
     else:
         elapsed = time.time() - st.session_state.start_time
         mm = int(elapsed // 60)
         ss = int(elapsed % 60)
         render_html(f"<div class='ds-timer'>{mm:02d}:{ss:02d}</div>")
 
-        if st.button("Stop & log", use_container_width=True):
-            st.session_state.show_log_time = True
-            st.session_state.elapsed_time = int(elapsed)
-            st.session_state.is_running = False
-            st.rerun()
+        col_btn4, col_spacer4 = st.columns([1, 5])
+        with col_btn4:
+            if st.button("Stop & log", use_container_width=True):
+                st.session_state.show_log_time = True
+                st.session_state.elapsed_time = int(elapsed)
+                st.session_state.is_running = False
+                st.rerun()
 
     if st.session_state.get("show_log_time", False):
         st.markdown("---")
@@ -224,20 +234,24 @@ with st.sidebar:
             st.info("No assigned tasks.")
         else:
             pick = st.selectbox("Task", list(task_map.keys()))
-            if st.button("Save", use_container_width=True):
-                db.log_time_entry(
-                    task_id=task_map[pick],
-                    user_email=user_email,
-                    duration=st.session_state.elapsed_time,
-                )
-                st.success("Time logged.")
-                del st.session_state.show_log_time
-                del st.session_state.elapsed_time
-                st.rerun()
+            col_btn5, col_spacer5 = st.columns([1, 5])
+            with col_btn5:
+                if st.button("Save", use_container_width=True):
+                    db.log_time_entry(
+                        task_id=task_map[pick],
+                        user_email=user_email,
+                        duration=st.session_state.elapsed_time,
+                    )
+                    st.success("Time logged.")
+                    del st.session_state.show_log_time
+                    del st.session_state.elapsed_time
+                    st.rerun()
 
-            if st.button("Cancel", use_container_width=True):
-                del st.session_state.show_log_time
-                st.rerun()
+            col_btn6, col_spacer6 = st.columns([1, 5])
+            with col_btn6:
+                if st.button("Cancel", use_container_width=True):
+                    del st.session_state.show_log_time
+                    st.rerun()
 
 # ---------- filters ----------
 st.markdown("### Filters")

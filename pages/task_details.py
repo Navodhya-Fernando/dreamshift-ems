@@ -104,10 +104,12 @@ with left:
         with st.form("add_subtask"):
             t = st.text_input("Title")
             d = st.date_input("Due date (optional)", value=None)
-            if st.form_submit_button("Add"):
-                if t.strip():
-                    db.add_subtask(task_id, t.strip(), d)
-                    st.rerun()
+            col_btn, col_spacer = st.columns([1, 5])
+            with col_btn:
+                if st.form_submit_button("Add"):
+                    if t.strip():
+                        db.add_subtask(task_id, t.strip(), d)
+                        st.rerun()
 
     # Time tracking
     st.markdown("### Time tracking")
@@ -120,18 +122,22 @@ with left:
         st.session_state.timer_running = False
 
     if not st.session_state.timer_running:
-        if st.button("Start timer", type="primary"):
-            st.session_state.timer_running = True
-            st.session_state.timer_start = time.time()
-            st.rerun()
+        col_btn2, col_spacer2 = st.columns([1, 5])
+        with col_btn2:
+            if st.button("Start timer", type="primary"):
+                st.session_state.timer_running = True
+                st.session_state.timer_start = time.time()
+                st.rerun()
     else:
         elapsed = int(time.time() - st.session_state.timer_start)
         st.markdown(f"<div class='ds-card' style='text-align:center;font-size:22px;font-weight:900;'>{elapsed//3600:02d}:{(elapsed%3600)//60:02d}:{elapsed%60:02d}</div>", unsafe_allow_html=True)
-        if st.button("Stop & log"):
-            duration = int(time.time() - st.session_state.timer_start)
-            db.log_time_entry(task_id, user_email, duration)
-            st.session_state.timer_running = False
-            st.rerun()
+        col_btn3, col_spacer3 = st.columns([1, 5])
+        with col_btn3:
+            if st.button("Stop & log"):
+                duration = int(time.time() - st.session_state.timer_start)
+                db.log_time_entry(task_id, user_email, duration)
+                st.session_state.timer_running = False
+                st.rerun()
 
 with right:
     # ───── ACTIONS ─────
@@ -139,7 +145,8 @@ with right:
     
     # Status
     new_status = st.selectbox("Status", ["Not Started", "In Progress", "Completed"], index=["Not Started", "In Progress", "Completed"].index(status))
-    if new_status != status:
+    col_btn4, col_spacer4 = st.columns([1, 5])
+    with col_btn4:
         if st.button("Update Status", use_container_width=True):
             db.update_task_status(task_id, new_status)
             st.success(f"Status → {new_status}")
@@ -151,7 +158,8 @@ with right:
     if priority not in priority_options:
         priority = "Medium"
     new_priority = st.selectbox("Priority", priority_options, index=priority_options.index(priority))
-    if new_priority != priority:
+    col_btn5, col_spacer5 = st.columns([1, 5])
+    with col_btn5:
         if st.button("Update Priority", use_container_width=True):
             db.update_task_priority(task_id, new_priority)
             st.success(f"Priority → {new_priority}")
@@ -186,11 +194,13 @@ with right:
         with st.form("extension_req_form"):
             new_deadline = st.date_input("New Deadline", value=due.date() if due else datetime.date.today())
             reason = st.text_area("Reason", height=100)
-            if st.form_submit_button("Submit Request"):
-                new_deadline_dt = datetime.datetime.combine(new_deadline, datetime.time.min)
-                db.create_extension_request(task_id, user_email, new_deadline_dt, reason)
-                st.success("Extension request submitted!")
-                st.rerun()
+            col_btn6, col_spacer6 = st.columns([1, 5])
+            with col_btn6:
+                if st.form_submit_button("Submit Request"):
+                    new_deadline_dt = datetime.datetime.combine(new_deadline, datetime.time.min)
+                    db.create_extension_request(task_id, user_email, new_deadline_dt, reason)
+                    st.success("Extension request submitted!")
+                    st.rerun()
 
 st.markdown("---")
 

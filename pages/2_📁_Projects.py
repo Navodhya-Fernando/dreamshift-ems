@@ -284,9 +284,11 @@ if right:
         
         st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
         
-        # Manage Templates button
-        if st.button("🎯 Manage Task Templates", use_container_width=True, type="secondary"):
-            st.switch_page("pages/task_templates.py")
+        # Manage Templates button (centered, horizontal)
+        col_btn, col_spacer = st.columns([1, 5])
+        with col_btn:
+            if st.button("🎯 Manage Task Templates", use_container_width=True, type="secondary"):
+                st.switch_page("pages/task_templates.py")
         
         # Show message if user cannot create projects
         if user_role not in ["Owner", "Workspace Admin"]:

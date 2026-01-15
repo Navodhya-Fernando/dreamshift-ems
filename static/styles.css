@@ -16,8 +16,8 @@
 }
 
 /* Global Styles */
-.stApp {
-    background: var(--bg-main) !important;
+    --accent-primary: #411c30;
+    --text-primary: #ffffff;
     color: var(--text-primary) !important;
 }
 
@@ -47,23 +47,23 @@ h1, h2, h3, h4, h5, h6, p, label {
 
 /* Neutralize selected tab background (remove yellow fill) */
 .stTabs [aria-selected="true"]{
-    background: rgba(255,255,255,0.10) !important;
+  color: #ffffff;
     border-color: rgba(255,255,255,0.18) !important;
     color: #fff !important;
 }
-
+  color: rgba(255,255,255,0.50);
 .stMarkdown {
     color: var(--text-primary) !important;
 }
-
+  color: rgba(255,255,255,0.92);
 
 /* Custom Card */
 .custom-card {
-    background: var(--bg-container);
+  color: #fff;
     border-radius: 12px;
     padding: 24px;
     box-shadow: var(--shadow);
-    margin-bottom: 20px;
+  color: #411c30;
     border: 1px solid var(--border-color);
     transition: all 0.3s ease;
 }
@@ -75,21 +75,13 @@ h1, h2, h3, h4, h5, h6, p, label {
 }
 
 /* Task Card */
-.task-card {
-    background: var(--bg-container);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 12px;
-    border-left: 4px solid var(--accent-primary);
+/* removed: handled by above for all buttons */
     box-shadow: var(--shadow);
     transition: all 0.2s ease;
     cursor: pointer;
 }
 
-.task-card:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateX(4px);
-    border-left-color: var(--accent-primary);
+/* removed: handled by above for all buttons */
 }
 
 .task-card-urgent {

@@ -91,20 +91,22 @@ with left:
     with st.form("create_template_form"):
         name = st.text_input("Template name", placeholder="e.g., CV Writing - Standard")
         desc = st.text_area("Description (optional)", placeholder="What this template is for...")
-        submitted = st.form_submit_button("Create", use_container_width=True)
-        if submitted:
-            if not name.strip():
-                st.error("Template name is required.")
-            else:
-                db.create_task_template(
-                    workspace_id=ws_id,
-                    name=name.strip(),
-                    description=desc.strip(),
-                    items=[],
-                    created_by=user_email,
-                )
-                st.success("Template created.")
-                st.rerun()
+        col_btn, col_spacer = st.columns([1, 5])
+        with col_btn:
+            submitted = st.form_submit_button("Create", use_container_width=True)
+            if submitted:
+                if not name.strip():
+                    st.error("Template name is required.")
+                else:
+                    db.create_task_template(
+                        workspace_id=ws_id,
+                        name=name.strip(),
+                        description=desc.strip(),
+                        items=[],
+                        created_by=user_email,
+                    )
+                    st.success("Template created.")
+                    st.rerun()
     render_html("</div>")
 
 # ------------------------------------------------------------
@@ -180,24 +182,26 @@ with right:
                     with c3:
                         r = st.selectbox("Default assignee role (optional)", ["", "Employee", "Workspace Admin", "Owner"], index=["", "Employee", "Workspace Admin", "Owner"].index(role) if role in ["", "Employee", "Workspace Admin", "Owner"] else 0)
                     
-                    save_item = st.form_submit_button("Update task", use_container_width=True)
-                    remove_item = st.form_submit_button("Remove task", use_container_width=True)
-                    
-                    if save_item:
-                        db.update_task_template_item(ws_id, selected_tpl_id, order=i, updates={
-                            "title": t.strip(),
-                            "description": d.strip(),
-                            "priority": p,
-                            "default_days_offset": int(off),
-                            "default_assignee_role": r,
-                        })
-                        st.success("Updated.")
-                        st.rerun()
-                    
-                    if remove_item:
-                        db.remove_task_template_item(ws_id, selected_tpl_id, order=i)
-                        st.success("Removed.")
-                        st.rerun()
+                    col_btn2, col_spacer2 = st.columns([1, 5])
+                    with col_btn2:
+                        save_item = st.form_submit_button("Update task", use_container_width=True)
+                        remove_item = st.form_submit_button("Remove task", use_container_width=True)
+                        
+                        if save_item:
+                            db.update_task_template_item(ws_id, selected_tpl_id, order=i, updates={
+                                "title": t.strip(),
+                                "description": d.strip(),
+                                "priority": p,
+                                "default_days_offset": int(off),
+                                "default_assignee_role": r,
+                            })
+                            st.success("Updated.")
+                            st.rerun()
+                        
+                        if remove_item:
+                            db.remove_task_template_item(ws_id, selected_tpl_id, order=i)
+                            st.success("Removed.")
+                            st.rerun()
     
     render_html("</div>")
     
@@ -217,20 +221,22 @@ with right:
         with c3:
             r = st.selectbox("Default assignee role (optional)", ["", "Employee", "Workspace Admin", "Owner"], index=0)
         
-        add = st.form_submit_button("Add", use_container_width=True)
-        if add:
-            if not t.strip():
-                st.error("Title is required.")
-            else:
-                db.add_task_template_item(ws_id, selected_tpl_id, {
-                    "title": t.strip(),
-                    "description": d.strip(),
-                    "priority": p,
-                    "default_days_offset": int(off),
-                    "default_assignee_role": r,
-                })
-                st.success("Added.")
-                st.rerun()
+        col_btn4, col_spacer4 = st.columns([1, 5])
+        with col_btn4:
+            add = st.form_submit_button("Add", use_container_width=True)
+            if add:
+                if not t.strip():
+                    st.error("Title is required.")
+                else:
+                    db.add_task_template_item(ws_id, selected_tpl_id, {
+                        "title": t.strip(),
+                        "description": d.strip(),
+                        "priority": p,
+                        "default_days_offset": int(off),
+                        "default_assignee_role": r,
+                    })
+                    st.success("Added.")
+                    st.rerun()
     render_html("</div>")
 
 # ------------------------------------------------------------

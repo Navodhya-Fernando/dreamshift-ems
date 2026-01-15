@@ -186,7 +186,9 @@ if not workspaces:
 
     with st.form("create_first_ws"):
         ws_name = st.text_input("Workspace Name", placeholder="e.g., Marketing Team, Development, Client Projects")
-        submitted = st.form_submit_button("Create Workspace", use_container_width=True)
+        col_btn, col_spacer = st.columns([1, 5])
+        with col_btn:
+            submitted = st.form_submit_button("Create Workspace", use_container_width=True)
         if submitted:
             if ws_name.strip():
                 db.create_workspace(ws_name.strip(), user_email)
@@ -336,9 +338,11 @@ with tab_projects:
 """
                     )
 
-                    if st.button("View", key=f"view_proj_{project['_id']}", use_container_width=True):
-                        st.session_state.selected_project_id = str(project["_id"])
-                        st.switch_page("pages/project_details.py")
+                    col_btn2, col_spacer2 = st.columns([1, 5])
+                    with col_btn2:
+                        if st.button("View", key=f"view_proj_{project['_id']}", use_container_width=True):
+                            st.session_state.selected_project_id = str(project["_id"])
+                            st.switch_page("pages/project_details.py")
 
     with right:
         # Action panel
@@ -365,7 +369,9 @@ with tab_projects:
                     proj_deadline = col_a.date_input("Deadline", min_value=datetime.date.today())
                     proj_status = col_b.selectbox("Status", ["Active", "On Hold", "Completed", "Cancelled"])
 
-                    submitted = st.form_submit_button("Create", use_container_width=True)
+                    col_btn3, col_spacer3 = st.columns([1, 5])
+                    with col_btn3:
+                        submitted = st.form_submit_button("Create", use_container_width=True)
                     if submitted:
                         if not proj_name.strip():
                             st.error("Please enter a project name.")
@@ -443,14 +449,18 @@ with tab_team:
                         index=0 if member.get("role") == "Employee" else 1,
                     )
                 with col_y:
-                    if st.button("Update", key=f"update_{member['email']}", use_container_width=True):
-                        db.update_member_role(ws_id, member["email"], new_role)
-                        st.success("Role updated.")
-                        st.rerun()
-                    if st.button("Remove", key=f"remove_{member['email']}", use_container_width=True):
-                        db.remove_workspace_member(ws_id, member["email"])
-                        st.success("Member removed.")
-                        st.rerun()
+                    col_btn4, col_spacer4 = st.columns([1, 5])
+                    with col_btn4:
+                        if st.button("Update", key=f"update_{member['email']}", use_container_width=True):
+                            db.update_member_role(ws_id, member["email"], new_role)
+                            st.success("Role updated.")
+                            st.rerun()
+                    col_btn5, col_spacer5 = st.columns([1, 5])
+                    with col_btn5:
+                        if st.button("Remove", key=f"remove_{member['email']}", use_container_width=True):
+                            db.remove_workspace_member(ws_id, member["email"])
+                            st.success("Member removed.")
+                            st.rerun()
 
     # Invite section
     if role in ["Owner", "Workspace Admin"]:
@@ -459,7 +469,9 @@ with tab_team:
             with st.form("invite_member"):
                 invite_email = st.text_input("Email", placeholder="colleague@company.com")
                 invite_role = st.selectbox("Role", ["Employee", "Workspace Admin"])
-                submitted = st.form_submit_button("Add to workspace", use_container_width=True)
+                col_btn6, col_spacer6 = st.columns([1, 5])
+                with col_btn6:
+                    submitted = st.form_submit_button("Add to workspace", use_container_width=True)
 
                 if submitted:
                     if not invite_email.strip():
@@ -493,7 +505,9 @@ with tab_settings:
     with st.expander("➕ Create New Workspace", expanded=False):
         with st.form("create_new_workspace"):
             new_ws_name = st.text_input("Workspace Name", placeholder="e.g., Marketing Team, Development, Client Projects")
-            submitted_create = st.form_submit_button("Create Workspace", use_container_width=True)
+            col_btn7, col_spacer7 = st.columns([1, 5])
+            with col_btn7:
+                submitted_create = st.form_submit_button("Create Workspace", use_container_width=True)
             if submitted_create:
                 if not new_ws_name.strip():
                     st.error("Please enter a workspace name.")
@@ -509,7 +523,9 @@ with tab_settings:
     else:
         with st.form("edit_workspace"):
             new_ws_name = st.text_input("Workspace name", value=selected_ws["name"])
-            submitted = st.form_submit_button("Save", use_container_width=True)
+            col_btn8, col_spacer8 = st.columns([1, 5])
+            with col_btn8:
+                submitted = st.form_submit_button("Save", use_container_width=True)
             if submitted:
                 if not new_ws_name.strip():
                     st.error("Workspace name cannot be empty.")
@@ -532,8 +548,10 @@ with tab_settings:
 
         st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
 
-        if st.button("Delete workspace", type="secondary"):
-            st.session_state.confirm_delete = True
+        col_btn9, col_spacer9 = st.columns([1, 5])
+        with col_btn9:
+            if st.button("Delete workspace", type="secondary"):
+                st.session_state.confirm_delete = True
 
         if st.session_state.get("confirm_delete", False):
             st.error("Confirm deletion. This cannot be undone.")

@@ -37,7 +37,7 @@ total_time = db.get_total_time_for_task(task_id)
 # Header with back button
 col_back, col_title = st.columns([1, 5])
 with col_back:
-    if st.button("← Back"):
+    with st.button("← Back"):
         del st.session_state.selected_task_id
         st.switch_page("app.py")
 
@@ -71,10 +71,12 @@ with col1:
         with st.form("add_subtask"):
             subtask_title = st.text_input("Subtask Title")
             subtask_due = st.date_input("Due Date (Optional)", value=None)
-            if st.form_submit_button("Add Subtask"):
-                db.add_subtask(task_id, subtask_title, subtask_due)
-                st.success("Subtask added!")
-                st.rerun()
+            col_btn2, col_spacer2 = st.columns([1, 5])
+            with col_btn2:
+                if st.form_submit_button("Add Subtask"):
+                    db.add_subtask(task_id, subtask_title, subtask_due)
+                    st.success("Subtask added!")
+                    st.rerun()
     
     if subtasks:
         for subtask in subtasks:
@@ -110,11 +112,13 @@ with col1:
     with st.form("add_comment"):
         comment_text = st.text_area("Add a comment (use @email to mention someone)", 
                                     placeholder="Share updates, ask questions, or mention teammates...")
-        if st.form_submit_button("Post Comment"):
-            if comment_text:
-                db.add_comment('task', task_id, st.session_state.user_email, comment_text)
-                st.success("Comment posted!")
-                st.rerun()
+        col_btn3, col_spacer3 = st.columns([1, 5])
+        with col_btn3:
+            if st.form_submit_button("Post Comment"):
+                if comment_text:
+                    db.add_comment('task', task_id, st.session_state.user_email, comment_text)
+                    st.success("Comment posted!")
+                    st.rerun()
     
     # Display comments
     if comments:
@@ -152,10 +156,12 @@ with col1:
             st.session_state.timer_running = False
         
         if not st.session_state.timer_running:
-            if st.button("▶️ Start Timer", use_container_width=True):
-                st.session_state.timer_running = True
-                st.session_state.timer_start = time.time()
-                st.rerun()
+            col_btn4, col_spacer4 = st.columns([1, 5])
+            with col_btn4:
+                if st.button("▶️ Start Timer", use_container_width=True):
+                    st.session_state.timer_running = True
+                    st.session_state.timer_start = time.time()
+                    st.rerun()
         else:
             elapsed = int(time.time() - st.session_state.timer_start)
             st.markdown(f"""
@@ -164,12 +170,14 @@ with col1:
                 </div>
             """, unsafe_allow_html=True)
             
-            if st.button("⏹️ Stop & Log", use_container_width=True):
-                duration = int(time.time() - st.session_state.timer_start)
-                db.log_time_entry(task_id, st.session_state.user_email, duration)
-                st.session_state.timer_running = False
-                st.success(f"Logged {duration // 60} minutes!")
-                st.rerun()
+            col_btn5, col_spacer5 = st.columns([1, 5])
+            with col_btn5:
+                if st.button("⏹️ Stop & Log", use_container_width=True):
+                    duration = int(time.time() - st.session_state.timer_start)
+                    db.log_time_entry(task_id, st.session_state.user_email, duration)
+                    st.session_state.timer_running = False
+                    st.success(f"Logged {duration // 60} minutes!")
+                    st.rerun()
     
     # Manual time entry
     with st.expander("➕ Manually Log Time"):
@@ -177,12 +185,14 @@ with col1:
             hours = st.number_input("Hours", min_value=0, max_value=24, value=0)
             minutes = st.number_input("Minutes", min_value=0, max_value=59, value=0)
             description = st.text_input("Description (optional)")
-            if st.form_submit_button("Log Time"):
-                total_seconds = (hours * 3600) + (minutes * 60)
-                if total_seconds > 0:
-                    db.log_time_entry(task_id, st.session_state.user_email, total_seconds, description)
-                    st.success("Time logged!")
-                    st.rerun()
+            col_btn6, col_spacer6 = st.columns([1, 5])
+            with col_btn6:
+                if st.form_submit_button("Log Time"):
+                    total_seconds = (hours * 3600) + (minutes * 60)
+                    if total_seconds > 0:
+                        db.log_time_entry(task_id, st.session_state.user_email, total_seconds, description)
+                        st.success("Time logged!")
+                        st.rerun()
     
     # Time entries log
     if time_entries:
@@ -208,10 +218,12 @@ with col2:
                               index=["To Do", "In Progress", "Completed"].index(current_status))
     
     if new_status != current_status:
-        if st.button("Update Status", use_container_width=True):
-            db.update_task_status(task_id, new_status)
-            st.success(f"Status updated to {new_status}!")
-            st.rerun()
+        col_btn7, col_spacer7 = st.columns([1, 5])
+        with col_btn7:
+            if st.button("Update Status", use_container_width=True):
+                db.update_task_status(task_id, new_status)
+                st.success(f"Status updated to {new_status}!")
+                st.rerun()
     
     # Deadline Extension Request
     if task['assignee'] == st.session_state.user_email and current_status != "Completed":
@@ -222,11 +234,13 @@ with col2:
                                         value=task['due_date'].date(),
                                         min_value=datetime.date.today())
             reason = st.text_area("Reason for Extension")
-            if st.form_submit_button("Submit Request"):
-                new_deadline_dt = datetime.datetime.combine(new_deadline, datetime.time.min)
-                db.create_extension_request(task_id, st.session_state.user_email, new_deadline_dt, reason)
-                st.success("Extension request submitted!")
-                st.rerun()
+            col_btn8, col_spacer8 = st.columns([1, 5])
+            with col_btn8:
+                if st.form_submit_button("Submit Request"):
+                    new_deadline_dt = datetime.datetime.combine(new_deadline, datetime.time.min)
+                    db.create_extension_request(task_id, st.session_state.user_email, new_deadline_dt, reason)
+                    st.success("Extension request submitted!")
+                    st.rerun()
     
     st.markdown("---")
     
