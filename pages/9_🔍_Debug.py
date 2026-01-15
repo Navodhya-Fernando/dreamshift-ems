@@ -66,3 +66,5 @@ st.json({
 })
 
 st.info("💡 **Tip**: If you see 'Owner' but you should be 'Employee', ask the workspace owner to check the Team tab in Workspaces and verify your role is set correctly.")
+
+# (No button found in grep, but if present, ensure use_container_width=True)
