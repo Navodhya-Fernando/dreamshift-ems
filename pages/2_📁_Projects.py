@@ -179,7 +179,7 @@ st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
 
 # ------------------------------------------------------------
 # Get workspace projects (check if we have ANY content)
-projects = db.get_workspace_projects(ws_id)
+projects = db.get_projects(ws_id)
 templates = db.get_task_templates(ws_id)
 
 # Determine if we should show the full two-column layout
