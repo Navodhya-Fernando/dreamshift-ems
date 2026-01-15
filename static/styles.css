@@ -44,7 +44,8 @@ h1, h2, h3, h4, h5, h6, p, label {
 [data-testid="stMarkdownContainer"] h6 a {
     display: none !important;
 }
-
+     background: var(--bg) !important;
+     padding: 1.8rem 2.5rem !important;
 /* Neutralize selected tab background (remove yellow fill) */
 .stTabs [aria-selected="true"]{
   color: #ffffff;

@@ -67,4 +67,9 @@ st.json({
 
 st.info("💡 **Tip**: If you see 'Owner' but you should be 'Employee', ask the workspace owner to check the Team tab in Workspaces and verify your role is set correctly.")
 
-# (No button found in grep, but if present, ensure use_container_width=True)
+# Example for a button:
+# col_btn, col_spacer = st.columns([1, 8])
+# with col_btn:
+#     if st.button("Button Text"):
+#         ...
+# Apply this pattern to all single buttons and form_submit_buttons on this page.

@@ -104,7 +104,7 @@ with left:
         with st.form("add_subtask"):
             t = st.text_input("Title")
             d = st.date_input("Due date (optional)", value=None)
-            col_btn, col_spacer = st.columns([1, 5])
+            col_btn, col_spacer = st.columns([1, 8])
             with col_btn:
                 if st.form_submit_button("Add"):
                     if t.strip():
@@ -122,7 +122,7 @@ with left:
         st.session_state.timer_running = False
 
     if not st.session_state.timer_running:
-        col_btn2, col_spacer2 = st.columns([1, 5])
+        col_btn2, col_spacer2 = st.columns([1, 8])
         with col_btn2:
             if st.button("Start timer", type="primary"):
                 st.session_state.timer_running = True
@@ -131,7 +131,7 @@ with left:
     else:
         elapsed = int(time.time() - st.session_state.timer_start)
         st.markdown(f"<div class='ds-card' style='text-align:center;font-size:22px;font-weight:900;'>{elapsed//3600:02d}:{(elapsed%3600)//60:02d}:{elapsed%60:02d}</div>", unsafe_allow_html=True)
-        col_btn3, col_spacer3 = st.columns([1, 5])
+        col_btn3, col_spacer3 = st.columns([1, 8])
         with col_btn3:
             if st.button("Stop & log"):
                 duration = int(time.time() - st.session_state.timer_start)

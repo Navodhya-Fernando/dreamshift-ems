@@ -217,7 +217,10 @@ with tab_security:
         new_pw = st.text_input("New password", type="password", key="new_pw")
         confirm_pw = st.text_input("Confirm new password", type="password", key="confirm_pw")
 
-        submitted_pw = st.form_submit_button("Update password", use_container_width=True)
+        col_btn, col_spacer = st.columns([1, 8])
+        with col_btn:
+            submitted_pw = st.form_submit_button("Update password", use_container_width=True)
+        
         if submitted_pw:
             if not old_pw or not new_pw or not confirm_pw:
                 st.error("Please fill all fields.")

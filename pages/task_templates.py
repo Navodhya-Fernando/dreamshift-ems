@@ -180,8 +180,11 @@ with right:
                     with c3:
                         r = st.selectbox("Default assignee role (optional)", ["", "Employee", "Workspace Admin", "Owner"], index=["", "Employee", "Workspace Admin", "Owner"].index(role) if role in ["", "Employee", "Workspace Admin", "Owner"] else 0)
                     
-                    save_item = st.form_submit_button("Update task", use_container_width=True)
-                    remove_item = st.form_submit_button("Remove task", use_container_width=True)
+                    col_btn, col_spacer = st.columns([1, 8])
+                    with col_btn:
+                        save_item = st.form_submit_button("Update task", use_container_width=True)
+                    with col_spacer:
+                        remove_item = st.form_submit_button("Remove task", use_container_width=True)
                     
                     if save_item:
                         db.update_task_template_item(ws_id, selected_tpl_id, order=i, updates={

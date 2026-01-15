@@ -67,7 +67,7 @@ with tab1:
     compact_view = st.checkbox("Use compact view for task lists", value=False)
     show_avatars = st.checkbox("Show user avatars", value=True)
     
-    col_btn, col_spacer = st.columns([1, 5])
+    col_btn, col_spacer = st.columns([1, 8])
     with col_btn:
         if st.button("Save Display Settings"):
             st.success("Display settings saved!")
@@ -122,7 +122,7 @@ with tab2:
         notify_recurring = st.checkbox("Recurring task reminders", value=True)
         notify_overdue = st.checkbox("Overdue task alerts", value=True)
     
-    col_btn2, col_spacer2 = st.columns([1, 5])
+    col_btn2, col_spacer2 = st.columns([1, 8])
     with col_btn2:
         if st.button("Save Notification Settings"):
             db.update_user_profile(user['email'], {
@@ -149,7 +149,7 @@ with tab3:
         new_password = st.text_input("New Password", type="password")
         confirm_password = st.text_input("Confirm New Password", type="password")
         
-        col_btn3, col_spacer3 = st.columns([1, 5])
+        col_btn3, col_spacer3 = st.columns([1, 8])
         with col_btn3:
             if st.form_submit_button("Change Password"):
                 # Verify current password

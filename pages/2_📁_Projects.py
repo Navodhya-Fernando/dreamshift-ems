@@ -251,7 +251,11 @@ if right:
                 selected_tpl_name = st.selectbox("Task template", list(tpl_map.keys()), index=0)
                 selected_tpl_id = tpl_map[selected_tpl_name]
                 
-                submitted = st.form_submit_button("Create Project", use_container_width=True)
+                # Create Project button (horizontal, never wraps)
+                col_btn, col_spacer = st.columns([1, 8])
+                with col_btn:
+                    submitted = st.form_submit_button("Create Project")
+                
                 if submitted:
                     if not proj_name.strip():
                         st.error("Project name is required.")
@@ -283,11 +287,10 @@ if right:
         render_html("</div>")
         
         st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-        
-        # Manage Templates button (centered, horizontal)
-        col_btn, col_spacer = st.columns([1, 5])
+        # Manage Templates button (horizontal, never wraps)
+        col_btn, col_spacer = st.columns([1, 8])
         with col_btn:
-            if st.button("🎯 Manage Task Templates", use_container_width=True, type="secondary"):
+            if st.button("🎯 Manage Task Templates", type="secondary"):
                 st.switch_page("pages/task_templates.py")
         
         # Show message if user cannot create projects

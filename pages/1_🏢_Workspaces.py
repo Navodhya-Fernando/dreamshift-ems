@@ -186,7 +186,7 @@ if not workspaces:
 
     with st.form("create_first_ws"):
         ws_name = st.text_input("Workspace Name", placeholder="e.g., Marketing Team, Development, Client Projects")
-        col_btn, col_spacer = st.columns([1, 5])
+        col_btn, col_spacer = st.columns([1, 8])
         with col_btn:
             submitted = st.form_submit_button("Create Workspace", use_container_width=True)
         if submitted:
@@ -338,7 +338,7 @@ with tab_projects:
 """
                     )
 
-                    col_btn2, col_spacer2 = st.columns([1, 5])
+                    col_btn2, col_spacer2 = st.columns([1, 8])
                     with col_btn2:
                         if st.button("View", key=f"view_proj_{project['_id']}", use_container_width=True):
                             st.session_state.selected_project_id = str(project["_id"])
@@ -369,7 +369,7 @@ with tab_projects:
                     proj_deadline = col_a.date_input("Deadline", min_value=datetime.date.today())
                     proj_status = col_b.selectbox("Status", ["Active", "On Hold", "Completed", "Cancelled"])
 
-                    col_btn3, col_spacer3 = st.columns([1, 5])
+                    col_btn3, col_spacer3 = st.columns([1, 8])
                     with col_btn3:
                         submitted = st.form_submit_button("Create", use_container_width=True)
                     if submitted:

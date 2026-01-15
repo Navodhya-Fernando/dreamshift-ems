@@ -524,7 +524,9 @@ with tab5:
                     """, unsafe_allow_html=True)
                 
                 st.markdown("---")
-                save = st.form_submit_button("💾 Save User Profile", use_container_width=True, type="primary")
+                col_btn, col_spacer = st.columns([1, 8])
+                with col_btn:
+                    save = st.form_submit_button("💾 Save User Profile", use_container_width=True, type="primary")
                 
                 if save:
                     db.update_user_profile_fields(selected_email, {
