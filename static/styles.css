@@ -4,8 +4,8 @@
 :root {
     --bg-main: #24101a;
     --bg-container: #411c30;
-    --accent-primary: #411c30;
-    --text-primary: #ffffff;
+    --accent-primary: #f6b900;
+    --text-primary: #f6b900;
     --text-secondary: #cccccc;
     --danger-color: #ff4444;
     --success-color: #00ff88;
@@ -109,7 +109,7 @@ h1, h2, h3, h4, h5, h6, p, label {
 
 /* Buttons */
 .btn-primary {
-    background: var(--accent-primary);
+    background: #f6b900;
     color: #411c30;
     border: none;
     padding: 12px 24px;
@@ -121,7 +121,8 @@ h1, h2, h3, h4, h5, h6, p, label {
 }
 
 .btn-primary:hover {
-    background: #ffc933;
+    background: #ffe500;
+    color: #411c30;
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(246, 185, 0, 0.5);
 }
@@ -150,9 +151,8 @@ h1, h2, h3, h4, h5, h6, p, label {
 
 /* Default buttons (secondary/unspecified) */
 .stButton > button,
-.stFormSubmitButton > button {
   background: rgba(255,255,255,0.06) !important;
-  color: rgba(255,255,255,0.92) !important;
+  color: #f6b900 !important;
   border: 1px solid rgba(255,255,255,0.12) !important;
   border-radius: 10px !important;
   font-weight: 650 !important;
@@ -162,25 +162,24 @@ h1, h2, h3, h4, h5, h6, p, label {
 }
 
 .stButton > button:hover,
-.stFormSubmitButton > button:hover {
   background: rgba(255,255,255,0.10) !important;
+  color: #f6b900 !important;
   border-color: rgba(255,255,255,0.18) !important;
   transform: none !important;
 }
 
 /* Primary buttons only */
 .stButton > button[kind="primary"],
-.stFormSubmitButton > button[kind="primary"] {
-  background: var(--accent-primary) !important;
-  color: #24101a !important;
-  border: 1px solid rgba(246,185,0,0.35) !important;
+  background: #f6b900 !important;
+  color: #411c30 !important;
+  border: 1px solid #f6b900 !important;
   box-shadow: 0 6px 18px rgba(246,185,0,0.22) !important;
   font-weight: 800 !important;
 }
 
 .stButton > button[kind="primary"]:hover,
-.stFormSubmitButton > button[kind="primary"]:hover {
-  background: #ffc933 !important;
+  background: #ffe500 !important;
+  color: #411c30 !important;
   box-shadow: 0 10px 26px rgba(246,185,0,0.32) !important;
 }
 
@@ -622,7 +621,7 @@ section[data-testid="stSidebar"] > div {
 
 .ds-project-title{
   font-weight: 900;
-  color: var(--accent-primary);
+  color: #f6b900;
   font-size: 1.05rem;
   margin: 0;
 }
@@ -1228,7 +1227,7 @@ section[data-testid="stSidebar"] a[href*="task_templates"] {
 }
 
 .ds-chat-author { 
-  color: #fff; 
+  color: #f6b900;
   font-weight: 900; 
   font-size: 14px;
   letter-spacing: 0.3px;
@@ -1238,12 +1237,12 @@ section[data-testid="stSidebar"] a[href*="task_templates"] {
   display: flex;
   gap: 12px;
   align-items: center;
-  color: rgba(255,255,255,0.50);
+  color: #f6b900;
   font-size: 12px;
 }
 
 .ds-chat-text { 
-  color: rgba(255,255,255,0.92); 
+  color: #f6b900;
   font-size: 14px; 
   line-height: 1.65;
   margin-bottom: 14px;
@@ -1253,7 +1252,7 @@ section[data-testid="stSidebar"] a[href*="task_templates"] {
   padding: 4px 10px; 
   border-radius: 999px;
   background: linear-gradient(135deg, #411c30 0%, #2d1420 100%);
-  color: #fff;
+  color: #f6b900;
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
@@ -1497,7 +1496,7 @@ header {visibility: hidden;}
 }
 
 .ds-quote-author {
-  color: #411c30;
+  color: #f6b900;
   font-weight: 800;
   font-style: normal;
   margin-bottom: 4px;
