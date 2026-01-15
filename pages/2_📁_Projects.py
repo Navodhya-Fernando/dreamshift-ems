@@ -410,12 +410,24 @@ with left:
                   </div>
                 </div>
                 """)
-                # Real Streamlit button, styled and right-aligned
-                btn_col1, btn_col2 = st.columns([5,1])
-                with btn_col2:
-                    if st.button("View Details", key=f"view_{proj_id}", use_container_width=True):
-                        st.session_state.selected_project_id = proj_id
-                        st.switch_page("pages/project_details.py")
+                # Place the button directly below the card, right-aligned, with compact width
+                st.markdown("""
+                <style>
+                .ds-btn-compact button {
+                    display: inline-block !important;
+                    width: auto !important;
+                    min-width: 0 !important;
+                    max-width: 200px !important;
+                    padding-left: 18px !important;
+                    padding-right: 18px !important;
+                }
+                </style>
+                <div style='text-align:right; margin-top:-18px; margin-bottom:18px;' class='ds-btn-compact'>
+                """, unsafe_allow_html=True)
+                if st.button("View Details", key=f"view_{proj_id}"):
+                    st.session_state.selected_project_id = proj_id
+                    st.switch_page("pages/project_details.py")
+                st.markdown("</div>", unsafe_allow_html=True)
 # ------------------------------------------------------------
 # Footer
 # ------------------------------------------------------------

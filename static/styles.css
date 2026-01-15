@@ -100,6 +100,17 @@ h1, h2, h3, h4, h5, h6, p, label {
 }
 
 /* Buttons */
+/* Compact button fix for all Streamlit buttons */
+.stButton > button, .stFormSubmitButton > button {
+  display: inline-block !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 220px !important;
+  padding-left: 18px !important;
+  padding-right: 18px !important;
+  margin-top: 6px !important;
+  margin-bottom: 6px !important;
+}
 .btn-primary {
     background: #f6b900;
     color: #411c30;
