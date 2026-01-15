@@ -253,3 +253,11 @@ for c in threads:
             indent=True
         )
 
+# 1. Use 2-column layout: left (main), right (metadata).
+# 2. Use global card class for all cards.
+# 3. Comments/activity: tight spacing, clear author/timestamp, subtle dividers.
+# 4. Add empty state card (ds-empty-state) if no comments/activity.
+# 5. Consistent button/input styles.
+# 6. Add skeleton loader (ds-skeleton) for loading states.
+# 7. Ensure consistent section/card/inline gaps using ds-gap-section, ds-gap-card, ds-gap-inline classes.
+

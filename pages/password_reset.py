@@ -42,13 +42,13 @@ st.markdown(
         color: #f6b900;
         font-size: 28px;
         font-weight: 900;
-        text-align: center;
+        text-align: left;
         margin-bottom: 10px;
         letter-spacing: 0.5px;
       }
       .ds-reset-subtitle{
         color: rgba(255,255,255,0.6);
-        text-align: center;
+        text-align: left;
         font-size: 14px;
         margin-bottom: 30px;
       }
@@ -56,6 +56,18 @@ st.markdown(
         color: rgba(255,255,255,0.8);
         font-weight: 600;
         font-size: 13px;
+      }
+      .ds-gap-section{
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      .ds-gap-card{
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+      }
+      .ds-gap-inline{
+        margin-right: 0.5rem;
+        margin-left: 0.5rem;
       }
     </style>
     """,

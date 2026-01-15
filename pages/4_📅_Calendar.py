@@ -41,7 +41,14 @@ if 'calendar_color_mode' not in st.session_state:
 if 'heatmap_enabled' not in st.session_state:
     st.session_state.heatmap_enabled = False
 
-# Remove all st.markdown CSS blocks from this file.
+# 1. Remove all st.container(), st.columns(), and st.empty() that render with no content.
+# 2. Use conditional rendering for containers/expanders only if there is data.
+# 3. Use global card class for all event cards.
+# 4. Align all headers, filters, and buttons to the same left edge.
+# 5. Compact filter row: place all filters in a single st.columns row, short labels.
+# 6. Add empty state card (ds-empty-state) if no events.
+# 7. Add skeleton loader (ds-skeleton) for loading states.
+# 8. Ensure consistent section/card/inline gaps using ds-gap-section, ds-gap-card, ds-gap-inline classes.
 
 # View options and controls
 col1, col2, col3, col4 = st.columns([1.5, 1.5, 1, 1])
