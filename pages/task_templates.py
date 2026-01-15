@@ -51,8 +51,6 @@ render_html("""
 </div>
 """)
 
-st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-
 # Only admins can manage templates
 if user_role not in ["Owner", "Workspace Admin"]:
     st.info("Only Owners or Workspace Admins can manage templates.")
@@ -129,8 +127,6 @@ with right:
     </div>
     """)
     
-    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-    
     # Update template info
     with st.form("update_template_info"):
         new_name = st.text_input("Name", value=tpl_name)
@@ -148,8 +144,6 @@ with right:
             db.update_task_template(ws_id, selected_tpl_id, {"is_active": False})
             st.success("Deactivated.")
             st.rerun()
-    
-    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
     
     # Items editor
     items = tpl.get("items", [])
@@ -203,8 +197,6 @@ with right:
                         st.rerun()
     
     render_html("</div>")
-    
-    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
     
     # Add new item
     render_html('<div class="ds-card">')

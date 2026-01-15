@@ -41,10 +41,7 @@ if 'calendar_color_mode' not in st.session_state:
 if 'heatmap_enabled' not in st.session_state:
     st.session_state.heatmap_enabled = False
 
-st.markdown("""
-    <h1 style="color: #ffffff;">📅 Calendar & Task Schedule</h1>
-    <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 30px;">View your tasks and deadlines in calendar format</p>
-""", unsafe_allow_html=True)
+# Remove all st.markdown CSS blocks from this file.
 
 # View options and controls
 col1, col2, col3, col4 = st.columns([1.5, 1.5, 1, 1])
@@ -87,8 +84,6 @@ with col4:
         st.session_state.calendar_month = datetime.date.today().month
         st.session_state.calendar_year = datetime.date.today().year
         st.rerun()
-
-st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
 
 # Calendar navigation
 col1, col2, col3 = st.columns([1, 2, 1])

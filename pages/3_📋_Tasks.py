@@ -112,37 +112,6 @@ st.set_page_config(page_title="Tasks - DreamShift", page_icon="✅", layout="wid
 from src.ui import load_global_css
 load_global_css()
 
-# Extra minimal CSS (kept inside this page so you can paste once and go)
-render_html("""
-<style>
-.ds-head{display:flex;justify-content:space-between;align-items:flex-end;margin:8px 0 18px 0}
-.ds-title{font-size:34px;font-weight:900;line-height:1.05;margin:0;color:#fff}
-.ds-sub{margin:6px 0 0 0;color:rgba(255,255,255,.65);font-size:14px}
-.ds-seg{display:flex;gap:8px;align-items:center;justify-content:flex-end}
-.ds-chip{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);padding:8px 12px;border-radius:12px;color:rgba(255,255,255,.85);font-weight:800;font-size:13px}
-.ds-chip.active{border-color: rgba(246,185,0,.55); background: rgba(246,185,0,.10); color: #f6b900;}
-.ds-card{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);border-radius:16px;padding:14px 14px;margin-bottom:12px}
-.ds-card h4{margin:0 0 6px 0;color:#fff}
-.ds-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0 6px 0}
-.ds-kpi{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);border-radius:16px;padding:14px}
-.ds-kpi .k{color:rgba(255,255,255,.6);font-size:12px;font-weight:800;letter-spacing:.08em}
-.ds-kpi .v{color:#fff;font-size:24px;font-weight:950;margin-top:6px}
-.ds-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.ds-meta{color:rgba(255,255,255,.65);font-size:13px;line-height:1.4;margin-top:4px}
-.ds-pill{display:inline-flex;align-items:center;gap:8px}
-.ds-progress{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:12px}
-.ds-progress > div{height:100%;background:linear-gradient(90deg,#f6b900,#ff8c00);width:0}
-.ds-kanban-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);font-weight:900;color:rgba(255,255,255,.88)}
-.ds-count{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:rgba(255,255,255,.75)}
-.ds-task{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);border-radius:16px;padding:12px;margin-bottom:10px}
-.ds-task .t{font-weight:950;color:#fff;margin:0 0 6px 0;font-size:14px}
-.ds-task .m{color:rgba(255,255,255,.65);font-size:12px;line-height:1.4}
-.ds-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-.ds-actions-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
-.ds-timer{font-size:34px;font-weight:1000;text-align:center;padding:14px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
-</style>
-""")
-
 db = DreamShiftDB()
 
 # ---------- auth ----------

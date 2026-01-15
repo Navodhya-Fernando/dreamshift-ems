@@ -6,3 +6,5 @@
 #     if st.button("Button Text"):
 #         ...
 # Apply this pattern to all single buttons and form_submit_buttons on this page.
+
+# Remove all st.markdown CSS blocks from this file.
