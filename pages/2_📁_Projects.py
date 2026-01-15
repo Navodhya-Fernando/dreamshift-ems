@@ -410,12 +410,12 @@ with left:
                   </div>
                 </div>
                 """)
-                
-                # Buttons without nested columns
-                if st.button("View Details", key=f"view_{proj_id}", use_container_width=True):
-                    st.session_state.selected_project_id = proj_id
-                    st.switch_page("pages/project_details.py")
-
+                # Real Streamlit button, styled and right-aligned
+                btn_col1, btn_col2 = st.columns([5,1])
+                with btn_col2:
+                    if st.button("View Details", key=f"view_{proj_id}", use_container_width=True):
+                        st.session_state.selected_project_id = proj_id
+                        st.switch_page("pages/project_details.py")
 # ------------------------------------------------------------
 # Footer
 # ------------------------------------------------------------
