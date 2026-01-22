@@ -1,91 +1,106 @@
-/* static/styles.css */
+/* --- GLOBAL VARIABLES --- */
 :root {
-    --bg-main: #24101a;
-    --bg-container: #411c30;
-    --text-primary: #ffffff;
-    --text-secondary: #cccccc;
-    --accent-yellow: #f6b900;
-    --accent-yellow-hover: #ffe500;
-    --border-color: #5a2d45;
-    --shadow-lg: 0 18px 60px rgba(0, 0, 0, 0.55);
+    --primary-color: #f6b900;
+    --bg-color: #0e1117;
+    --sidebar-bg: #161b22;
+    --text-color: #fafafa;
+    --card-bg: #1e2329;
+    --border-color: rgba(255, 255, 255, 0.08);
 }
 
-.stApp { background-color: var(--bg-main) !important; }
+/* --- SIDEBAR CONTAINER --- */
+/* Target the main Streamlit sidebar container */
+[data-testid="stSidebar"] {
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+}
 
-/* --- HEADERS (SVG + Title in one line) --- */
-.ds-header-flex {
+/* HIDE the default Streamlit Navigation List */
+[data-testid="stSidebarNav"] {
+    display: none !important;
+}
+
+/* --- CUSTOM NAVIGATION LINKS (st.page_link) --- */
+
+/* Reset default button styles for page links */
+button[kind="secondary"] {
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Style the actual link container */
+a[data-testid="stPageLink-NavLink"] {
+    background-color: transparent;
+    border: none;
+    color: #b0b3b8; /* Muted text color */
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease-in-out;
+    margin-bottom: 2px;
+    text-decoration: none !important;
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.95rem;
 }
-.ds-header-title {
-    font-size: 2.2rem;
-    font-weight: 800;
+
+/* Hover State */
+a[data-testid="stPageLink-NavLink"]:hover {
+    background-color: rgba(255, 255, 255, 0.05);
     color: #fff;
-    margin: 0;
-    line-height: 1.1;
+    transform: translateX(3px); /* Subtle slide effect */
 }
 
-/* --- CLOCKIFY-STYLE TIMER --- */
-.ds-timer-card {
-    background: #1a0f14;
-    border: 1px solid #f6b900;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 20px;
-    text-align: center;
-    box-shadow: 0 0 15px rgba(246, 185, 0, 0.15);
-}
-.ds-timer-display {
-    font-family: 'Courier New', monospace;
-    font-size: 1.8rem;
-    font-weight: 900;
-    color: #f6b900;
-    margin: 4px 0 10px;
+/* Active/Current Page State */
+a[data-testid="stPageLink-NavLink"][aria-current="page"] {
+    background-color: rgba(246, 185, 0, 0.15); /* Low opacity yellow */
+    color: var(--primary-color);
+    font-weight: 600;
+    border-left: 3px solid var(--primary-color);
 }
 
-/* --- BUTTONS --- */
-.stButton > button, .stFormSubmitButton > button {
-    background-color: var(--accent-yellow) !important;
-    color: #411c30 !important;
-    border: 1px solid var(--accent-yellow) !important;
-    border-radius: 6px !important;
-    font-weight: 700 !important;
-    transition: all 0.2s ease !important;
-}
-.stButton > button:hover {
-    background-color: var(--accent-yellow-hover) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(246, 185, 0, 0.3);
+/* Icons inside the links */
+a[data-testid="stPageLink-NavLink"] svg {
+    fill: currentColor;
 }
 
-/* --- CARDS & METRICS --- */
+/* --- GENERAL UI COMPONENTS --- */
+
+/* Cards (Used in Dashboards) */
 .ds-card {
-    background: var(--bg-container);
+    background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
-    margin-bottom: 16px;
-}
-.ds-metric-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 15px;
-}
-.ds-metric-box {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 10px;
-    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-/* --- INPUTS --- */
-input, textarea, select {
-    background-color: #2e1422 !important;
-    color: white !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    border-radius: 6px !important;
+/* Page Headers */
+.ds-header-flex {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.ds-header-title {
+    margin: 0;
+    font-weight: 700;
+    font-size: 2rem;
+}
+
+/* Badges */
+.ds-badge {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+/* Adjust Streamlit's top padding */
+.block-container {
+    padding-top: 3rem;
+    max-width: 95rem;
 }

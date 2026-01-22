@@ -1,8 +1,11 @@
 import os
 import datetime
+import secrets
+import re
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import bcrypt
+from src.mailer import send_task_assignment_email, send_password_reset_email
 
 class DreamShiftDB:
     def __init__(self):
@@ -14,15 +17,20 @@ class DreamShiftDB:
             
         try:
             self.client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+            # Trigger a connection check
             self.client.admin.command('ping')
             self.db = self.client[DB_NAME]
-            self.ObjectId = ObjectId  # Expose ObjectId for pages
+            self.ObjectId = ObjectId
         except Exception as e:
             print(f"❌ MongoDB Connection Failed: {e}")
             raise e
 
-    # --- AUTHENTICATION ---
+    # ==========================================
+    # 🔐 AUTHENTICATION & USERS
+    # ==========================================
+
     def create_user(self, email, password, name):
+        """Creates a new user with hashed password."""
         if self.db.users.find_one({"email": email}):
             return False, "Email already registered."
         
@@ -32,26 +40,81 @@ class DreamShiftDB:
             "password": hashed,
             "name": name,
             "created_at": datetime.datetime.utcnow(),
-            "preferences": {"email_notifications": True},
-            "role": "Member"
+            "role": "Member",
+            "preferences": {"email_notifications": True}
         }
         self.db.users.insert_one(user_doc)
         return True, "Account created."
 
     def authenticate_user(self, email, password):
+        """Checks email and password against database."""
         user = self.db.users.find_one({"email": email})
         if user:
             try:
                 if bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
                     return user
             except:
-                if user['password'] == password: return user # Fallback
+                # Fallback for legacy plain text passwords (if any)
+                if user['password'] == password: return user
         return None
     
     def get_user(self, email):
         return self.db.users.find_one({"email": email})
 
-    # --- WORKSPACES ---
+    def get_user_stats(self, email):
+        """Returns basic productivity stats for the user."""
+        total = self.db.tasks.count_documents({"assignee": email})
+        completed = self.db.tasks.count_documents({"assignee": email, "status": "Completed"})
+        rate = int((completed / total * 100) if total > 0 else 0)
+        return {"assigned": total, "completed": completed, "rate": rate}
+
+    # ==========================================
+    # 📧 PASSWORD RESET (Email Trigger)
+    # ==========================================
+
+    def create_password_reset_token(self, email):
+        """Generates a token and sends an EMAIL."""
+        user = self.get_user(email)
+        if not user:
+            return False, "User not found"
+        
+        token = secrets.token_urlsafe(32)
+        expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        
+        self.db.password_resets.insert_one({
+            "email": email,
+            "token": token,
+            "expires_at": expiration,
+            "used": False
+        })
+        
+        # Construct link (adjust domain for production)
+        reset_link = f"http://localhost:8501/password-reset?token={token}" 
+        
+        # 📨 TRIGGER EMAIL
+        send_password_reset_email(email, reset_link)
+        return True, "Reset link sent to email."
+
+    def reset_password_with_token(self, token, new_password):
+        """Verifies token and updates password."""
+        record = self.db.password_resets.find_one({"token": token, "used": False})
+        if not record:
+            return False, "Invalid or used token."
+        
+        if record['expires_at'] < datetime.datetime.utcnow():
+            return False, "Token expired."
+            
+        hashed = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        self.db.users.update_one({"email": record['email']}, {"$set": {"password": hashed}})
+        self.db.password_resets.update_one({"_id": record['_id']}, {"$set": {"used": True}})
+        
+        return True, "Password updated successfully."
+
+    # ==========================================
+    # 🏢 WORKSPACES
+    # ==========================================
+
     def get_user_workspaces(self, email):
         return list(self.db.workspaces.find({"members.email": email}))
     
@@ -66,7 +129,6 @@ class DreamShiftDB:
         return self.db.workspaces.insert_one(doc).inserted_id
 
     def add_workspace_member(self, ws_id, email, role="Employee"):
-        # Check if user exists first
         if not self.db.users.find_one({"email": email}):
             return False, "User not found."
         
@@ -89,7 +151,10 @@ class DreamShiftDB:
     def update_workspace_statuses(self, ws_id, statuses):
         self.db.workspaces.update_one({"_id": ObjectId(ws_id)}, {"$set": {"custom_statuses": statuses}})
 
-    # --- TASKS ---
+    # ==========================================
+    # ✅ TASKS (Email Trigger)
+    # ==========================================
+
     def create_task(self, ws_id, title, desc, due_date, assignee, status, priority, project_id, creator):
         task_id = self.db.tasks.insert_one({
             "workspace_id": ws_id,
@@ -105,11 +170,17 @@ class DreamShiftDB:
             "subtasks": []
         }).inserted_id
         
+        # 📨 TRIGGER EMAIL + INBOX NOTIFICATION
         if assignee and assignee != creator:
+            # 1. Email
+            send_task_assignment_email(assignee, title, creator, due_date)
+            # 2. Inbox
             self.create_notification(assignee, "New Task", f"Assigned: {title}", "info")
+            
         return task_id
 
     def get_tasks_with_urgency(self, query):
+        """Fetches tasks and calculates urgency color locally."""
         tasks = list(self.db.tasks.find(query))
         now = datetime.datetime.utcnow()
         for t in tasks:
@@ -123,7 +194,10 @@ class DreamShiftDB:
     def update_task_status(self, task_id, status):
         self.db.tasks.update_one({"_id": ObjectId(task_id)}, {"$set": {"status": status}})
 
-    # --- SUBTASKS ---
+    # ==========================================
+    # ☑️ SUBTASKS
+    # ==========================================
+
     def add_subtask(self, task_id, title):
         sub_id = str(ObjectId())
         self.db.tasks.update_one(
@@ -137,7 +211,10 @@ class DreamShiftDB:
             {"$set": {"subtasks.$.completed": completed}}
         )
 
-    # --- COMMENTS & CHAT ---
+    # ==========================================
+    # 💬 COMMENTS (Inbox Only)
+    # ==========================================
+
     def add_comment(self, entity_type, entity_id, user_email, text, **kwargs):
         user = self.get_user(user_email)
         comment = {
@@ -148,29 +225,28 @@ class DreamShiftDB:
             "text": text,
             "created_at": datetime.datetime.utcnow(),
             "reactions": {},
-            "is_pinned": False,
             "is_deleted": False
         }
-        comment.update(kwargs) # Parent comment ID, etc.
+        comment.update(kwargs)
         self.db.comments.insert_one(comment)
         
-        # Handle mentions
+        # 🔔 INBOX ONLY: Handle Mentions
         self.handle_mentions(text, user['name'], f"{entity_type}:{entity_id}")
 
     def get_comments(self, entity_type, entity_id):
         return list(self.db.comments.find({
             "entity_type": entity_type, 
-            "entity_id": entity_id
+            "entity_id": entity_id,
+            "is_deleted": False
         }).sort("created_at", 1))
 
-    def delete_comment(self, cid, user_email, is_admin_action=False):
+    def delete_comment(self, cid):
         self.db.comments.update_one(
             {"_id": ObjectId(cid)}, 
-            {"$set": {"is_deleted": True, "deleted_at": datetime.datetime.utcnow()}}
+            {"$set": {"is_deleted": True}}
         )
 
     def toggle_reaction(self, cid, emoji, user_email):
-        # Determine if we add or remove
         comment = self.db.comments.find_one({"_id": ObjectId(cid)})
         current = comment.get("reactions", {}).get(emoji, [])
         if user_email in current:
@@ -178,7 +254,10 @@ class DreamShiftDB:
         else:
             self.db.comments.update_one({"_id": ObjectId(cid)}, {"$push": {f"reactions.{emoji}": user_email}})
 
-    # --- TIME TRACKING ---
+    # ==========================================
+    # ⏱️ TIME TRACKING
+    # ==========================================
+
     def log_time_entry(self, task_id, user_email, seconds, description=""):
         self.db.time_entries.insert_one({
             "task_id": task_id,
@@ -191,8 +270,12 @@ class DreamShiftDB:
     def get_task_time_entries(self, task_id):
         return list(self.db.time_entries.find({"task_id": task_id}).sort("created_at", -1))
 
-    # --- EXTENSIONS ---
+    # ==========================================
+    # 📅 EXTENSIONS (Inbox Only)
+    # ==========================================
+
     def request_extension(self, task_id, requester, new_date, reason):
+        """Creates an extension request and notifies admins via INBOX only."""
         req_id = self.db.extension_requests.insert_one({
             "task_id": task_id,
             "requester": requester,
@@ -202,18 +285,24 @@ class DreamShiftDB:
             "created_at": datetime.datetime.utcnow()
         }).inserted_id
         
-        # Find admins to notify
+        # Find admins
         task = self.db.tasks.find_one({"_id": ObjectId(task_id)})
+        if not task: return
         ws = self.db.workspaces.find_one({"_id": ObjectId(task['workspace_id'])})
         admins = [m['email'] for m in ws['members'] if m['role'] in ['Owner', 'Admin']]
         
+        # 🔔 INBOX ONLY: Notify Admins
         for admin in admins:
             self.create_notification(admin, "Extension Request", f"{requester} requested extension for {task['title']}", "warning")
         
         return admins
 
-    # --- NOTIFICATIONS & UTILS ---
+    # ==========================================
+    # 🔔 INTERNAL NOTIFICATIONS & UTILS
+    # ==========================================
+
     def create_notification(self, email, title, msg, n_type="info", link=None):
+        """Creates an internal DB notification. Does NOT send email."""
         self.db.notifications.insert_one({
             "user_email": email, "title": title, "message": msg,
             "type": n_type, "link": link, "read": False,
@@ -227,14 +316,7 @@ class DreamShiftDB:
         self.db.notifications.update_one({"_id": ObjectId(nid)}, {"$set": {"read": True}})
 
     def handle_mentions(self, text, source_user, link):
-        import re
+        """Parses @mentions and creates Inbox notifications."""
         emails = re.findall(r"@([\w\.-]+@[\w\.-]+)", text)
         for email in emails:
             self.create_notification(email, "Mentioned", f"{source_user} mentioned you.", "mention", link)
-
-    def get_user_stats(self, email):
-        # Basic stats implementation
-        total = self.db.tasks.count_documents({"assignee": email})
-        completed = self.db.tasks.count_documents({"assignee": email, "status": "Completed"})
-        rate = int((completed / total * 100) if total > 0 else 0)
-        return {"assigned": total, "completed": completed, "rate": rate}
