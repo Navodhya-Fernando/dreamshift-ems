@@ -27,20 +27,6 @@ user = db.get_user(st.session_state.user_email)
 
 st.title("⚙️ Settings")
 
-# Global card style
-card_style = """
-    <style>
-    .custom-card {
-        background-color: #1e1e2e;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 16px;
-    }
-    </style>
-"""
-
-st.markdown(card_style, unsafe_allow_html=True)
-
 # Tabs for different settings
 tab1, tab2, tab3, tab4 = st.tabs(["🎨 Appearance", "🔔 Notifications", "🔐 Security", "🔗 Integrations"])
 

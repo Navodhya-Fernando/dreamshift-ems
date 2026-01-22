@@ -15,65 +15,6 @@ db = DreamShiftDB()
 # Get reset token from URL
 reset_token = st.query_params.get("reset_token")
 
-# Styling
-st.markdown(
-    """
-    <style>
-      :root{
-        --bg:#24101a;
-        --accent:#411c30;
-        --text:#ffffff;
-      }
-      body{
-        background: var(--bg);
-        color: var(--text);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      }
-      .ds-reset-wrap{
-        max-width: 450px;
-        margin: 60px auto;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 20px;
-        padding: 50px 40px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-      }
-      .ds-reset-title{
-        color: #f6b900;
-        font-size: 28px;
-        font-weight: 900;
-        text-align: left;
-        margin-bottom: 10px;
-        letter-spacing: 0.5px;
-      }
-      .ds-reset-subtitle{
-        color: rgba(255,255,255,0.6);
-        text-align: left;
-        font-size: 14px;
-        margin-bottom: 30px;
-      }
-      .stTextInput > label, .stForm > label{
-        color: rgba(255,255,255,0.8);
-        font-weight: 600;
-        font-size: 13px;
-      }
-      .ds-gap-section{
-        margin-top: 1.5rem;
-        margin-bottom: 1.5rem;
-      }
-      .ds-gap-card{
-        margin-top: 1rem;
-        margin-bottom: 1rem;
-      }
-      .ds-gap-inline{
-        margin-right: 0.5rem;
-        margin-left: 0.5rem;
-      }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 st.markdown('<div class="ds-reset-wrap">', unsafe_allow_html=True)
 
 if not reset_token:
