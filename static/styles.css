@@ -401,18 +401,6 @@ h1, h2, h3, h4, h5, h6, p, label {
     background: rgba(0, 255, 136, 0.1);
 }
 
-/* Buttons */
-/* Compact button fix for all Streamlit buttons */
-.stButton > button, .stFormSubmitButton > button {
-  display: inline-block !important;
-  width: auto !important;
-  min-width: 0 !important;
-  max-width: 220px !important;
-  padding-left: 18px !important;
-  padding-right: 18px !important;
-  margin-top: 6px !important;
-  margin-bottom: 6px !important;
-}
 .btn-primary {
     background: #f6b900;
     color: #411c30;
@@ -446,51 +434,6 @@ h1, h2, h3, h4, h5, h6, p, label {
 .btn-secondary:hover {
     background: var(--accent-primary);
     color: var(--bg-main);
-}
-
-/* =========================
-   Streamlit button theming
-   - Default = subtle (ClickUp-like)
-   - Primary = DreamShift yellow
-   ========================= */
-
-/* Default buttons (secondary/unspecified) */
- .stButton > button {
-  background: rgba(255,255,255,0.06) !important;
-  color: #fff !important;
-  border: 1px solid rgba(255,255,255,0.12) !important;
-  border-radius: 10px !important;
-  font-weight: 650 !important;
-  padding: 0.5rem 0.9rem !important;
-  box-shadow: none !important;
-  letter-spacing: 0.2px !important;
-}
-
-.stButton > button:hover,
-  background: rgba(255,255,255,0.10) !important;
-  color: #fff !important;
-  border-color: rgba(255,255,255,0.18) !important;
-  transform: none !important;
-}
-
-/* Primary buttons only */
-.stButton > button[kind="primary"],
-  background: #f6b900 !important;
-  color: #411c30 !important;
-  border: 1px solid #f6b900 !important;
-  box-shadow: 0 6px 18px rgba(246,185,0,0.22) !important;
-  font-weight: 800 !important;
-}
-
-.stButton > button[kind="primary"]:hover,
-  background: #ffe500 !important;
-  color: #411c30 !important;
-  box-shadow: 0 10px 26px rgba(246,185,0,0.32) !important;
-}
-
-/* Make icon-only buttons tighter */
-.stButton > button:has(span:empty) {
-  padding: 0.45rem 0.65rem !important;
 }
 
 .btn-danger {
