@@ -1,741 +1,502 @@
 /* =========================================================
-   DreamShift EMS - Final UI Styles
-   Theme: Background #24101a | Primary #f6b900 | Text #411c30
-   ========================================================= */
+     DreamShift EMS - Modern Minimal UI
+     Palette: #24101a (bg), #f6b900 (accent), #411c30 (text)
+     ========================================================= */
 
-/* ---------- GLOBAL VARIABLES ---------- */
 :root {
-  --primary-color: #f6b900;
-  --primary-hover: #ffe500;
-  --primary-text: #411c30;
-
-  --bg-color: #24101a;
-  --sidebar-bg: #1e0d16;
-  --surface-1: #2a1220;   /* cards */
-  --surface-2: #1a0b12;   /* inputs */
-  --surface-3: rgba(255,255,255,0.04);
-
-  --text-color: #ffffff;
-  --text-muted: rgba(255,255,255,0.68);
-  --text-soft: rgba(255,255,255,0.80);
-
-  --border-color: rgba(255, 255, 255, 0.09);
-  --border-strong: rgba(255, 255, 255, 0.14);
-
-  --shadow-1: 0 2px 10px rgba(0,0,0,0.28);
-  --shadow-2: 0 10px 30px rgba(0,0,0,0.35);
-
-  --radius-1: 10px;
-  --radius-2: 14px;
-  --radius-3: 18px;
-
-  --ring: 0 0 0 3px rgba(246,185,0,0.20);
-
-  --danger: #d32f2f;
-  --warn: #f57c00;
-  --ok: #4caf50;
+    --primary: #f6b900;
+    --primary-hover: #ffe500;
+    --primary-text: #411c30;
+    --bg: #24101a;
+    --bg-soft: #1a0b12;
+    --sidebar: #1b0b13;
+    --card: #2a1220;
+    --card-soft: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.10);
+    --border-strong: rgba(255,255,255,0.18);
+    --text: #ffffff;
+    --text-muted: rgba(255,255,255,0.68);
+    --text-soft: rgba(255,255,255,0.82);
+    --shadow-1: 0 6px 16px rgba(0,0,0,0.28);
+    --shadow-2: 0 16px 40px rgba(0,0,0,0.35);
+    --radius-1: 10px;
+    --radius-2: 14px;
+    --radius-3: 18px;
+    --ring: 0 0 0 3px rgba(246,185,0,0.25);
+    --danger: #d32f2f;
+    --warn: #f57c00;
+    --ok: #4caf50;
 }
 
-/* ---------- APP BACKGROUND ---------- */
+* { box-sizing: border-box; }
+
+html, body, [class*="css"] {
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
 .stApp,
 section[data-testid="stAppViewContainer"] {
-  background-color: var(--bg-color) !important;
-  color: var(--text-color) !important;
+    background: var(--bg) !important;
+    color: var(--text) !important;
 }
 
-/* Max width and spacing */
 .block-container {
-  padding-top: 2.6rem;
-  padding-bottom: 3rem;
-  max-width: 96rem;
+    padding-top: 2.2rem;
+    padding-bottom: 3rem;
+    max-width: 96rem;
 }
 
-/* Typography */
-html, body, [class*="css"] {
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-}
+h1, h2, h3, h4 { letter-spacing: -0.01em; }
 
-h1, h2, h3, h4 {
-  letter-spacing: -0.01em;
-}
-
-/* Muted helpers */
-.ds-muted { color: var(--text-muted); }
-.ds-strong { font-weight: 800; color: var(--text-color); }
-
-/* Divider helper used in pages */
-.ds-divider {
-  height: 1px;
-  width: 100%;
-  background: var(--border-color);
-  margin: 16px 0;
-}
-
-/* ---------- SIDEBAR ---------- */
+/* ---------------------------------------------------------
+     SIDEBAR
+     --------------------------------------------------------- */
 [data-testid="stSidebar"] {
-  background-color: var(--sidebar-bg) !important;
-  border-right: 1px solid var(--border-color);
+    background: var(--sidebar) !important;
+    border-right: 1px solid var(--border);
 }
 
-/* Hide Streamlit default nav */
 [data-testid="stSidebarNav"],
 section[data-testid="stSidebarNav"],
 [data-testid="stSidebarNav"] * {
-  display: none !important;
+    display: none !important;
 }
 
-/* Sidebar labels */
-[data-testid="stSidebar"] label {
-  color: var(--text-muted) !important;
-  font-size: 0.8rem;
-  font-weight: 600;
+.ds-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 6px 0 18px 0;
 }
 
-/* Sidebar select box */
-[data-testid="stSidebar"] [data-baseweb="select"] > div {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
-  color: var(--text-color) !important;
-  border-radius: 10px;
-  min-height: 42px;
-  box-shadow: none !important;
+.ds-brand-title {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--primary);
+    letter-spacing: -0.02em;
 }
 
-[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within {
-  border-color: rgba(246,185,0,0.45) !important;
-  box-shadow: var(--ring) !important;
+.ds-brand-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
 }
 
-[data-testid="stSidebar"] [data-baseweb="select"] span {
-  color: var(--text-color) !important;
+.ds-sidebar-section-title {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 8px 0 6px;
 }
 
-[data-baseweb="popover"] {
-  background: var(--surface-1) !important;
-  border: 1px solid var(--border-color) !important;
-  box-shadow: var(--shadow-2) !important;
+.ds-sidebar-sep {
+    height: 1px;
+    width: 100%;
+    background: var(--border);
+    margin: 12px 0;
 }
 
-[data-baseweb="popover"] [role="listbox"] {
-  padding: 6px 0;
-}
-
-[data-baseweb="popover"] [role="option"] {
-  background-color: transparent !important;
-  color: #eee !important;
-  border-radius: 8px;
-  margin: 0 6px;
-  padding: 8px 12px;
-}
-
-[data-baseweb="popover"] [role="option"]:hover {
-  background-color: rgba(246, 185, 0, 0.18) !important;
-  color: var(--primary-color) !important;
-}
-
-/* Custom Page Links in Sidebar */
 a[data-testid="stPageLink-NavLink"] {
-  background-color: transparent;
-  border: none;
-  color: var(--text-color);
-  font-weight: 600;
-  padding: 10px 12px;
-  border-radius: 10px;
-  transition: background 0.15s ease, transform 0.15s ease;
-  margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none !important;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text);
+    font-weight: 600;
+    padding: 9px 12px;
+    border-radius: 10px;
+    transition: background 0.15s ease, transform 0.15s ease, border 0.15s ease;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none !important;
 }
 
 a[data-testid="stPageLink-NavLink"]:hover {
-  background-color: rgba(255, 255, 255, 0.07);
-  transform: translateX(3px);
+    background: rgba(255,255,255,0.06);
+    transform: translateX(2px);
+    border-color: rgba(255,255,255,0.08);
 }
 
 a[data-testid="stPageLink-NavLink"][aria-current="page"] {
-  background-color: rgba(246, 185, 0, 0.10);
-  color: var(--primary-color);
-  border-left: 3px solid var(--primary-color);
+    background: rgba(246,185,0,0.12);
+    color: var(--primary);
+    border-color: rgba(246,185,0,0.3);
+    box-shadow: inset 3px 0 0 var(--primary);
 }
 
-/* ---------- BUTTONS ---------- */
+/* Sidebar select */
+[data-testid="stSidebar"] label {
+    color: var(--text-muted) !important;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] > div {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+    color: var(--text) !important;
+    border-radius: 10px;
+    min-height: 40px;
+    box-shadow: none !important;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within {
+    box-shadow: var(--ring) !important;
+    border-color: rgba(246,185,0,0.45) !important;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] span {
+    color: var(--text) !important;
+}
+
+[data-baseweb="popover"] {
+    background: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-2) !important;
+}
+
+[data-baseweb="popover"] [role="option"] {
+    background: transparent !important;
+    color: var(--text) !important;
+    border-radius: 8px;
+    margin: 0 6px;
+    padding: 8px 12px;
+}
+
+[data-baseweb="popover"] [role="option"]:hover {
+    background: rgba(246,185,0,0.16) !important;
+    color: var(--primary) !important;
+}
+
+/* ---------------------------------------------------------
+     BUTTONS & INPUTS
+     --------------------------------------------------------- */
 button[kind="primary"],
 button[data-testid="baseButton-primary"] {
-  background-color: var(--primary-color) !important;
-  color: var(--primary-text) !important;
-  border: none !important;
-  border-radius: 10px !important;
-  font-weight: 800 !important;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
-  padding: 0.56rem 1rem !important;
-  box-shadow: 0 6px 16px rgba(246, 185, 0, 0.12);
+    background: var(--primary) !important;
+    color: var(--primary-text) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 800 !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    padding: 0.55rem 1rem !important;
+    box-shadow: 0 8px 20px rgba(246,185,0,0.16);
 }
 
 button[kind="primary"]:hover,
 button[data-testid="baseButton-primary"]:hover {
-  background-color: var(--primary-hover) !important;
-  color: var(--primary-text) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(246, 185, 0, 0.20);
-}
-
-button[kind="primary"]:focus,
-button[data-testid="baseButton-primary"]:focus {
-  box-shadow: var(--ring) !important;
+    background: var(--primary-hover) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px rgba(246,185,0,0.22);
 }
 
 button[kind="secondary"],
 button[data-testid="baseButton-secondary"] {
-  background-color: rgba(255,255,255,0.03) !important;
-  color: var(--text-color) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 10px !important;
-  font-weight: 700 !important;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    background: rgba(255,255,255,0.04) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
 }
 
 button[kind="secondary"]:hover,
 button[data-testid="baseButton-secondary"]:hover {
-  background-color: rgba(255,255,255,0.06) !important;
-  border-color: rgba(255,255,255,0.14) !important;
-  transform: translateY(-1px);
+    border-color: rgba(255,255,255,0.2) !important;
+    background: rgba(255,255,255,0.07) !important;
 }
 
-button[kind="secondary"]:focus,
-button[data-testid="baseButton-secondary"]:focus {
-  box-shadow: var(--ring) !important;
-}
-
-/* ---------- FORMS ---------- */
 input, textarea, select,
 [data-baseweb="select"] div,
 [data-baseweb="input"] input {
-  background-color: var(--surface-2) !important;
-  color: var(--text-color) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 10px !important;
+    background: var(--bg-soft) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
 }
 
 textarea:focus, input:focus,
 [data-baseweb="select"] div:focus-within {
-  box-shadow: var(--ring) !important;
-  border-color: rgba(246,185,0,0.35) !important;
+    box-shadow: var(--ring) !important;
+    border-color: rgba(246,185,0,0.45) !important;
 }
 
-/* Make Streamlit form labels and help text cleaner */
-label, .stMarkdown, .stCaption, .stAlert, .stText {
-  color: var(--text-color);
-}
-
-/* ---------- CARDS ---------- */
+/* ---------------------------------------------------------
+     CARDS & HEADERS
+     --------------------------------------------------------- */
 .ds-card {
-  background-color: var(--surface-1);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-2);
-  padding: 18px;
-  margin-bottom: 14px;
-  box-shadow: var(--shadow-1);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2);
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-1);
 }
 
-.ds-card-title {
-  font-size: 1.05rem;
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  color: var(--text-color);
-  margin-bottom: 6px;
+.ds-card-compact {
+    padding: 12px 14px;
 }
 
-.ds-card-subtitle {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-bottom: 14px;
-  line-height: 1.45;
+.ds-card-soft {
+    background: var(--card-soft);
+    border: 1px solid var(--border);
 }
 
-/* ---------- PAGE HEADER (used everywhere) ---------- */
-.ds-page-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 10px 0 14px 0;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 18px;
+.ds-header-flex {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
 }
 
-.ds-page-head-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.ds-header-flex svg {
+    width: 22px;
+    height: 22px;
+    display: block;
 }
 
-.ds-page-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
-  background: rgba(246,185,0,0.08);
-  border: 1px solid rgba(246,185,0,0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.ds-header-title {
+    color: var(--text);
+    font-weight: 900;
+    letter-spacing: -0.01em;
 }
 
-.ds-page-icon svg {
-  width: 18px;
-  height: 18px;
-  display: block;
+.ds-section-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 10px;
 }
 
-.ds-page-titles { display: flex; flex-direction: column; gap: 2px; }
-
-.ds-page-title {
-  font-size: 1.55rem;
-  font-weight: 950;
-  color: var(--text-color);
-  line-height: 1.1;
+.ds-meta {
+    display: flex;
+    gap: 14px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
 }
 
-.ds-page-subtitle {
-  font-size: 0.95rem;
-  color: var(--text-muted);
+.ds-meta-item {
+    padding: 2px 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 999px;
 }
 
-/* ---------- PILLS / BADGES ---------- */
 .ds-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  background: rgba(246,185,0,0.14);
-  color: var(--primary-color);
-  border: 1px solid rgba(246,185,0,0.16);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    background: rgba(246,185,0,0.16);
+    color: var(--primary);
+    border: 1px solid rgba(246,185,0,0.2);
 }
 
-.ds-pill-ghost {
-  background: rgba(255,255,255,0.04);
-  color: var(--text-soft);
-  border: 1px solid var(--border-color);
-}
-
-/* Backward compat */
 .ds-badge {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  display: inline-block;
-  color: var(--text-soft);
-  border: 1px solid var(--border-color);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+    color: var(--text-soft);
 }
 
-/* ---------- EMPTY STATES ---------- */
-.ds-empty-state {
-  border: 1px solid var(--border-color);
-  background: rgba(255,255,255,0.02);
-  border-radius: var(--radius-2);
-  padding: 28px;
-  text-align: center;
+/* ---------------------------------------------------------
+     METRICS & TABS
+     --------------------------------------------------------- */
+[data-testid="stMetric"] {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2);
+    padding: 14px;
+    box-shadow: var(--shadow-1);
 }
 
-.ds-empty-title {
-  font-size: 1.1rem;
-  font-weight: 900;
-  color: var(--text-color);
+.ds-metric-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
 }
 
-.ds-empty-sub {
-  margin-top: 6px;
-  color: var(--text-muted);
-  line-height: 1.45;
+.ds-metric-value {
+    font-size: 2rem;
+    font-weight: 900;
+    margin: 6px 0;
 }
 
-.ds-empty-mini {
-  border: 1px dashed rgba(255,255,255,0.14);
-  background: rgba(255,255,255,0.02);
-  border-radius: var(--radius-2);
-  padding: 16px;
-  color: var(--text-muted);
+.ds-metric-delta {
+    font-size: 0.8rem;
+    color: var(--ok);
 }
 
-/* ---------- PROFILE ---------- */
-.ds-profile-card {
-  text-align: center;
-  padding: 22px 18px;
+[data-baseweb="tab-list"] {
+    background: rgba(255,255,255,0.02);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
 }
 
-.ds-avatar {
-  width: 58px;
-  height: 58px;
-  border-radius: 16px;
-  margin: 0 auto 12px auto;
-  background: rgba(246,185,0,0.14);
-  border: 1px solid rgba(246,185,0,0.20);
-  color: var(--primary-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 950;
-  letter-spacing: 0.02em;
-  font-size: 1.05rem;
+[data-baseweb="tab"] {
+    color: var(--text-muted) !important;
+    font-weight: 700;
 }
 
-.ds-profile-name {
-  font-size: 1.18rem;
-  font-weight: 950;
-  color: var(--text-color);
-  margin-bottom: 4px;
+[data-baseweb="tab"][aria-selected="true"] {
+    color: var(--text) !important;
+    background: rgba(246,185,0,0.16) !important;
+    border-radius: 8px;
 }
 
-.ds-profile-email {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-bottom: 10px;
+/* ---------------------------------------------------------
+     EXPANDER
+     --------------------------------------------------------- */
+[data-testid="stExpander"] {
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-2) !important;
+    background: rgba(255,255,255,0.02);
 }
 
-.ds-profile-role {
-  display: inline-flex;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 850;
-  color: var(--text-soft);
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border-color);
+[data-testid="stExpander"] summary {
+    font-weight: 700 !important;
+    color: var(--text) !important;
 }
 
-.ds-security-row {
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 12px;
-  background: rgba(255,255,255,0.02);
-}
-
-.ds-security-k { font-weight: 900; color: var(--text-color); }
-.ds-security-v { margin-top: 2px; font-size: 0.9rem; color: var(--text-muted); }
-
-/* ---------- INBOX ---------- */
-.ds-inbox-summary {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-2);
-  padding: 16px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: var(--shadow-1);
-  margin-bottom: 12px;
-}
-
-.ds-inbox-summary-k {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  font-weight: 700;
-}
-
-.ds-inbox-summary-v {
-  font-size: 1.8rem;
-  font-weight: 950;
-  color: var(--primary-color);
-  line-height: 1;
-}
-
-.ds-inbox-summary-note {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  text-align: right;
-}
-
-.ds-inbox-item {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-2);
-  padding: 14px 14px;
-  margin-bottom: 12px;
-  box-shadow: var(--shadow-1);
-}
-
-.ds-inbox-item-warn {
-  border-left: 4px solid var(--danger);
-  background: rgba(211,47,47,0.08);
-}
-
-.ds-inbox-item-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.ds-inbox-item-title {
-  font-weight: 950;
-  color: var(--text-color);
-  font-size: 1.02rem;
-}
-
-.ds-inbox-item-msg {
-  margin-top: 8px;
-  color: rgba(255,255,255,0.86);
-  line-height: 1.55;
-  font-size: 0.95rem;
-}
-
-.ds-inbox-item-time {
-  margin-top: 10px;
-  color: var(--text-muted);
-  font-size: 0.82rem;
-}
-
-/* ---------- TASK ROWS (Project Details + Lists) ---------- */
-.ds-task-row {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-2);
-  background: rgba(255,255,255,0.025);
-  padding: 12px 14px;
-  margin-bottom: 10px;
-  box-shadow: var(--shadow-1);
-}
-
-.ds-task-row-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.ds-task-title {
-  font-size: 1.02rem;
-  font-weight: 900;
-  color: var(--text-color);
-  line-height: 1.25;
-}
-
-.ds-task-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.ds-task-row-meta {
-  margin-top: 8px;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.ds-task-meta-item {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-/* Urgency classes (optional use across app) */
-.ds-task-low { color: rgba(76,175,80,0.95); }
-.ds-task-medium { color: rgba(246,185,0,0.95); }
-.ds-task-high { color: rgba(245,124,0,0.95); }
-.ds-task-critical { color: rgba(211,47,47,0.95); }
-
-/* ---------- CALENDAR ---------- */
-.ds-calendar-title {
-  font-size: 1.25rem;
-  font-weight: 950;
-  color: var(--text-color);
-  padding-top: 8px;
-}
-
-/* ---------- CHAT / COMMENTS (ClickUp-style) ---------- */
+/* ---------------------------------------------------------
+     CHAT
+     --------------------------------------------------------- */
 .ds-chat-card {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-2);
-  padding: 12px 14px;
-  margin-bottom: 10px;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.ds-chat-card:hover {
-  background: rgba(255,255,255,0.03);
-  border-color: rgba(255,255,255,0.14);
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+    margin-bottom: 8px;
 }
 
 .ds-chat-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
 }
 
 .ds-chat-author {
-  font-weight: 950;
-  color: var(--primary-color);
-  font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--primary);
+    font-size: 0.92rem;
 }
 
 .ds-chat-time {
-  font-size: 0.78rem;
-  color: var(--text-muted);
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }
 
 .ds-chat-body {
-  color: rgba(255,255,255,0.90);
-  font-size: 0.95rem;
-  line-height: 1.55;
+    color: var(--text-soft);
+    font-size: 0.95rem;
+    line-height: 1.55;
 }
 
-/* Mentions */
 .ds-mention {
-  background: rgba(246,185,0,0.14);
-  border: 1px solid rgba(246,185,0,0.18);
-  color: var(--primary-color);
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-weight: 850;
+    color: var(--primary);
+    font-weight: 700;
 }
 
-/* Quote block */
 .ds-quote {
-  margin: 8px 0 10px 0;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(0,0,0,0.18);
+    border-left: 2px solid var(--primary);
+    padding-left: 10px;
+    margin: 8px 0;
+    color: var(--text-muted);
 }
 
-.ds-quote-author {
-  font-size: 0.82rem;
-  font-weight: 900;
-  color: var(--text-soft);
-  margin-bottom: 4px;
+.ds-pin-badge, .ds-edited, .ds-edit-history {
+    display: inline-flex;
+    margin-right: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
 }
 
-.ds-quote-text {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  line-height: 1.45;
-}
-
-/* Thread indentation */
 .ds-indent-1 { margin-left: 18px; border-left: 2px solid rgba(255,255,255,0.06); padding-left: 12px; }
 .ds-indent-2 { margin-left: 36px; border-left: 2px solid rgba(255,255,255,0.06); padding-left: 12px; }
 .ds-indent-3 { margin-left: 54px; border-left: 2px solid rgba(255,255,255,0.06); padding-left: 12px; }
 
-/* Pinned + edited */
-.ds-pin-badge,
-.ds-edited,
-.ds-edit-history {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-right: 8px;
-  margin-top: 6px;
-  font-size: 0.78rem;
-  padding: 4px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border-color);
-  background: rgba(255,255,255,0.03);
-  color: var(--text-muted);
+/* ---------------------------------------------------------
+     HERO / GREETING
+     --------------------------------------------------------- */
+.ds-greeting {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 18px;
 }
 
-.ds-pin-badge { color: var(--primary-color); border-color: rgba(246,185,0,0.18); background: rgba(246,185,0,0.08); }
-
-/* Continue thread link */
-.ds-continue-thread {
-  display: inline-block;
-  margin: 8px 0 0 0;
-  color: var(--primary-color);
-  text-decoration: none;
-  font-weight: 800;
-  font-size: 0.9rem;
+.ds-greeting-title {
+    font-size: 1.9rem;
+    font-weight: 900;
+    margin: 0;
 }
 
-.ds-continue-thread:hover {
-  text-decoration: underline;
+.ds-greeting-sub {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin: 2px 0 0 0;
 }
 
-/* Deleted (if ever used) */
-.ds-deleted {
-  color: rgba(255,255,255,0.55);
-  font-style: italic;
+/* ---------------------------------------------------------
+     TIMER CARD
+     --------------------------------------------------------- */
+.ds-timer-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2);
+    padding: 12px 14px;
+    margin: 10px 0 14px;
+    box-shadow: var(--shadow-1);
 }
 
-.ds-deleted-card {
-  opacity: 0.75;
+.ds-timer-display {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--primary);
 }
 
-/* ---------- AUTH PAGES (Sign-in / Reset) ---------- */
+/* ---------------------------------------------------------
+     LOGIN / AUTH
+     --------------------------------------------------------- */
 .ds-login-wrap {
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 18px 16px;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 30px 28px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-3);
+    box-shadow: var(--shadow-2);
 }
 
-.ds-auth-shell {
-  max-width: 560px;
-  margin: 0 auto;
-  padding: 18px 16px 28px 16px;
+.ds-login-title {
+    font-size: 2.2rem;
+    font-weight: 900;
+    margin: 0;
 }
 
-.ds-auth-brand {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
+.ds-login-subtitle {
+    color: var(--text-muted);
+    margin-top: 6px;
 }
 
-.ds-auth-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.ds-auth-logo-mark {
-  width: 14px;
-  height: 14px;
-  border-radius: 6px;
-  background: var(--primary-color);
-  box-shadow: 0 8px 20px rgba(246,185,0,0.20);
-}
-
-.ds-auth-logo-text {
-  font-weight: 950;
-  color: var(--text-color);
-  font-size: 1.25rem;
-  letter-spacing: -0.01em;
-}
-
-.ds-auth-logo-text span { color: var(--primary-color); }
-
-.ds-auth-sub {
-  color: var(--text-muted);
-  font-size: 0.95rem;
-}
-
-.ds-auth-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-3);
-  padding: 18px;
-  box-shadow: var(--shadow-2);
-}
-
-.ds-auth-title {
-  font-size: 1.05rem;
-  font-weight: 950;
-  color: var(--text-color);
-  margin-bottom: 6px;
-}
-
-.ds-auth-hint {
-  color: var(--text-muted);
-  line-height: 1.45;
-  margin-bottom: 12px;
-}
-
-/* ---------- STREAMLIT STATUS WIDGET ---------- */
+/* ---------------------------------------------------------
+     UTILITIES
+     --------------------------------------------------------- */
 [data-testid="stStatusWidget"] { display: none; }
