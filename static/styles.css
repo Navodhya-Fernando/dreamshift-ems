@@ -25,7 +25,7 @@
     --ring: 0 0 0 3px rgba(246,185,0,0.25);
     --danger: #d32f2f;
     --warn: #f57c00;
-    --ok: #4caf50;
+    --ok: #ffffff;
 }
 
 * { box-sizing: border-box; }
@@ -48,6 +48,17 @@ section[data-testid="stAppViewContainer"] {
 
 h1, h2, h3, h4 { letter-spacing: -0.01em; }
 
+/* Force text to white across the app */
+body, p, span, div, label,
+.stMarkdown, .stText, .stCaption, .stAlert,
+.stTitle, .stHeader, .stSubheader {
+    color: var(--text) !important;
+}
+
+[data-testid="stAlert"] * {
+    color: var(--text) !important;
+}
+
 /* ---------------------------------------------------------
      SIDEBAR
      --------------------------------------------------------- */
@@ -56,8 +67,15 @@ h1, h2, h3, h4 { letter-spacing: -0.01em; }
     border-right: 1px solid var(--border);
 }
 
+/* Hide Streamlit multipage nav (all known variants) */
 [data-testid="stSidebarNav"],
 section[data-testid="stSidebarNav"],
+div[data-testid="stSidebarNav"],
+div[data-testid="stSidebarNavItems"],
+ul[data-testid="stSidebarNavItems"],
+div[data-testid="stSidebarNavSeparator"],
+nav[aria-label="Main navigation"],
+nav[aria-label="Sidebar navigation"],
 [data-testid="stSidebarNav"] * {
     display: none !important;
 }
@@ -103,7 +121,7 @@ a[data-testid="stPageLink-NavLink"] {
     border: 1px solid transparent;
     color: var(--text);
     font-weight: 600;
-    padding: 9px 12px;
+    padding: 8px 10px;
     border-radius: 10px;
     transition: background 0.15s ease, transform 0.15s ease, border 0.15s ease;
     margin-bottom: 4px;
@@ -111,6 +129,7 @@ a[data-testid="stPageLink-NavLink"] {
     align-items: center;
     gap: 10px;
     text-decoration: none !important;
+    font-size: 0.95rem;
 }
 
 a[data-testid="stPageLink-NavLink"]:hover {
@@ -334,7 +353,7 @@ textarea:focus, input:focus,
 
 .ds-metric-delta {
     font-size: 0.8rem;
-    color: var(--ok);
+    color: var(--text);
 }
 
 [data-baseweb="tab-list"] {

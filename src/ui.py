@@ -55,6 +55,12 @@ def hide_streamlit_sidebar():
     <style>
     [data-testid="stSidebarNav"],
     section[data-testid="stSidebarNav"],
+    div[data-testid="stSidebarNav"],
+    div[data-testid="stSidebarNavItems"],
+    ul[data-testid="stSidebarNavItems"],
+    div[data-testid="stSidebarNavSeparator"],
+    nav[aria-label="Main navigation"],
+    nav[aria-label="Sidebar navigation"],
     [data-testid="stSidebarNav"] * {display: none !important;}
     </style>
     """, unsafe_allow_html=True)
@@ -78,7 +84,7 @@ def render_custom_sidebar():
         # --- MENU ITEMS ---
         # Using st.page_link with Material icons (SVG path doesn't work directly in st.page_link)
         
-        st.page_link("Home.py", label="Home", icon=":material/dashboard:")
+        st.page_link("Home.py", label="Home", icon="🏠")
         
         # Workspace Switcher (Inline)
         if "user_email" in st.session_state:
@@ -113,12 +119,12 @@ def render_custom_sidebar():
                 st.markdown('<div class="ds-sidebar-sep"></div>', unsafe_allow_html=True)
 
         st.markdown('<div class="ds-sidebar-section-title">Navigation</div>', unsafe_allow_html=True)
-        st.page_link("pages/workspaces.py", label="Workspaces", icon=":material/group:")
-        st.page_link("pages/projects.py", label="Projects", icon=":material/folder:")
-        st.page_link("pages/tasks.py", label="Tasks", icon=":material/check_circle:")
-        st.page_link("pages/inbox.py", label="Inbox", icon=":material/notifications:")
-        st.page_link("pages/profile.py", label="Profile", icon=":material/person:")
-        st.page_link("pages/settings.py", label="Settings", icon=":material/settings:")
+        st.page_link("pages/workspaces.py", label="Workspaces", icon="🏢")
+        st.page_link("pages/projects.py", label="Projects", icon="📁")
+        st.page_link("pages/tasks.py", label="Tasks", icon="✅")
+        st.page_link("pages/inbox.py", label="Inbox", icon="🔔")
+        st.page_link("pages/profile.py", label="Profile", icon="👤")
+        st.page_link("pages/settings.py", label="Settings", icon="⚙️")
         
         st.markdown('<div class="ds-sidebar-sep"></div>', unsafe_allow_html=True)
 

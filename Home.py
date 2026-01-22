@@ -120,7 +120,7 @@ with col2:
 with col3:
     entries = db.db.time_entries.find({"user_email": st.session_state.user_email})
     total_hours = sum(e.get('seconds', 0) for e in entries) / 3600
-    render_metric("Hours Logged", f"{total_hours:.1f}h", color="#4caf50")
+    render_metric("Hours Logged", f"{total_hours:.1f}h", color="#f6b900")
 
 st.markdown("---")
 
