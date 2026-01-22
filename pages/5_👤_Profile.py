@@ -3,13 +3,10 @@ import datetime
 import html
 from src.database import DreamShiftDB
 
-st.set_page_config(page_title="Profile", page_icon="👤", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Profile | DreamShift EMS", page_icon="👤", layout="wide", initial_sidebar_state="expanded")
 
 # Load UI utilities
-from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
-
-# Hide default Streamlit sidebar
-hide_streamlit_sidebar()
+from src.ui import load_global_css, render_custom_sidebar
 
 # Render custom sidebar
 render_custom_sidebar()

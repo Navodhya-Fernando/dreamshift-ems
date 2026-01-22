@@ -14,13 +14,10 @@ from components.calendar import (
     get_week_range
 )
 
-st.set_page_config(page_title="📅 Calendar", page_icon="📅", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Calendar | DreamShift EMS", page_icon="📅", layout="wide", initial_sidebar_state="expanded")
 
 # Load custom CSS and setup
-from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
-
-# Hide default Streamlit sidebar
-hide_streamlit_sidebar()
+from src.ui import load_global_css, render_custom_sidebar
 
 # Render custom sidebar
 render_custom_sidebar()

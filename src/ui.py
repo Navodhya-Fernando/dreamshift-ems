@@ -16,27 +16,32 @@ def load_global_css():
         st.error("⚠️ CSS file not found: static/styles.css")
 
 
-def hide_streamlit_sidebar():
-    """Hide the default Streamlit sidebar completely"""
-    st.markdown(
-        """
-        <style>
-        /* Hide default Streamlit sidebar */
-        [data-testid="stSidebarNav"] {
-            display: none !important;
-        }
-        section[data-testid="stSidebar"] {
-            display: none !important;
-            width: 0 !important;
-        }
-        [data-testid="stSidebar"] {
-            display: none !important;
-            width: 0 !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+
+
+# NOTE: hide_streamlit_sidebar() function removed - no longer needed
+# We now use Streamlit's initial_sidebar_state="expanded" for all pages
+# and render_custom_sidebar() to display our professional navigation
+# def hide_streamlit_sidebar():
+#     """Hide the default Streamlit sidebar completely"""
+#     st.markdown(
+#         """
+#         <style>
+#         /* Hide default Streamlit sidebar */
+#         [data-testid="stSidebarNav"] {
+#             display: none !important;
+#         }
+#         section[data-testid="stSidebar"] {
+#             display: none !important;
+#             width: 0 !important;
+#         }
+#         [data-testid="stSidebar"] {
+#             display: none !important;
+#             width: 0 !important;
+#         }
+#         </style>
+#         """,
+#         unsafe_allow_html=True,
+#     )
 
 
 def render_custom_sidebar():

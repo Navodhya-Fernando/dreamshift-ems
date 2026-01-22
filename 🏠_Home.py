@@ -16,10 +16,7 @@ st.set_page_config(
 )
 
 # Import UI utilities
-from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
-
-# Hide default Streamlit sidebar
-hide_streamlit_sidebar()
+from src.ui import load_global_css, render_custom_sidebar
 
 # Render custom sidebar
 render_custom_sidebar()
@@ -485,106 +482,16 @@ if "user_email" not in st.session_state:
   else:
     st.switch_page("pages/0_🚪_Sign_In.py")
 
-# ==========================================
-# SIDEBAR NAVIGATION
-# ==========================================
-with st.sidebar:
-    user_name = st.session_state.get('user_name', st.session_state.user_email.split('@')[0])
-    initial = (user_name[0] if user_name else st.session_state.user_email[0]).upper()
 
-    # Profile card
-    st.markdown(f"""
-    <div class="ds-sb-card">
-      <div class="ds-sb-row">
-        <div style="display:flex; gap:10px; align-items:center;">
-          <div class="ds-avatar">{initial}</div>
-          <div>
-            <p class="ds-sb-title">{html.escape(user_name)}</p>
-            <p class="ds-sb-sub">{html.escape(st.session_state.user_email)}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
 
-    if st.button("🚪 Log Out", use_container_width=True, key="sidebar_logout"):
-        logout()
-
-    # Workspace card
+# Initialize session state for workspace if not already set
+if "current_ws_name" not in st.session_state:
     workspaces = db.get_user_workspaces(st.session_state.user_email)
-
-    st.markdown('<div class="ds-sb-card">', unsafe_allow_html=True)
-    st.markdown('<p class="ds-sb-title" style="margin-bottom:10px;">Workspace</p>', unsafe_allow_html=True)
-
     if workspaces:
-        ws_map = {ws['name']: str(ws['_id']) for ws in workspaces}
-        current_ws_name = st.selectbox(
-            "Active workspace",
-            list(ws_map.keys()),
-            key="workspace_selector",
-            label_visibility="collapsed"
-        )
-        st.session_state.current_ws_id = ws_map[current_ws_name]
-        st.session_state.current_ws_name = current_ws_name
-
+        st.session_state.current_ws_id = str(workspaces[0]['_id'])
+        st.session_state.current_ws_name = workspaces[0]['name']
         role = db.get_user_role(st.session_state.current_ws_id, st.session_state.user_email)
-        if role is None:
-            # User is not a member of this workspace - shouldn't happen but handle gracefully
-            role = "No Access"
-        st.session_state.user_role = role
-
-        st.markdown(f"""
-        <div class="ds-sb-row" style="margin-top:10px;">
-          <span class="ds-pill ds-pill-accent">{html.escape(role)}</span>
-          <span class="ds-pill">{html.escape(current_ws_name)}</span>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.caption("No workspace yet. Create one in Workspaces.")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Notifications card
-    notifications = db.get_user_notifications(st.session_state.user_email, unread_only=True)
-    unread_count = len(notifications)
-
-    st.markdown('<div class="ds-sb-card">', unsafe_allow_html=True)
-    st.markdown(f"""
-      <div class="ds-sb-row">
-        <p class="ds-sb-title" style="margin:0;">Notifications</p>
-        <span class="ds-pill">{unread_count}</span>
-      </div>
-    """, unsafe_allow_html=True)
-
-    if unread_count > 0:
-        # show top 4
-        for notif in notifications[:4]:
-            title = notif.get("type", "Update")
-            with st.expander(title, expanded=False):
-                st.write(notif.get("message", ""))
-                if notif.get("created_at"):
-                    st.caption(notif["created_at"].strftime("%b %d, %I:%M %p"))
-                if st.button("Mark as read", key=f"notif_{notif['_id']}", use_container_width=True):
-                    db.mark_notification_read(str(notif['_id']))
-                    st.rerun()
-
-        colA, colB = st.columns(2)
-        with colA:
-            if st.button("All read", use_container_width=True):
-                db.mark_all_notifications_read(st.session_state.user_email)
-                st.rerun()
-        with colB:
-            st.markdown('<div class="ds-secondary">', unsafe_allow_html=True)
-            st.button("Open", use_container_width=True, disabled=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        st.caption("No new notifications")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Logout
-    if st.button("🚪 Logout", use_container_width=True, type="primary"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
+        st.session_state.user_role = role if role else "Member"
 
 # ==========================================
 # MAIN DASHBOARD
