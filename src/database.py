@@ -19,9 +19,9 @@ class DreamShiftDB:
         
         # Safely try to access Streamlit secrets
         try:
-            if hasattr(st, 'secrets') and st.secrets:
-                mongodb_uri = st.secrets.get("MONGODB_URI")
-                db_name = st.secrets.get("DB_NAME", "dreamshift")
+            if hasattr(st, 'secrets'):
+                mongodb_uri = st.secrets.get("MONGODB_URI", None) if hasattr(st.secrets, 'get') else getattr(st.secrets, "MONGODB_URI", None)
+                db_name = st.secrets.get("DB_NAME", "dreamshift") if hasattr(st.secrets, 'get') else getattr(st.secrets, "DB_NAME", "dreamshift")
         except Exception:
             pass
         

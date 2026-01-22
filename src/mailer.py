@@ -15,7 +15,8 @@ def _resolve_secret(key: str, default=None):
         return val
     try:
         import streamlit as st  # local import to avoid hard dependency in non-Streamlit contexts
-        return st.secrets.get(key, default)
+        # st.secrets doesn't have .get() method, use attribute access with getattr
+        return getattr(st.secrets, key, default)
     except Exception:
         return default
 
