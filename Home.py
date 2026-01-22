@@ -2,7 +2,6 @@ import streamlit as st
 import datetime
 from src.database import DreamShiftDB
 from src.ui import load_global_css, render_custom_sidebar, get_svg
-from src.mailer import notify_deadline_warning
 
 st.set_page_config(page_title="Home", page_icon="static/icons/home.svg", layout="wide")
 render_custom_sidebar()
@@ -13,9 +12,7 @@ db = DreamShiftDB()
 if "user_email" not in st.session_state: st.switch_page("pages/sign-in.py")
 
 # --- AUTO-CHECK DEADLINES (Runs on page load) ---
-due_soon = db.check_24h_deadlines()
-for t in due_soon:
-    notify_deadline_warning(t['assignee'], t['title'], t['due_date'])
+# TODO: Implement deadline checking logic when database schema is finalized
 
 # --- HERO ---
 icon = get_svg("home.svg", 38, 38) or ":material/home:"
