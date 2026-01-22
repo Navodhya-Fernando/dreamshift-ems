@@ -1,7 +1,6 @@
 # src/ui.py
 """
 Global UI/CSS loader for DreamShift EMS
-All styling is centralized in static/styles.css for easy maintenance.
 """
 
 import streamlit as st
@@ -18,53 +17,22 @@ def load_global_css():
         st.error("⚠️ CSS file not found: static/styles.css")
 
 
-def hide_default_sidebar_and_setup_layout():
-    """
-    Properly hide the default Streamlit sidebar using aggressive CSS
-    and adjust layout for full-width content area.
-    """
+def hide_streamlit_sidebar():
+    """Hide the default Streamlit sidebar completely"""
     st.markdown(
         """
         <style>
-        /* AGGRESSIVELY hide Streamlit's default sidebar */
+        /* Hide default Streamlit sidebar */
+        [data-testid="stSidebarNav"] {
+            display: none !important;
+        }
         section[data-testid="stSidebar"] {
             display: none !important;
             width: 0 !important;
-            min-width: 0 !important;
-            visibility: hidden !important;
         }
-        
         [data-testid="stSidebar"] {
             display: none !important;
             width: 0 !important;
-            min-width: 0 !important;
-            visibility: hidden !important;
-        }
-        
-        .stDeployButton {
-            display: none;
-        }
-        
-        /* Adjust main content to full width */
-        .appview-container {
-            margin-left: 0 !important;
-        }
-        
-        [data-testid="stAppViewContainer"] {
-            margin-left: 0 !important;
-        }
-        
-        .main {
-            width: 100%;
-            margin-left: 0 !important;
-            padding-left: 0 !important;
-        }
-        
-        .block-container {
-            max-width: 100%;
-            width: 100%;
-            padding-left: 2rem;
-            padding-right: 2rem;
         }
         </style>
         """,
@@ -72,29 +40,84 @@ def hide_default_sidebar_and_setup_layout():
     )
 
 
-def render_custom_sidebar_navigation():
+def render_custom_sidebar():
     """
-    Render custom sidebar navigation using Streamlit's built-in navigation.
-    This works with Streamlit's page routing system.
+    Render a custom sidebar with icon-based navigation using Streamlit components.
+    Uses st.sidebar to create a fixed sidebar with icon navigation.
     """
-    # Define navigation
-    pages = {
-        "Home": "🏠_Home.py",
-        "Sign In": "pages/0_🚪_Sign_In.py",
-        "Workspaces": "pages/1_🏢_Workspaces.py",
-        "Projects": "pages/2_📁_Projects.py",
-        "Tasks": "pages/3_📋_Tasks.py",
-        "Calendar": "pages/4_📅_Calendar.py",
-        "Profile": "pages/5_👤_Profile.py",
-        "Settings": "pages/6_⚙️_Settings.py",
-        "Admin": "pages/7_👑_Admin_Panel.py",
-        "Templates": "pages/task_templates.py",
-        "Debug": "pages/9_🔍_Debug.py",
-    }
+    # Add CSS for custom sidebar styling
+    st.markdown(
+        """
+        <style>
+        /* Push main content to account for sidebar */
+        .appview-container {
+            margin-left: 0;
+        }
+        
+        /* Style sidebar */
+        [data-testid="stSidebar"] {
+            background: linear-gradient(135deg, #411c30 0%, #24101a 100%);
+            width: 80px !important;
+        }
+        
+        [data-testid="stSidebar"] > div:first-child {
+            width: 80px !important;
+            padding: 0 !important;
+        }
+        
+        /* Style sidebar buttons */
+        [data-testid="stSidebar"] .stButton > button {
+            width: 100%;
+            height: 60px;
+            font-size: 24px;
+            border: 2px solid transparent;
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            margin: 4px 0;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+        
+        [data-testid="stSidebar"] .stButton > button:hover {
+            background: rgba(246,185,0,0.15);
+            color: #f6b900;
+            border-color: rgba(246,185,0,0.3);
+            transform: scale(1.05);
+        }
+        
+        /* Hide button text, show only icons */
+        [data-testid="stSidebar"] .stButton > button > p {
+            display: none;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     
-    # Render sidebar using Streamlit columns (will appear in default sidebar position)
+    # Create navigation in sidebar
     with st.sidebar:
-        st.markdown("### Navigation")
-        for label, page in pages.items():
-            st.page_link(page, label=label, use_container_width=True)
+        st.markdown(
+            "<div style='height: 20px;'></div>",
+            unsafe_allow_html=True,
+        )
+        
+        nav_items = [
+            ("🏠", "🏠_Home.py"),
+            ("🏢", "1_🏢_Workspaces.py"),
+            ("📁", "2_📁_Projects.py"),
+            ("📋", "3_📋_Tasks.py"),
+            ("📅", "4_📅_Calendar.py"),
+            ("👤", "5_👤_Profile.py"),
+            ("⚙️", "6_⚙️_Settings.py"),
+            ("👑", "7_👑_Admin_Panel.py"),
+            ("🎯", "8_🎯_Task_Templates.py"),
+            ("🔍", "9_🔍_Debug.py"),
+        ]
+        
+        for icon, page in nav_items:
+            if st.button(icon, key=f"nav_{page}", use_container_width=True):
+                st.switch_page(f"pages/{page}" if page != "🏠_Home.py" else page)
+
+
 

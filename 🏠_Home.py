@@ -16,13 +16,13 @@ st.set_page_config(
 )
 
 # Import UI utilities
-from src.ui import load_global_css, hide_default_sidebar_and_setup_layout, render_custom_sidebar_navigation
+from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
 
-# Hide default Streamlit sidebar and setup layout
-hide_default_sidebar_and_setup_layout()
+# Hide default Streamlit sidebar
+hide_streamlit_sidebar()
 
-# Render custom sidebar navigation
-render_custom_sidebar_navigation()
+# Render custom sidebar
+render_custom_sidebar()
 
 # Load global CSS
 load_global_css()

@@ -7,7 +7,7 @@ st.set_page_config(
     page_title="Reset Password - DreamShift EMS",
     page_icon="🔐",
     layout="centered",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 db = DreamShiftDB()

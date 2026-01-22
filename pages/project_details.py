@@ -6,16 +6,19 @@ Shows project info, tasks, and basic chat
 import streamlit as st
 import datetime
 from src.database import DreamShiftDB
-from src.ui import load_global_css, hide_default_sidebar_and_setup_layout, render_custom_sidebar_navigation
+from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
 from src.chat_ui import build_threads, render_comment
 
-st.set_page_config(page_title="Project Details", page_icon="📁", layout="wide")
+st.set_page_config(page_title="Project Details", page_icon="📁", layout="wide", initial_sidebar_state="expanded")
 
-# Hide default Streamlit sidebar and setup layout
-hide_default_sidebar_and_setup_layout()
+# Hide default Streamlit sidebar
+hide_streamlit_sidebar()
 
-# Render custom sidebar navigation
-render_custom_sidebar_navigation()
+# Render custom sidebar
+render_custom_sidebar()
+
+# Load global CSS
+load_global_css()
 
 # Load global CSS
 load_global_css()
