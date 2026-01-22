@@ -27,6 +27,23 @@ render_custom_sidebar()
 # Load global CSS
 load_global_css()
 
+# Apply login page specific styles
+st.markdown(
+    """
+    <style>
+    .main {
+        background: #24101a !important;
+    }
+    .block-container {
+        max-width: 600px !important;
+        padding-top: 3.2rem !important;
+        padding-bottom: 3rem !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 db = DreamShiftDB()
 
 # If already authenticated, push token to URL and go home
