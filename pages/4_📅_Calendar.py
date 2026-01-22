@@ -7,10 +7,9 @@ from src.database import DreamShiftDB
 from src.calendar_sync import authorize_gcal, sync_all_tasks_to_gcal
 
 st.set_page_config(
-    page_title="Calendar | DreamShift",
-    page_icon="static/icons/calendar.svg",
+    page_title="Calendar",
+    page_icon="📅",
     layout="wide",
-    initial_sidebar_state="expanded",
 )
 
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar

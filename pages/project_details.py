@@ -35,6 +35,12 @@ if not project_id:
     st.error("No project selected.")
     st.stop()
 
+# --- BACK BUTTON ---
+col_back, col_title = st.columns([1, 10])
+with col_back:
+    if st.button(":material/arrow_back: Back"):
+        st.switch_page("pages/2_📁_Projects.py")
+
 project = db.get_project(project_id)
 if not project:
     st.error("Project not found.")

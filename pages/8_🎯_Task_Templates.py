@@ -1,12 +1,10 @@
-import datetime
 import streamlit as st
 from src.database import DreamShiftDB
 
 st.set_page_config(
-    page_title="Templates | DreamShift",
-    page_icon="static/icons/templates.svg",
+    page_title="Templates",
+    page_icon="🎯",
     layout="wide",
-    initial_sidebar_state="expanded",
 )
 
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar

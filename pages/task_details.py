@@ -34,6 +34,12 @@ if not task_id:
     st.error("No task selected.")
     st.stop()
 
+# --- BACK BUTTON ---
+col_back, col_title = st.columns([1, 10])
+with col_back:
+    if st.button(":material/arrow_back: Back"):
+        st.switch_page("pages/3_📋_Tasks.py")
+
 task = db.get_task(task_id)
 if not task:
     st.error("Task not found.")
