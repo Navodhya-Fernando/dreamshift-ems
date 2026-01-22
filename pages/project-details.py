@@ -1,7 +1,7 @@
 import streamlit as st
 from src.database import DreamShiftDB
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
-from src.chat_ui import render_comment
+from src.chat_ui import render_chat_interface
 
 st.set_page_config(page_title="Project Details", layout="wide")
 load_global_css()
@@ -23,7 +23,7 @@ if not proj:
 # --- HEADER ---
 c1, c2 = st.columns([1, 6])
 if c1.button("← Back"): st.switch_page("pages/projects.py")
-c2.markdown(f"# 📂 {proj['name']}")
+c2.markdown(f"# {proj['name']}")
 st.markdown(f"*{proj.get('description')}*")
 
 st.divider()
@@ -65,27 +65,4 @@ else:
             st.switch_page("pages/task-details.py")
 
 # --- PROJECT DISCUSSION ---
-st.markdown("---")
-st.markdown("## Discussion")
-comments = db.get_comments("project", pid)
-
-# Render comments
-for c in comments:
-    render_comment(
-        c,
-        current_user_email=st.session_state.user_email,
-        can_pin=True,
-        db=db,
-        entity_type="project",
-        entity_id=pid,
-        workspace_id=proj['workspace_id'],
-        project_id=pid,
-        task_id=None
-    )
-
-with st.form("project_comment"):
-    txt = st.text_area("Write a comment (@mention teammates by name)...")
-    if st.form_submit_button("Post Comment"):
-        if txt:
-            db.add_comment("project", pid, st.session_state.user_email, txt, workspace_id=proj['workspace_id'])
-            st.rerun()
+render_chat_interface(pid, "project")

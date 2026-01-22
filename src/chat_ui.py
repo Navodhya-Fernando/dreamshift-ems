@@ -3,6 +3,7 @@ import datetime
 import html
 import re
 import streamlit as st
+from bson import ObjectId
 
 REACTION_ORDER = ["thumbs_up", "heart", "party", "eyes", "check"]
 REACTION_ICONS = {
@@ -330,92 +331,103 @@ def render_comment(
 
 def render_chat_interface(context_id, context_type="task"):
     """
-    Renders a modern, ClickUp-style chat/comment section.
-    
-    Args:
-        context_id (str): The ID of the task or project.
-        context_type (str): 'task' or 'project'.
+    Unified chat/comment section for tasks and projects.
+    Includes mention picker and uses the same thread UI for both.
     """
     from src.database import DreamShiftDB
     db = DreamShiftDB()
     user_email = st.session_state.user_email
-    
-    st.markdown("---")
-    st.markdown("### 💬 Comments")
 
-    # --- 1. NEW COMMENT INPUT (Top, like modern apps) ---
-    with st.container():
-        with st.form(key=f"chat_form_{context_id}", clear_on_submit=True):
-            col_in, col_btn = st.columns([0.85, 0.15])
-            with col_in:
-                new_comment = st.text_area(
-                    "Write a comment...", 
-                    height=80, 
-                    placeholder="Type your message here... Use @ to mention someone.",
-                    label_visibility="collapsed"
+    # Resolve workspace/project/task context
+    workspace_id = None
+    project_id = None
+    task_id = None
+
+    if context_type == "task":
+        task = db.db.tasks.find_one({"_id": ObjectId(context_id)})
+        if task:
+            workspace_id = task.get("workspace_id")
+            project_id = task.get("project_id")
+        task_id = context_id
+    elif context_type == "project":
+        project = db.db.projects.find_one({"_id": ObjectId(context_id)})
+        if project:
+            workspace_id = project.get("workspace_id")
+        project_id = context_id
+
+    st.markdown("---")
+    st.markdown("### Comments")
+
+    # Mention picker
+    members = db.get_workspace_members(workspace_id) if workspace_id else []
+    mention_options = [m.get("name") or m.get("email") for m in members if m.get("name") or m.get("email")]
+    mention_key = f"mention_pick_{context_type}_{context_id}"
+
+    if mention_options:
+        st.multiselect(
+            "Mention teammates",
+            options=mention_options,
+            key=mention_key,
+            label_visibility="collapsed",
+            placeholder="Mention teammates…",
+        )
+
+    # New comment input
+    text_key = f"comment_text_{context_type}_{context_id}"
+    with st.form(key=f"chat_form_{context_type}_{context_id}"):
+        new_comment = st.text_area(
+            "Write a comment…",
+            height=80,
+            placeholder="Type your message here… Use @ to mention someone.",
+            label_visibility="collapsed",
+            key=text_key,
+        )
+        submitted = st.form_submit_button("Send", type="primary", use_container_width=True)
+
+        if submitted:
+            text = (new_comment or "").strip()
+            selected_mentions = st.session_state.get(mention_key, []) or []
+            for name in selected_mentions:
+                tag = f"@{name}"
+                if tag.lower() not in text.lower():
+                    text = (text + " " + tag).strip()
+
+            if text:
+                db.add_comment(
+                    entity_type=context_type,
+                    entity_id=context_id,
+                    user_email=user_email,
+                    text=text,
+                    workspace_id=workspace_id,
+                    project_id=project_id,
+                    task_id=task_id,
                 )
-            with col_btn:
-                st.markdown("<br>", unsafe_allow_html=True)
-                submitted = st.form_submit_button("Send", type="primary", use_container_width=True)
-            
-            if submitted and new_comment.strip():
-                comment_data = {
-                    "context_id": context_id,
-                    "context_type": context_type,
-                    "author": user_email,
-                    "text": new_comment,
-                    "timestamp": datetime.datetime.utcnow(),
-                    "mentions": [], # Parser logic would go here
-                    "likes": []
-                }
-                db.db.comments.insert_one(comment_data)
+                st.session_state[text_key] = ""
+                st.session_state[mention_key] = []
                 st.rerun()
 
-    # --- 2. COMMENTS FEED ---
-    comments = list(db.db.comments.find({"context_id": context_id}).sort("timestamp", -1))
-    
+    # Comments feed (threaded)
+    comments = db.get_comments(context_type, context_id)
     if not comments:
-        st.markdown("""
-            <div style="text-align: center; color: #b0b3b8; padding: 40px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
-                No comments yet. Be the first to start the conversation!
+        st.markdown(
+            """
+            <div class="ds-card ds-card-soft" style="text-align:center; padding:24px;">
+                <div style="font-weight:800;">No comments yet</div>
+                <div style="color:var(--text-muted);">Start the conversation.</div>
             </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
     else:
         for c in comments:
-            author_name = c['author'].split('@')[0].title() # Simple name extraction
-            time_str = c['timestamp'].strftime("%b %d, %I:%M %p")
-            initial = author_name[0] if author_name else "U"
-            
-            # ClickUp-style Comment Card HTML
-            st.markdown(f"""
-            <div class="ds-chat-card">
-                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                    <div style="
-                        width: 32px; height: 32px; 
-                        border-radius: 50%; 
-                        background: #f6b900; 
-                        color: #411c30; 
-                        display: flex; align-items: center; justify-content: center; 
-                        font-weight: 800; font-size: 14px;
-                        flex-shrink: 0;
-                    ">
-                        {initial}
-                    </div>
-                    
-                    <div style="flex-grow: 1;">
-                        <div class="ds-chat-header">
-                            <span class="ds-chat-author">{author_name}</span>
-                            <span class="ds-chat-time">{time_str}</span>
-                        </div>
-                        <div class="ds-chat-body">
-                            {html.escape(c['text'])}
-                        </div>
-                        
-                        <div style="margin-top: 8px; display: flex; gap: 15px; font-size: 0.75rem; color: #b0b3b8; cursor: pointer;">
-                            <span style="hover:color:#fff;">Reply</span>
-                            <span style="hover:color:#fff;">👍 Like</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            render_comment(
+                c,
+                current_user_email=user_email,
+                can_pin=True,
+                db=db,
+                entity_type=context_type,
+                entity_id=context_id,
+                workspace_id=workspace_id,
+                project_id=project_id,
+                task_id=task_id,
+            )
