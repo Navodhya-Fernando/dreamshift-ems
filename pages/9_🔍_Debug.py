@@ -1,19 +1,19 @@
 import streamlit as st
 from src.database import DreamShiftDB
 
-st.set_page_config(page_title="Debug Info", page_icon="🔍", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Debug Info", page_icon="🔍", layout="wide")
 
 # Load UI utilities
-from src.ui import load_global_css, hide_default_sidebar, render_custom_sidebar
+from src.ui import load_global_css, hide_default_sidebar_and_setup_layout, render_custom_sidebar_navigation
 
-# Hide default Streamlit sidebar
-hide_default_sidebar()
+# Hide default Streamlit sidebar and setup layout
+hide_default_sidebar_and_setup_layout()
+
+# Render custom sidebar navigation
+render_custom_sidebar_navigation()
 
 # Load global CSS
 load_global_css()
-
-# Render custom sidebar
-render_custom_sidebar()
 
 db = DreamShiftDB()
 

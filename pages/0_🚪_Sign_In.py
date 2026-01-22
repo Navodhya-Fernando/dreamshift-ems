@@ -12,14 +12,16 @@ st.set_page_config(
     page_title="Sign In - DreamShift EMS",
     page_icon="🚪",
     layout="centered",
-    initial_sidebar_state="collapsed",
 )
 
 # Load UI utilities
-from src.ui import load_global_css, hide_default_sidebar
+from src.ui import load_global_css, hide_default_sidebar_and_setup_layout, render_custom_sidebar_navigation
 
-# Hide default Streamlit sidebar
-hide_default_sidebar()
+# Hide default Streamlit sidebar and setup layout
+hide_default_sidebar_and_setup_layout()
+
+# Render custom sidebar navigation
+render_custom_sidebar_navigation()
 
 # Load global CSS
 load_global_css()
