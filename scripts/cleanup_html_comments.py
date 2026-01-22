@@ -57,7 +57,7 @@ def cleanup_comments():
             updated_count += 1
     
     print(f"\n{'='*50}")
-    print(f"✅ Cleanup complete!")
+    print(f"Cleanup complete!")
     print(f"📊 Total comments checked: {len(all_comments)}")
     print(f"🔧 Comments updated: {updated_count}")
     print(f"{'='*50}")
@@ -71,4 +71,4 @@ if __name__ == "__main__":
     if response == "yes":
         cleanup_comments()
     else:
-        print("❌ Cleanup cancelled")
+        print("Cleanup cancelled")

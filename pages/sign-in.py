@@ -11,7 +11,7 @@ try:
     db = DreamShiftDB()
     db_connected = True
 except Exception as e:
-    st.error(f"❌ Database Connection Failed: {e}")
+    st.error(f"Database Connection Failed: {e}")
     db_connected = False
 
 if st.session_state.get("user_email"):
@@ -64,7 +64,7 @@ if db_connected:
                 else:
                     success, msg = db.create_user(new_email, new_pass, new_name)
                     if success:
-                        st.success("✅ Account created! You can now Sign In.")
+                        st.success("Account created! You can now Sign In.")
                     else:
                         st.error(f"Error: {msg}")
 

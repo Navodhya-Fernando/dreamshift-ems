@@ -33,7 +33,7 @@ def send_email(to_email, subject, html_content):
         server.quit()
         return True
     except Exception as e:
-        print(f"❌ Email Failed: {e}")
+        print(f"Email failed: {e}")
         return False
 
 # --- SPECIFIC NOTIFICATION FUNCTIONS ---

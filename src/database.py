@@ -22,11 +22,11 @@ class DreamShiftDB:
             self.db = self.client[DB_NAME]
             self.ObjectId = ObjectId
         except Exception as e:
-            print(f"❌ MongoDB Connection Failed: {e}")
+            print(f"MongoDB Connection Failed: {e}")
             raise e
 
     # ==========================================
-    # 🔐 AUTHENTICATION & USERS
+    # AUTHENTICATION & USERS
     # ==========================================
 
     def create_user(self, email, password, name):
@@ -152,7 +152,7 @@ class DreamShiftDB:
         self.db.workspaces.update_one({"_id": ObjectId(ws_id)}, {"$set": {"custom_statuses": statuses}})
 
     # ==========================================
-    # ✅ TASKS (Email Trigger)
+    # TASKS (Email Trigger)
     # ==========================================
 
     def create_task(self, ws_id, title, desc, due_date, assignee, status, priority, project_id, creator):

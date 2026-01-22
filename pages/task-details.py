@@ -22,7 +22,7 @@ if not task: st.error("Task not found."); st.stop()
 
 # --- HEADER ---
 col_back, col_title = st.columns([1, 6])
-if col_back.button("← Back"): st.switch_page("pages/tasks.py")
+if col_back.button("Back"): st.switch_page("pages/tasks.py")
 col_title.markdown(f"## {task.get('title')}")
 
 # --- MAIN LAYOUT ---
@@ -30,7 +30,7 @@ left, right = st.columns([2, 1])
 
 with left:
     # --- SUBTASKS ---
-    st.markdown("### ✅ Subtasks")
+    st.markdown("### Subtasks")
     subtasks = task.get('subtasks', [])
     
     # Progress Bar

@@ -2,7 +2,6 @@ import streamlit as st
 import datetime
 from src.database import DreamShiftDB
 from src.ui import load_global_css, render_custom_sidebar, get_svg
-from src.mailer import notify_deadline_warning
 
 st.set_page_config(page_title="Home", page_icon="static/icons/home.svg", layout="wide")
 render_custom_sidebar()
@@ -12,42 +11,38 @@ db = DreamShiftDB()
 
 if "user_email" not in st.session_state: st.switch_page("pages/sign-in.py")
 
-# --- LOGIC: DEADLINE CHECKER (Runs once per session login roughly) ---
+# --- AUTO-CHECK DEADLINES (Inbox Notification Only) ---
 if "deadline_checked" not in st.session_state:
     tasks = db.get_tasks_with_urgency({
         "assignee": st.session_state.user_email, 
         "status": {"$ne": "Completed"}
     })
     for t in tasks:
-        if t.get('urgency_color') == "#d32f2f": # Red/Overdue
-            # Check if we already notified (mock logic, ideally store in DB)
-            notify_deadline_warning(st.session_state.user_email, t['title'], str(t['due_date']))
+        # If task is Overdue (Red) or Urgent (Orange)
+        if t.get('urgency_color') in ["#d32f2f", "#f57c00"]:
+             # Send to INBOX only (No Email)
+             db.create_notification(
+                 st.session_state.user_email, 
+                 "Deadline Alert", 
+                 f"Task '{t['title']}' is due on {t.get('due_date').strftime('%Y-%m-%d') if t.get('due_date') else 'No Date'}.", 
+                 "warning"
+             )
     st.session_state['deadline_checked'] = True
 
-# --- HEADER ---
-icon = get_svg("home.svg", 38, 38) or ":material/home:"
+# --- HERO SECTION ---
+# Using Custom SVG for the main icon
+icon_html = get_svg("home.svg", 38, 38) or ":material/home:"
+
+# Time-based greeting without emojis
 hour = datetime.datetime.now().hour
 greeting = "Good Morning" if hour < 12 else "Good Afternoon" if hour < 18 else "Good Evening"
 
 st.markdown(f"""
 <div class="ds-header-flex">
-    {icon}
+    {icon_html}
     <h1 class="ds-header-title">{greeting}, {st.session_state.get('user_name', 'User')}</h1>
 </div>
 """, unsafe_allow_html=True)
-
-# --- METRICS ---
-stats = db.get_user_stats(st.session_state.user_email)
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Assigned Tasks", stats['assigned'], delta="Active")
-with col2:
-    st.metric("Completion Rate", f"{stats['rate']}%", delta="Productivity")
-with col3:
-    # Calculate simple hours from time entries
-    entries = db.db.time_entries.find({"user_email": st.session_state.user_email})
-    total_hours = sum(e.get('seconds', 0) for e in entries) / 3600
-    st.metric("Hours Tracked", f"{total_hours:.1f}h")
 
 st.markdown("---")
 
@@ -63,7 +58,7 @@ with c1:
     })
     
     if not my_tasks:
-        st.success("🎉 You are all caught up!")
+        st.success("You are all caught up!")
     
     for t in my_tasks[:5]: # Top 5
         color = t.get('urgency_color', '#4caf50')

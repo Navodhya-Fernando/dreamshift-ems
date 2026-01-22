@@ -4,7 +4,14 @@ import html
 import re
 import streamlit as st
 
-REACTION_ORDER = ["👍", "❤️", "🎉", "👀", "✅"]
+REACTION_ORDER = ["thumbs_up", "heart", "party", "eyes", "check"]
+REACTION_ICONS = {
+    "thumbs_up": ":material/thumb_up:",
+    "heart": ":material/favorite:",
+    "party": ":material/celebration:",
+    "eyes": ":material/visibility:",
+    "check": ":material/done:"
+}
 
 def fmt_ts(dt) -> str:
     """Format timestamp in a clean, readable way."""
