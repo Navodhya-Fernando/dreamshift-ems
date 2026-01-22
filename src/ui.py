@@ -53,51 +53,49 @@ def render_custom_sidebar():
         [data-testid="stSidebar"] {
             background: linear-gradient(135deg, #411c30 0%, #24101a 100%) !important;
             width: 80px !important;
-        }
-        
-        [data-testid="stSidebar"] > div:first-child {
-            width: 80px !important;
-        }
-        
-        /* Hide sidebar label/title */
-        [data-testid="stSidebar"] .stMarkdown {
-            height: 20px;
-        }
-        
-        /* Style page links to look like icon buttons */
-        [data-testid="stSidebar"] [data-testid="stPageLink-nav"] {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 60px;
-            font-size: 24px;
-            background: transparent;
-            color: rgba(255,255,255,0.7);
-            margin: 4px 0;
-            border-radius: 8px;
-            border: 2px solid transparent;
-            transition: all 0.2s ease;
-            text-decoration: none;
             padding: 0 !important;
         }
         
-        [data-testid="stSidebar"] [data-testid="stPageLink-nav"]:hover {
-            background: rgba(246,185,0,0.15) !important;
-            color: #f6b900 !important;
-            border-color: rgba(246,185,0,0.3) !important;
-            transform: scale(1.05);
+        [data-testid="stSidebar"] > div {
+            padding: 10px 0 !important;
+            width: 80px !important;
         }
         
-        /* Hide page link text, show only the icon part */
-        [data-testid="stSidebar"] [data-testid="stPageLink-nav"] span {
-            display: none;
+        /* Reset all button styles inside sidebar */
+        [data-testid="stSidebar"] .stButton > button {
+            width: 60px !important;
+            height: 60px !important;
+            padding: 0 !important;
+            margin: 4px auto !important;
+            background: transparent !important;
+            color: rgba(255, 255, 255, 0.7) !important;
+            border: 2px solid transparent !important;
+            border-radius: 8px !important;
+            font-size: 28px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.2s ease !important;
+            box-shadow: none !important;
         }
         
-        [data-testid="stSidebar"] [data-testid="stPageLink-nav"] .st-emotion-cache-1gulkj5 {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* Sidebar button hover state */
+        [data-testid="stSidebar"] .stButton > button:hover {
+            background: #f6b900 !important;
+            color: #411c30 !important;
+            border-color: #f6b900 !important;
+            transform: scale(1.08) !important;
+        }
+        
+        /* Hide button text wrapper */
+        [data-testid="stSidebar"] .stButton > button > p {
+            display: none !important;
+        }
+        
+        /* Focus state */
+        [data-testid="stSidebar"] .stButton > button:focus {
+            outline: none !important;
+            box-shadow: none !important;
         }
         </style>
         """,
@@ -107,7 +105,7 @@ def render_custom_sidebar():
     # Create navigation in sidebar
     with st.sidebar:
         st.markdown(
-            "<div style='height: 10px;'></div>",
+            "<div style='height: 5px;'></div>",
             unsafe_allow_html=True,
         )
         
@@ -125,7 +123,9 @@ def render_custom_sidebar():
         ]
         
         for icon, page in nav_items:
-            st.page_link(page, label=icon, icon=None)
+            col = st.columns([1])[0]
+            with col:
+                st.page_link(page, label=icon, icon=None)
 
 
 
