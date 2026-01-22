@@ -10,9 +10,10 @@ import time
 import datetime
 import html
 from src.database import DreamShiftDB
-from src.ui import load_global_css, render_custom_sidebar
+from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
 
 st.set_page_config(page_title="Tasks | DreamShift EMS", page_icon="static/icons/tasks.svg", layout="wide", initial_sidebar_state="expanded")
+hide_streamlit_sidebar()
 render_custom_sidebar()
 load_global_css()
 
@@ -110,18 +111,6 @@ def status_badge(s: str):
         "To Do": "badge badge-primary",
     }.get(s, "badge badge-primary")
     return s, klass
-
-# ---------- page ----------
-st.set_page_config(page_title="Tasks | DreamShift EMS", page_icon="static/icons/tasks.svg", layout="wide", initial_sidebar_state="expanded")
-
-from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
-
-# Hide default sidebar navigation and show custom sidebar
-hide_streamlit_sidebar()
-render_custom_sidebar()
-
-# Load global CSS
-load_global_css()
 
 db = DreamShiftDB()
 
