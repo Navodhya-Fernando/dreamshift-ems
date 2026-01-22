@@ -8,6 +8,7 @@ import os
 from src.database import DreamShiftDB
 from src.mailer import send_email
 
+# 1. Page Config: "centered" layout is crucial here
 st.set_page_config(
     page_title="Sign In - DreamShift EMS",
     page_icon="🚪",
@@ -17,33 +18,11 @@ st.set_page_config(
 
 # Load UI utilities
 from src.ui import load_global_css
-
-# Load global CSS
 load_global_css()
 
 db = DreamShiftDB()
 
-# If already authenticated, push token to URL and go home
-if st.session_state.get("user_email"):
-    if "session_token" not in st.session_state:
-        token = db.create_session_token(st.session_state["user_email"])
-        st.session_state.session_token = token
-    st.query_params.update({"session_token": st.session_state.session_token})
-    st.switch_page("🏠_Home.py")
-    st.stop()
-
-# Auto-login if session token comes from a shared link
-incoming_token = st.query_params.get("session_token")
-if incoming_token and "user_email" not in st.session_state:
-    user = db.get_session_by_token(incoming_token)
-    if user:
-        st.session_state.user_email = user["email"]
-        st.session_state.user_name = user.get("name", user["email"].split("@")[0])
-        st.session_state.session_token = incoming_token
-        st.switch_page("🏠_Home.py")
-        st.stop()
-
-# Helpers
+# --- HELPER FUNCTIONS ---
 def set_session(user_email: str, user_name: str):
     st.session_state.user_email = user_email
     st.session_state.user_name = user_name
@@ -51,171 +30,167 @@ def set_session(user_email: str, user_name: str):
     st.session_state.session_token = token
     st.query_params.update({"session_token": token})
 
-
-# Initialize toggles
-for key, default in {
-    "show_forgot_password": False,
-    "show_signup": False,
-}.items():
-    if key not in st.session_state:
-        st.session_state[key] = default
-
-
 def render_header():
+    """Renders the logo/title inside the card"""
     st.markdown(
         """
-          <h1 class="ds-login-title">DreamShift <span>EMS</span></h1>
-          <p class="ds-login-sub">Employee Management System</p>
-          <div class="ds-divider"></div>
+        <div style="text-align: center;">
+            <h1 class="ds-login-title">DreamShift <span>EMS</span></h1>
+            <p class="ds-login-sub">Employee Management System</p>
+        </div>
         """,
         unsafe_allow_html=True,
     )
 
+# --- AUTH LOGIC (Redirect if logged in) ---
+if st.session_state.get("user_email"):
+    if "session_token" not in st.session_state:
+        token = db.create_session_token(st.session_state["user_email"])
+        st.session_state.session_token = token
+    st.switch_page("🏠_Home.py")
 
-# Forgot Password
+# Check URL token
+incoming_token = st.query_params.get("session_token")
+if incoming_token and "user_email" not in st.session_state:
+    user = db.get_session_by_token(incoming_token)
+    if user:
+        set_session(user["email"], user.get("name", user["email"].split("@")[0]))
+        st.switch_page("🏠_Home.py")
+
+# Initialize toggles
+if "show_forgot_password" not in st.session_state:
+    st.session_state.show_forgot_password = False
+if "show_signup" not in st.session_state:
+    st.session_state.show_signup = False
+
+# --- VIEW: FORGOT PASSWORD ---
 if st.session_state.show_forgot_password:
     st.markdown('<div class="ds-login-wrap">', unsafe_allow_html=True)
     render_header()
     st.markdown("### Reset Password")
-    st.markdown("Enter your email address and we'll send you a reset link.")
+    st.markdown("<p style='color:#ccc; font-size: 14px;'>Enter your email address and we'll send you a reset link.</p>", unsafe_allow_html=True)
 
     with st.form("forgot_password_form"):
         reset_email = st.text_input("Email Address", placeholder="your.email@company.com").strip()
-        col1, col2 = st.columns(2)
-        send_btn = col1.form_submit_button("Send Reset Link", use_container_width=True)
-        cancel_btn = col2.form_submit_button("Cancel", use_container_width=True)
-
-        if send_btn and reset_email:
+        
+        st.markdown("<div style='height: 10px'></div>", unsafe_allow_html=True)
+        
+        submit_btn = st.form_submit_button("Send Reset Link", use_container_width=True)
+        
+        if submit_btn and reset_email:
             user = db.get_user_by_email(reset_email)
             if user:
+                # (Reset logic preserved from your original code)
                 reset_token = secrets.token_urlsafe(32)
                 token_hash = hashlib.sha256(reset_token.encode()).hexdigest()
                 expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
                 db.save_reset_token(reset_email, token_hash, expiry)
                 
-                # Build reset link using environment variable or Streamlit's deployed URL
                 base_url = os.getenv('APP_BASE_URL', 'http://localhost:8501')
                 reset_link = f"{base_url}/password_reset?reset_token={reset_token}"
                 
+                # Simple HTML email content
                 html_content = f"""
-<html>
-<body style=\"font-family: Arial, sans-serif; background: #24101a; color: #ffffff; padding: 40px;\">
-    <div style=\"max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.06); border-radius: 16px; padding: 40px; border: 1px solid rgba(255,255,255,0.1);\">
-        <h1 style=\"color: #f6b900; text-align: center;\">Password Reset</h1>
-        <p style=\"font-size: 16px; line-height: 1.6;\">Hi {html.escape(user['name'])},</p>
-        <p style=\"font-size: 16px; line-height: 1.6;\">We received a request to reset your password for your DreamShift EMS account.</p>
-        <p style=\"font-size: 16px; line-height: 1.6;\">Click the button below to reset your password:</p>
-        <div style=\"text-align: center; margin: 30px 0;\">
-            <a href=\"{reset_link}\" style=\"background: #f6b900; color: #161616; padding: 15px 40px; border-radius: 12px; text-decoration: none; font-weight: 700; display: inline-block;\">Reset Password</a>
-        </div>
-        <p style=\"font-size: 14px; color: rgba(255, 255, 255, 0.7);\">Or copy this link: {reset_link}</p>
-        <p style=\"font-size: 14px; color: rgba(255, 255, 255, 0.7);\">This link will expire in 1 hour.</p>
-        <p style=\"font-size: 14px; color: rgba(255, 255, 255, 0.7); margin-top: 30px;\">If you didn't request this, please ignore this email.</p>
-        <div style=\"text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);\">
-            <p style=\"color: rgba(255, 255, 255, 0.5); font-size: 12px;\">DreamShift Employee Management System</p>
-        </div>
-    </div>
-</body>
-</html>
-"""
+                <p>Hi {html.escape(user['name'])},</p>
+                <p>Click here to reset your password: <a href="{reset_link}">Reset Password</a></p>
+                """
                 try:
-                    send_email(reset_email, "Password Reset - DreamShift EMS", html_content)
-                    st.success("✅ Reset link sent! Check your email.")
+                    send_email(reset_email, "Password Reset", html_content)
+                    st.success("✅ Check your email!")
                     time.sleep(2)
                     st.session_state.show_forgot_password = False
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Failed to send email: {str(e)}")
+                    st.error(f"Error: {e}")
             else:
-                st.error("No account found with that email address.")
+                st.error("Email not found.")
 
-        if cancel_btn:
-            st.session_state.show_forgot_password = False
-            st.rerun()
+    # Back button outside form
+    if st.button("Back to Login", use_container_width=True):
+        st.session_state.show_forgot_password = False
+        st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
-# Reset form is now handled in a separate page (pages/password_reset.py)
-# This section removed as password reset flow uses dedicated page
-
-# Signup form
-if st.session_state.get('show_signup', False):
+# --- VIEW: SIGN UP ---
+if st.session_state.show_signup:
     st.markdown('<div class="ds-login-wrap">', unsafe_allow_html=True)
     render_header()
     st.markdown("### Create Account")
+    
     with st.form("signup_form"):
-        new_name = st.text_input("Full Name", placeholder="John Doe").strip()
-        new_email = st.text_input("Email", placeholder="john.doe@company.com").strip()
-        new_password = st.text_input("Password", type="password", placeholder="Create a strong password")
-        confirm_password = st.text_input("Confirm Password", type="password", placeholder="Re-enter password")
-        col1, col2 = st.columns(2)
-        create_btn = col1.form_submit_button("Create Account", use_container_width=True)
-        cancel_btn = col2.form_submit_button("Back to Login", use_container_width=True)
+        new_name = st.text_input("Full Name").strip()
+        new_email = st.text_input("Email").strip()
+        new_password = st.text_input("Password", type="password")
+        confirm_password = st.text_input("Confirm Password", type="password")
+        
+        st.markdown("<div style='height: 15px'></div>", unsafe_allow_html=True)
+        create_btn = st.form_submit_button("Create Account", use_container_width=True)
+
         if create_btn:
             if not new_name or not new_email or not new_password:
-                st.error("All fields are required.")
-            elif "@" not in new_email:
-                st.error("Enter a valid email address.")
+                st.error("All fields required.")
             elif new_password != confirm_password:
-                st.error("Passwords don't match!")
-            elif len(new_password) < 6:
-                st.error("Password must be at least 6 characters long!")
+                st.error("Passwords do not match.")
             elif db.is_email_taken(new_email):
-                st.error("Email already registered!")
+                st.error("Email already taken.")
             else:
-                try:
-                    db.create_user(new_email, new_password, new_name)
-                    st.success("Account created successfully! Please login.")
-                    st.session_state.show_signup = False
-                    time.sleep(0.8)
-                    st.rerun()
-                except Exception:
-                    st.error("Signup failed. Please check your connection and try again.")
-        if cancel_btn:
-            st.session_state.show_signup = False
-            st.rerun()
+                db.create_user(new_email, new_password, new_name)
+                st.success("Account created! Please login.")
+                time.sleep(1)
+                st.session_state.show_signup = False
+                st.rerun()
+
+    if st.button("Back to Login", use_container_width=True):
+        st.session_state.show_signup = False
+        st.rerun()
+        
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
-# Default: login form
+# --- VIEW: LOGIN (Default) ---
 st.markdown('<div class="ds-login-wrap">', unsafe_allow_html=True)
 render_header()
+
 with st.form("login_form"):
-    email = st.text_input("Email", placeholder="your.email@company.com").strip()
-    password = st.text_input("Password", type="password", placeholder="Enter your password")
+    email = st.text_input("Email Address", placeholder="name@company.com").strip()
+    password = st.text_input("Password", type="password", placeholder="••••••••")
+    
+    st.markdown("<div style='height: 20px'></div>", unsafe_allow_html=True)
+    
+    # This button will now pick up the strict CSS styles
     login_btn = st.form_submit_button("Sign In", use_container_width=True)
+    
     if login_btn:
         if not email or not password:
-            st.error("Email and password are required.")
+            st.error("Please enter email and password.")
         else:
             user = db.authenticate_user(email, password)
             if user:
                 set_session(email, user['name'])
-                st.success(f"Welcome back, {user['name']}!")
-                time.sleep(0.8)
+                st.success(f"Welcome, {user['name']}!")
+                time.sleep(0.5)
                 st.switch_page("🏠_Home.py")
             else:
-                st.error("Invalid credentials. Please try again.")
+                st.error("Invalid credentials.")
 
-st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Secondary Actions (Forgot Password / Create Account)
+# Using columns for better alignment below the card
 col1, col2 = st.columns(2)
+
 with col1:
     st.markdown('<div class="ds-secondary">', unsafe_allow_html=True)
     if st.button("Forgot password?", use_container_width=True):
         st.session_state.show_forgot_password = True
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
+
 with col2:
     st.markdown('<div class="ds-secondary">', unsafe_allow_html=True)
     if st.button("Create account", use_container_width=True):
         st.session_state.show_signup = True
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-
-# Handle reset token in URL
-if "reset_token" in st.query_params:
-    st.session_state.show_reset_form = True
-    st.rerun()
-
-st.markdown('</div>', unsafe_allow_html=True)
