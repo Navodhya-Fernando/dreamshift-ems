@@ -21,42 +21,6 @@ from src.ui import load_global_css
 # Load global CSS
 load_global_css()
 
-# Apply login page specific styles
-st.markdown(
-    """
-    <style>
-    html, body {
-        background: #24101a !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    .stApp {
-        background: #24101a !important;
-    }
-    .main {
-        background: #24101a !important;
-    }
-    [data-testid="stSidebar"] {
-        display: none !important;
-    }
-    .block-container {
-        max-width: 600px !important;
-        padding-top: 3.2rem !important;
-        padding-bottom: 3rem !important;
-    }
-    .stButton > button, .stFormSubmitButton > button {
-        background: #f6b900 !important;
-        color: #411c30 !important;
-    }
-    .stButton > button:hover, .stFormSubmitButton > button:hover {
-        background: #ffe500 !important;
-        color: #411c30 !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 db = DreamShiftDB()
 
 # If already authenticated, push token to URL and go home
