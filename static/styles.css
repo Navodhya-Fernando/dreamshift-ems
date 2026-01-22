@@ -17,8 +17,8 @@
     --text: #ffffff;
     --text-muted: rgba(255,255,255,0.68);
     --text-soft: rgba(255,255,255,0.82);
-    --shadow-1: 0 6px 16px rgba(0,0,0,0.28);
-    --shadow-2: 0 16px 40px rgba(0,0,0,0.35);
+    --shadow-1: 0 4px 12px rgba(0,0,0,0.22);
+    --shadow-2: 0 10px 28px rgba(0,0,0,0.28);
     --radius-1: 10px;
     --radius-2: 14px;
     --radius-3: 18px;
@@ -112,7 +112,7 @@ nav[aria-label="Sidebar navigation"],
 .ds-sidebar-sep {
     height: 1px;
     width: 100%;
-    background: var(--border);
+    background: rgba(255,255,255,0.08);
     margin: 12px 0;
 }
 
@@ -153,12 +153,13 @@ a[data-testid="stPageLink-NavLink"][aria-current="page"] {
 }
 
 [data-testid="stSidebar"] [data-baseweb="select"] > div {
-    background: rgba(255,255,255,0.04) !important;
-    border: 1px solid rgba(255,255,255,0.14) !important;
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.18) !important;
     color: var(--text) !important;
-    border-radius: 10px;
+    border-radius: 12px;
     min-height: 40px;
     box-shadow: none !important;
+    padding-left: 6px;
 }
 
 [data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within {
@@ -168,6 +169,17 @@ a[data-testid="stPageLink-NavLink"][aria-current="page"] {
 
 [data-testid="stSidebar"] [data-baseweb="select"] span {
     color: var(--text) !important;
+}
+
+/* Make the workspace switcher minimal and compact */
+[data-testid="stSidebar"] [data-baseweb="select"] input {
+    color: var(--text) !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] svg {
+    color: var(--text-muted) !important;
+    opacity: 0.8;
 }
 
 [data-baseweb="popover"] {
@@ -200,8 +212,8 @@ button[data-testid="baseButton-primary"] {
     border-radius: 10px !important;
     font-weight: 800 !important;
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-    padding: 0.55rem 1rem !important;
-    box-shadow: 0 8px 20px rgba(246,185,0,0.16);
+    padding: 0.5rem 0.9rem !important;
+    box-shadow: 0 6px 14px rgba(246,185,0,0.12);
 }
 
 button[kind="primary"]:hover,
@@ -213,9 +225,9 @@ button[data-testid="baseButton-primary"]:hover {
 
 button[kind="secondary"],
 button[data-testid="baseButton-secondary"] {
-    background: rgba(255,255,255,0.04) !important;
+    background: rgba(255,255,255,0.03) !important;
     color: var(--text) !important;
-    border: 1px solid var(--border) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
     border-radius: 10px !important;
     font-weight: 700 !important;
 }
@@ -229,9 +241,9 @@ button[data-testid="baseButton-secondary"]:hover {
 input, textarea, select,
 [data-baseweb="select"] div,
 [data-baseweb="input"] input {
-    background: var(--bg-soft) !important;
+    background: rgba(255,255,255,0.03) !important;
     color: var(--text) !important;
-    border: 1px solid var(--border) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
     border-radius: 10px !important;
 }
 
@@ -248,7 +260,7 @@ textarea:focus, input:focus,
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius-2);
-    padding: 18px;
+    padding: 16px;
     margin-bottom: 14px;
     box-shadow: var(--shadow-1);
 }
@@ -358,20 +370,29 @@ textarea:focus, input:focus,
 
 [data-baseweb="tab-list"] {
     background: rgba(255,255,255,0.02);
-    padding: 4px;
-    border-radius: 10px;
+    padding: 6px;
+    border-radius: 12px;
     border: 1px solid var(--border);
+    gap: 6px;
 }
 
 [data-baseweb="tab"] {
     color: var(--text-muted) !important;
     font-weight: 700;
+    border-radius: 10px;
+    padding: 10px 14px !important;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+[data-baseweb="tab"]:hover {
+    background: rgba(255,255,255,0.06) !important;
+    color: var(--text) !important;
 }
 
 [data-baseweb="tab"][aria-selected="true"] {
     color: var(--text) !important;
-    background: rgba(246,185,0,0.16) !important;
-    border-radius: 8px;
+    background: rgba(246,185,0,0.18) !important;
+    border-radius: 10px;
 }
 
 /* ---------------------------------------------------------

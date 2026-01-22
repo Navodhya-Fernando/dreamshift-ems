@@ -61,6 +61,19 @@ svg_night = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill=
 
 # JavaScript to detect time and inject correct SVG/Text
 greeting_html = f"""
+<style>
+  .ds-greeting {{
+    display:flex; align-items:center; gap:12px;
+    padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.12);
+    margin-bottom:18px;
+  }}
+  .ds-greeting-title {{
+    font-size:1.9rem; font-weight:900; margin:0; color:#fff;
+  }}
+  .ds-greeting-sub {{
+    font-size:0.95rem; color:rgba(255,255,255,0.7); margin:2px 0 0 0;
+  }}
+</style>
 <div class="ds-greeting">
     <div id="greeting-icon"></div>
     <div>
@@ -75,23 +88,28 @@ greeting_html = f"""
     const titleDiv = document.getElementById("greeting-title");
     
     let greeting = "Good Morning";
-    let svg = \`{svg_morning}\`;
+    let svg = `{svg_morning}`;
+    let emoji = "☀️";
     
     if (hour >= 5 && hour < 12) {{
         greeting = "Good Morning";
-        svg = \`{svg_morning}\`;
+        svg = `{svg_morning}`;
+        emoji = "☀️";
     }} else if (hour >= 12 && hour < 17) {{
         greeting = "Good Afternoon";
-        svg = \`{svg_evening}\`;
+        svg = `{svg_evening}`;
+        emoji = "🌤️";
     }} else if (hour >= 17 && hour < 21) {{
         greeting = "Good Evening";
-        svg = \`{svg_evening}\`;
+        svg = `{svg_evening}`;
+        emoji = "🌆";
     }} else {{
         greeting = "Good Night";
-        svg = \`{svg_night}\`;
+        svg = `{svg_night}`;
+        emoji = "🌙";
     }}
     
-    titleDiv.innerText = greeting + ", {user_name}";
+    titleDiv.innerText = emoji + " " + greeting + ", {user_name}";
     iconDiv.innerHTML = svg;
 </script>
 """
