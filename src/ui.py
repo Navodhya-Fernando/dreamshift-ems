@@ -126,7 +126,7 @@ def render_custom_sidebar():
             
             st.markdown(f"""
             <div style="display:flex; align-items:center; gap:12px; padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border: 1px solid rgba(255,255,255,0.05);">
-                <div style="width:32px; height:32px; background:#f6b900; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#111; font-size: 14px;">
+                <div style="width:32px; height:32px; background:#f6b900; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#411c30; font-size: 14px;">
                     {user_initial}
                 </div>
                 <div style="overflow:hidden;">
@@ -141,59 +141,5 @@ def render_custom_sidebar():
                 st.page_link("pages/settings.py", label="Settings", icon=":material/settings:")
             with c2:
                 if st.button("Logout", use_container_width=True, key="sidebar_logout_btn"):
-                    st.session_state.clear()
-                    st.switch_page("pages/sign-in.py")
-        
-        st.markdown('<div style="height: 15px;"></div>', unsafe_allow_html=True)
-        
-        # --- TOOLS SECTION ---
-        st.markdown('<p style="font-size: 0.75rem; color: #666; font-weight: 600; padding-left: 10px; margin-bottom: 5px;">TOOLS</p>', unsafe_allow_html=True)
-        st.page_link("pages/inbox.py", label="Inbox", icon="🔔")
-        st.page_link("pages/admin-panel.py", label="Admin Panel", icon="🛡️")
-
-        # --- USER PROFILE (Pinned to Bottom) ---
-        # We use a container and markdown to simulate a "pinned bottom" effect
-        st.markdown("---")
-        
-        if "user_email" in st.session_state:
-            user_name = st.session_state.get('user_name', 'User')
-            user_initial = user_name[0].upper() if user_name else "U"
-            
-            # Custom HTML for the mini profile card
-            st.markdown(f"""
-            <div style="
-                display:flex; 
-                align-items:center; 
-                gap:12px; 
-                padding:12px; 
-                background:rgba(255,255,255,0.03); 
-                border-radius:10px; 
-                border: 1px solid rgba(255,255,255,0.05);">
-                <div style="
-                    width:32px; 
-                    height:32px; 
-                    background:#f6b900; 
-                    border-radius:50%; 
-                    display:flex; 
-                    align-items:center; 
-                    justify-content:center; 
-                    font-weight:bold; 
-                    color:#111;
-                    font-size: 14px;">
-                    {user_initial}
-                </div>
-                <div style="overflow:hidden;">
-                    <div style="font-size:0.9rem; font-weight:600; white-space:nowrap; color: #eee;">{user_name}</div>
-                    <div style="font-size:0.75rem; opacity:0.6; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">{st.session_state.user_email}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Mini links for settings/logout
-            c1, c2 = st.columns(2)
-            with c1:
-                st.page_link("pages/settings.py", label="Settings", icon="⚙️")
-            with c2:
-                if st.button("Logout", use_container_width=True):
                     st.session_state.clear()
                     st.switch_page("pages/sign-in.py")
