@@ -141,7 +141,7 @@ def render_custom_sidebar():
             with c1:
                 st.page_link("pages/settings.py", label="Settings", icon=":material/settings:")
             with c2:
-                if st.button("Logout", use_container_width=True):
+                if st.button("Logout", use_container_width=True, key="sidebar_logout_btn"):
                     st.session_state.clear()
                     st.switch_page("pages/sign-in.py")
         
