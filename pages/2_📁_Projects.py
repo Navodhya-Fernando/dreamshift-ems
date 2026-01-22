@@ -47,8 +47,10 @@ ws_name = st.session_state.get('current_ws_name', 'Workspace')
 render_html("""
 <div class="ds-page-head">
   <div>
-    <h1 class="ds-page-title">Projects</h1>
-    <p class="ds-page-sub">Manage your workspace projects</p>
+    <h1 class="ds-page-title" style="display:flex; align-items:center; gap:10px;">
+        :material/folder_open: Projects
+    </h1>
+    <p class="ds-page-sub">Track project progress and deadlines</p>
   </div>
 </div>
 """)
@@ -186,8 +188,8 @@ if show_layout:
     # Manage Templates button (horizontal, never wraps)
     col_btn, col_spacer = st.columns([1, 8])
     with col_btn:
-        if st.button("🎯 Manage Task Templates", type="secondary"):
-            st.switch_page("pages/task_templates.py")
+      if st.button(":material/description: Manage Task Templates", type="secondary"):
+        st.switch_page("pages/task_templates.py")
     
     # Show message if user cannot create projects
     if user_role not in ["Owner", "Workspace Admin"]:
@@ -244,7 +246,7 @@ if not projects:
     # Empty state
     render_html("""
     <div class="ds-empty-state">
-      <div class="ds-empty-state-icon">📁</div>
+      <div class="ds-empty-state-icon">:material/folder_off:</div>
       <div class="ds-empty-state-title">No projects found</div>
       <div class="ds-empty-state-sub">Adjust filters or create a new project.</div>
     </div>

@@ -147,15 +147,17 @@ with left:
     render_html("""
     <div class="ds-head">
       <div>
-        <div class="ds-title">Tasks</div>
-        <div class="ds-sub">Board and list view for workspace tasks</div>
+        <div class="ds-title" style="display:flex; align-items:center; gap:10px;">
+            :material/check_circle: Tasks
+        </div>
+        <div class="ds-sub">Manage your daily work</div>
       </div>
     </div>
     """)
 with right:
     col_btn, col_spacer = st.columns([1, 5])
     with col_btn:
-        if st.button("Board", use_container_width=True):
+        if st.button(":material/view_kanban:", help="Board View", use_container_width=True):
             st.session_state.task_view = "board"
             st.rerun()
     with col_spacer:
@@ -163,7 +165,7 @@ with right:
     
     col_btn2, col_spacer2 = st.columns([1, 5])
     with col_btn2:
-        if st.button("List", use_container_width=True):
+        if st.button(":material/view_list:", help="List View", use_container_width=True):
             st.session_state.task_view = "list"
             st.rerun()
     with col_spacer2:

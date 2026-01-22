@@ -41,7 +41,9 @@ if not all_workspaces:
     render_html(
         """
 <div class="ds-card">
-  <div class="ds-page-title">Workspace Management</div>
+  <div class="ds-page-title" style="display:flex; align-items:center; gap:10px;">
+    :material/domain: Workspaces
+  </div>
   <p class="ds-page-sub">Create your first workspace to get started.</p>
 </div>
 """
@@ -121,6 +123,20 @@ if not selected_ws:
     st.stop()
 
 ws_stats = db.get_workspace_stats(ws_id)
+
+# Header
+render_html(
+    """
+<div class="ds-page-head">
+  <div>
+    <h1 class="ds-page-title" style="display:flex; align-items:center; gap:10px;">
+        :material/domain: Workspaces
+    </h1>
+    <p class="ds-page-sub">Manage your organization units and teams</p>
+  </div>
+</div>
+"""
+)
 
 # ------------------------------------------------------------
 # Header + metrics

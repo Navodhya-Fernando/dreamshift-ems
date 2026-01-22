@@ -23,12 +23,18 @@ if "user_email" not in st.session_state:
     st.stop()
 
 if "user_role" not in st.session_state or st.session_state.user_role not in ["Owner", "Workspace Admin"]:
-    st.error("🔒 Access Denied: This page is only available to Owners and Workspace Admins")
+    st.error(":material/lock: Access Denied: This page is only available to Owners and Workspace Admins")
     st.stop()
 
 st.markdown("""
-    <h1 style="color: #f6b900;">👑 Admin Dashboard & Analytics</h1>
-    <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 30px;">Manage your team, monitor performance, and view insights</p>
+    <div class="ds-page-head">
+      <div>
+        <h1 class="ds-page-title" style="display:flex; align-items:center; gap:10px; color: #f6b900;">
+            :material/admin_panel_settings: Admin Panel
+        </h1>
+        <p class="ds-page-sub">System-wide settings and analytics</p>
+      </div>
+    </div>
 """, unsafe_allow_html=True)
 
 # Get workspace info
@@ -45,7 +51,7 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-label">👥 TEAM MEMBERS</div>
+            <div class="metric-label">:material/group: TEAM MEMBERS</div>
             <div class="metric-value">{len(workspace.get('members', []))}</div>
         </div>
     """, unsafe_allow_html=True)
@@ -53,7 +59,7 @@ with col1:
 with col2:
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-label">📁 ACTIVE PROJECTS</div>
+            <div class="metric-label">:material/folder_open: ACTIVE PROJECTS</div>
             <div class="metric-value">{ws_stats['total_projects']}</div>
         </div>
     """, unsafe_allow_html=True)
@@ -61,7 +67,7 @@ with col2:
 with col3:
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-label">📋 TOTAL TASKS</div>
+            <div class="metric-label">:material/checklist: TOTAL TASKS</div>
             <div class="metric-value">{ws_stats['total_tasks']}</div>
         </div>
     """, unsafe_allow_html=True)
@@ -70,7 +76,7 @@ with col4:
     completion_rate = round((ws_stats['completed_tasks'] / ws_stats['total_tasks'] * 100) if ws_stats['total_tasks'] > 0 else 0)
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-label">✅ COMPLETION</div>
+            <div class="metric-label">:material/percent: COMPLETION</div>
             <div class="metric-value">{completion_rate}%</div>
         </div>
     """, unsafe_allow_html=True)
@@ -78,7 +84,13 @@ with col4:
 st.markdown("<br>", unsafe_allow_html=True)
 
 # Tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Overview", "👥 Team Performance", "⚠️ Alerts", "📈 Reports", "⚙️ Admin Actions"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    ":material/dashboard: Overview",
+    ":material/group: Team",
+    ":material/notifications_active: Alerts",
+    ":material/analytics: Reports",
+    ":material/build: Actions",
+])
 
 with tab1:
     st.markdown("### Workspace Overview")
@@ -135,7 +147,7 @@ with tab1:
     st.markdown("---")
     
     # Recent activity
-    st.markdown("### 📊 Recent Activity")
+    st.markdown("### :material/history: Recent Activity")
     
     all_tasks = db.get_tasks_with_urgency({"workspace_id": st.session_state.current_ws_id})
     recent_tasks = sorted(all_tasks, key=lambda x: x.get('updated_at', x['created_at']), reverse=True)[:10]
@@ -146,9 +158,9 @@ with tab1:
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <h4 style="margin: 0; color: #f6b900;">{task['title']}</h4>
-                        <p style="margin: 5px 0 0 0; color: rgba(255, 255, 255, 0.7); font-size: 14px;">
-                            👤 {task.get('assignee', 'Unassigned')} • 
-                            📁 {task.get('project_name', 'No Project')} • 
+                            <p style="margin: 5px 0 0 0; color: rgba(255, 255, 255, 0.7); font-size: 14px;">
+                            :material/person: {task.get('assignee', 'Unassigned')} • 
+                            :material/folder_open: {task.get('project_name', 'No Project')} • 
                             {task.get('updated_at', task['created_at']).strftime('%b %d, %I:%M %p')}
                         </p>
                     </div>
@@ -160,7 +172,7 @@ with tab1:
         """, unsafe_allow_html=True)
 
 with tab2:
-    st.markdown("### 👥 Team Performance Analytics")
+    st.markdown("### :material/group: Team Performance Analytics")
     
     # Get all members
     members = workspace.get('members', [])
@@ -199,22 +211,22 @@ with tab2:
         st.markdown("---")
         
         # Current tasks
-        st.markdown("#### Current Tasks")
+        st.markdown("#### :material/assignment: Current Tasks")
         
         member_tasks = db.get_tasks_with_urgency({"assignee": selected_member_email, "workspace_id": st.session_state.current_ws_id})
         active_tasks = [t for t in member_tasks if t['status'] != 'Completed']
         
         if not active_tasks:
-            st.success("✨ All tasks completed!")
+            st.success(":material/check_circle: All tasks completed!")
         else:
             for task in active_tasks:
                 st.markdown(f"""
                     <div class="task-card" style="border-left-color: {task['urgency_color']};">
                         <h4 style="margin: 0; color: #ffffff;">{task['title']}</h4>
                         <p style="margin: 5px 0 0 0; color: rgba(255, 255, 255, 0.7);">
-                            📅 Due: {task['due_date'].strftime('%b %d, %Y')} • 
-                            📊 {task['completion_pct']}% Complete • 
-                            🎯 {task.get('priority', 'Normal')}
+                            :material/event: Due: {task['due_date'].strftime('%b %d, %Y')} • 
+                            :material/insights: {task['completion_pct']}% Complete • 
+                            :material/flag: {task.get('priority', 'Normal')}
                         </p>
                     </div>
                 """, unsafe_allow_html=True)
@@ -222,7 +234,7 @@ with tab2:
         st.markdown("---")
         
         # Time tracking summary
-        st.markdown("#### ⏱️ Time Tracking Summary")
+        st.markdown("#### :material/timer: Time Tracking Summary")
         
         time_entries = db.get_user_time_entries(selected_member_email)
         
@@ -248,20 +260,20 @@ with tab2:
             st.markdown("---")
             st.markdown("#### 🔓 Share Dashboard Access")
             
-            st.info("💡 You can grant view-only access to this employee's dashboard to other team members")
+            st.info(":material/tips_and_updates: You can grant view-only access to this employee's dashboard to other team members")
             
             share_email = st.text_input("Share with (email)", placeholder="colleague@company.com")
             if st.button("Grant View Access"):
                 if share_email:
-                    st.success(f"✅ Dashboard access granted to {share_email}")
+                    st.success(f":material/check_circle: Dashboard access granted to {share_email}")
                 else:
                     st.error("Please enter an email address")
 
 with tab3:
-    st.markdown("### ⚠️ Alerts & Notifications")
+    st.markdown("### :material/notifications_active: Alerts & Notifications")
     
     # Overdue tasks
-    st.markdown("#### 🚨 Overdue Tasks")
+    st.markdown("#### :material/priority_high: Overdue Tasks")
     
     all_tasks = db.get_tasks_with_urgency({"workspace_id": st.session_state.current_ws_id})
     overdue_tasks = [
@@ -270,26 +282,26 @@ with tab3:
     ]
     
     if overdue_tasks:
-        st.warning(f"⚠️ {len(overdue_tasks)} overdue tasks require attention!")
+        st.warning(f":material/warning: {len(overdue_tasks)} overdue tasks require attention!")
         for task in overdue_tasks:
             days_overdue = (datetime.datetime.utcnow() - task['due_date']).days
             st.markdown(f"""
                 <div class="task-card task-card-urgent">
                     <h4 style="margin: 0; color: #ff4444;">{task['title']}</h4>
                     <p style="margin: 5px 0 0 0; color: rgba(255, 255, 255, 0.7);">
-                        👤 {task.get('assignee', 'Unassigned')} • 
-                        ⏰ {days_overdue} days overdue • 
-                        📁 {task.get('project_name', 'No Project')}
+                        :material/person: {task.get('assignee', 'Unassigned')} • 
+                        :material/av_timer: {days_overdue} days overdue • 
+                        :material/folder_open: {task.get('project_name', 'No Project')}
                     </p>
                 </div>
             """, unsafe_allow_html=True)
     else:
-        st.success("✅ No overdue tasks!")
+        st.success(":material/check_circle: No overdue tasks!")
     
     st.markdown("---")
     
     # Contract expiry warnings
-    st.markdown("#### 📄 Contract Expiry Alerts")
+    st.markdown("#### :material/description: Contract Expiry Alerts")
     
     expiring_soon = []
     for member in members:
@@ -309,11 +321,11 @@ with tab3:
     if expiring_soon:
         for contract in expiring_soon:
             st.warning(f"""
-                ⚠️ **{contract['name']}**'s contract expires in {contract['days']} days 
+                :material/warning: **{contract['name']}**'s contract expires in {contract['days']} days 
                 ({contract['date'].strftime('%B %d, %Y')})
             """)
     else:
-        st.success("✅ No contracts expiring in the next 30 days")
+        st.success(":material/check_circle: No contracts expiring in the next 30 days")
     
     st.markdown("---")
     
@@ -340,12 +352,12 @@ with tab3:
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    if st.button("✅ Approve", key=f"approve_{req['_id']}", use_container_width=True):
+                    if st.button(":material/check_circle: Approve", key=f"approve_{req['_id']}", use_container_width=True):
                         db.approve_extension_request(str(req['_id']))
                         st.success("Extension approved!")
                         st.rerun()
                 with col2:
-                    if st.button("❌ Reject", key=f"reject_{req['_id']}", use_container_width=True):
+                    if st.button(":material/close: Reject", key=f"reject_{req['_id']}", use_container_width=True):
                         db.reject_extension_request(str(req['_id']))
                         st.success("Extension rejected")
                         st.rerun()
@@ -353,7 +365,7 @@ with tab3:
         st.info("No pending extension requests")
 
 with tab4:
-    st.markdown("### 📈 Reports & Analytics")
+    st.markdown("### :material/analytics: Reports & Analytics")
     
     st.markdown("""
         <div class="custom-card">
@@ -376,8 +388,8 @@ with tab4:
     with date_col2:
         end_date = st.date_input("To", value=datetime.date.today())
     
-    if st.button("📊 Generate Report", use_container_width=True):
-        st.success("✅ Report generated!")
+    if st.button(":material/insights: Generate Report", use_container_width=True):
+        st.success(":material/check_circle: Report generated!")
 
         # Build CSV for tasks in range (workspace scoped)
         tasks = db.get_tasks_with_urgency({"workspace_id": ws_id})
@@ -404,7 +416,7 @@ with tab4:
         csv_bytes = buf.getvalue().encode("utf-8")
 
         st.download_button(
-            label="💾 Download CSV",
+            label=":material/download: Download CSV",
             data=csv_bytes,
             file_name="dreamshift_report.csv",
             mime="text/csv",
@@ -421,13 +433,13 @@ with tab4:
             st.write(f"**Completion Rate:** {completion_rate}%")
 
 with tab5:
-    st.markdown("### ⚙️ Admin Actions")
+    st.markdown("### :material/build: Admin Actions")
     
     if st.session_state.user_role == "Owner":
         # User Profile Management Section
         st.markdown("""
             <div class="custom-card">
-                <h4 style="color: #f6b900;">👤 User Profile Management</h4>
+                <h4 style="color: #f6b900;">:material/person: User Profile Management</h4>
                 <p style="color: rgba(255, 255, 255, 0.7);">Manage team member profiles, photos, roles, and join dates</p>
             </div>
         """, unsafe_allow_html=True)
@@ -482,7 +494,7 @@ with tab5:
                         try:
                             st.image(photo_url, width=90)
                         except:
-                            st.warning("⚠️ Image failed to load. URL may be invalid or expired.")
+                            st.warning(":material/warning: Image failed to load. URL may be invalid or expired.")
                     else:
                         st.info("No photo URL provided")
                 
@@ -500,7 +512,7 @@ with tab5:
                 st.markdown("---")
                 col_btn, col_spacer = st.columns([1, 8])
                 with col_btn:
-                    save = st.form_submit_button("💾 Save User Profile", use_container_width=True, type="primary")
+                    save = st.form_submit_button(":material/save: Save User Profile", use_container_width=True, type="primary")
                 
                 if save:
                     db.update_user_profile_fields(selected_email, {
@@ -509,7 +521,7 @@ with tab5:
                         "profile.photo_url": photo_url,
                         "profile.date_joined": date_joined.isoformat()
                     })
-                    st.success("✅ User profile updated successfully!")
+                    st.success(":material/check_circle: User profile updated successfully!")
                     st.rerun()
             
             st.markdown("</div>", unsafe_allow_html=True)
@@ -527,7 +539,7 @@ with tab5:
         """, unsafe_allow_html=True)
         
         # Bulk actions
-        st.markdown("#### 🔄 Bulk Operations")
+        st.markdown("#### :material/change_circle: Bulk Operations")
         
         bulk_action = st.selectbox("Select Action", [
             "Mark all overdue tasks as urgent",
@@ -537,27 +549,27 @@ with tab5:
         ])
         
         if st.button("Execute Bulk Action"):
-            st.warning("⚠️ Are you sure? This will affect multiple items.")
+            st.warning(":material/warning: Are you sure? This will affect multiple items.")
             if st.button("Confirm"):
-                st.success("✅ Bulk action completed!")
+                st.success(":material/check_circle: Bulk action completed!")
         
         st.markdown("---")
         
         # Workspace settings
-        st.markdown("#### ⚙️ Workspace Settings")
+        st.markdown("#### :material/settings: Workspace Settings")
         
-        if st.button("🏢 Manage Workspace"):
+        if st.button(":material/domain: Manage Workspace"):
             st.switch_page("pages/1_🏢_Workspaces.py")
         
-        if st.button("👥 Manage Team Members"):
+        if st.button(":material/group: Manage Team Members"):
             st.switch_page("pages/1_🏢_Workspaces.py")
     else:
-        st.info("🔒 Owner-only section. Contact your workspace owner for administrative actions.")
+        st.info(":material/lock: Owner-only section. Contact your workspace owner for administrative actions.")
 
 # Footer
 st.markdown("---")
 st.markdown("""
     <div style="text-align: center; color: rgba(255, 255, 255, 0.7);">
-        <p>💡 Admin Panel • Manage your team efficiently • DreamShift EMS</p>
+        <p>:material/tips_and_updates: Admin Panel • Manage your team efficiently • DreamShift EMS</p>
     </div>
 """, unsafe_allow_html=True)

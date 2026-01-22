@@ -442,10 +442,6 @@ section[data-testid="stSidebar"] .stButton:last-of-type > button:hover * {
 
 db = DreamShiftDB()
 
-"""
-Auth is now handled in a dedicated login page. Home checks for a valid session or redirects.
-"""
-
 
 def logout():
   """Clear session state, revoke token, and return to sign-in."""
@@ -502,21 +498,22 @@ if "current_ws_name" not in st.session_state:
 now = datetime.datetime.now()
 hour = now.hour
 if hour < 12:
-    greeting = "Good Morning"
-    emoji = "🌅"
+  greeting = "Good Morning"
+  icon = ":material/wb_sunny:"
 elif hour < 18:
-    greeting = "Good Afternoon"
-    emoji = "☀️"
+  greeting = "Good Afternoon"
+  icon = ":material/sunny:"
 else:
-    greeting = "Good Evening"
-    emoji = "🌙"
+  greeting = "Good Evening"
+  icon = ":material/bedtime:"
 
 time_str = now.strftime("%I:%M %p").lstrip("0")
 
+# Hero header using Material icons
 st.markdown(f"""
 <div class="ds-hero">
   <div>
-    <h1>{emoji} {greeting}, {html.escape(st.session_state.get('user_name', st.session_state.user_email.split('@')[0]))}</h1>
+    <h1>{icon} {greeting}, {html.escape(st.session_state.get('user_name', st.session_state.user_email.split('@')[0]))}</h1>
     <p>Local time: {time_str}</p>
   </div>
 </div>
@@ -549,7 +546,11 @@ st.markdown(f"""
 st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
 
 # Main Content Area
-tab1, tab2, tab3 = st.tabs(["📝 My Tasks", "🔥 Urgent", "📊 Activity"])
+tab1, tab2, tab3 = st.tabs([
+  ":material/list_alt: My Tasks",
+  ":material/warning: Urgent",
+  ":material/history: Activity",
+])
 
 with tab1:
     st.markdown("### My Active Tasks")
@@ -651,9 +652,9 @@ with tab2:
                     if t['urgency_color'] == "#DC3545" or t.get('due_date', datetime.datetime.max) < datetime.datetime.utcnow()]
     
     if not urgent_tasks:
-        st.success("✨ Great! No urgent tasks at the moment.")
+      st.success(":material/check_circle: Great! No urgent tasks at the moment.")
     else:
-        st.warning(f"⚠️ You have {len(urgent_tasks)} urgent/overdue tasks!")
+        st.warning(f":material/warning: You have {len(urgent_tasks)} urgent/overdue tasks!")
         
         for task in urgent_tasks:
             is_overdue = task.get('due_date', datetime.datetime.max) < datetime.datetime.utcnow()
@@ -662,10 +663,10 @@ with tab2:
             due = task['due_date'].strftime('%B %d, %Y') if task.get('due_date') else "No due date"
             
             st.markdown(f"""
-                <div class="ds-task urgent">
-                    <p class="ds-task-title">{'🚨 OVERDUE' if is_overdue else '⚡ URGENT'}: {title}</p>
-                    <div class="ds-task-sub">Due: {due} | Project: {project}</div>
-                </div>
+              <div class="ds-task urgent">
+                <p class="ds-task-title">{' :material/priority_high: OVERDUE' if is_overdue else ' :material/bolt: URGENT'}: {title}</p>
+                <div class="ds-task-sub">Due: {due} | Project: {project}</div>
+              </div>
             """, unsafe_allow_html=True)
             
             if st.button("View & Take Action", key=f"urgent_{task['_id']}", use_container_width=True):
@@ -673,14 +674,14 @@ with tab2:
                 st.switch_page("pages/task_details.py")
 
 with tab3:
-    st.markdown("### 📊 Recent Activity")
+    st.markdown("### :material/history: Recent Activity")
     
     # Get recent updates from tasks
     all_tasks = db.get_tasks_with_urgency({"assignee": st.session_state.user_email})
     recent_tasks = sorted(all_tasks, key=lambda x: x.get('updated_at', x['created_at']), reverse=True)[:10]
     
     for task in recent_tasks:
-        status_emoji = "✅" if task['status'] == "Completed" else "⏳" if task['status'] == "In Progress" else "📝"
+        status_icon = ":material/check_circle:" if task['status'] == "Completed" else ":material/schedule:" if task['status'] == "In Progress" else ":material/notes:"
         title = html.escape(task['title'])
         status = html.escape(task['status'])
         project = html.escape(task.get('project_name', 'No Project'))
@@ -689,7 +690,7 @@ with tab3:
         st.markdown(f"""
             <div class="ds-task">
                 <div style="display: flex; justify-content: space-between;">
-                    <span style="font-weight:850;">{status_emoji} {title}</span>
+                    <span style="font-weight:850;">{status_icon} {title}</span>
                     <span style="color: var(--muted); font-size: 12px;">{timestamp}</span>
                 </div>
                 <p style="margin: 4px 0 0 0; color: var(--muted); font-size: 13px;">
