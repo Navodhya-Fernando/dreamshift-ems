@@ -116,7 +116,8 @@ class DreamShiftDB:
     # ==========================================
 
     def get_user_workspaces(self, email):
-        return list(self.db.workspaces.find({"members.email": email}))
+           """Return ALL workspaces - no restrictions."""
+           return list(self.db.workspaces.find({}))
     
     def create_workspace(self, name, owner_email):
         doc = {
@@ -231,7 +232,7 @@ class DreamShiftDB:
         self.db.comments.insert_one(comment)
         
         # 🔔 INBOX ONLY: Handle Mentions
-        self.handle_mentions(text, user['name'], f"{entity_type}:{entity_id}")
+        self.handle_mentions(text, user_email, f"{entity_type}:{entity_id}")
 
     def get_comments(self, entity_type, entity_id):
         return list(self.db.comments.find({
@@ -316,7 +317,7 @@ class DreamShiftDB:
         self.db.notifications.update_one({"_id": ObjectId(nid)}, {"$set": {"read": True}})
 
     def handle_mentions(self, text, source_user, link):
-        """Parses @mentions and creates Inbox notifications."""
+        """Parses @email mentions and creates Inbox notifications."""
         emails = re.findall(r"@([\w\.-]+@[\w\.-]+)", text)
         for email in emails:
             self.create_notification(email, "Mentioned", f"{source_user} mentioned you.", "mention", link)

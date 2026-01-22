@@ -1,10 +1,10 @@
 /* --- GLOBAL VARIABLES --- */
 :root {
     --primary-color: #f6b900;
-    --bg-color: #0e1117;
+    --bg-color: #24101a;
     --sidebar-bg: #161b22;
     --text-color: #fafafa;
-    --card-bg: #1e2329;
+    --card-bg: #24101a;
     --border-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -141,4 +141,43 @@ a[data-testid="stPageLink-NavLink"] svg {
 /* Hide the default Streamlit "Running" man animation in the top right */
 [data-testid="stStatusWidget"] {
     display: none;
+}
+
+/* --- PRIMARY BUTTONS STYLING --- */
+/* Ensure all primary buttons use brand colors */
+button[kind="primary"],
+button[data-testid="baseButton-primary"] {
+    background-color: #f6b900 !important;
+    color: #411c30 !important;
+    border: none !important;
+    font-weight: 600 !important;
+}
+
+button[kind="primary"]:hover,
+button[data-testid="baseButton-primary"]:hover {
+    background-color: #ffc933 !important;
+    color: #411c30 !important;
+}
+
+/* Secondary buttons keep their transparent style */
+button[kind="secondary"] {
+    background: transparent !important;
+    color: #b0b3b8 !important;
+}
+
+button[kind="secondary"]:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #fff !important;
+}
+
+/* Global background color for main content area */
+section[data-testid="stAppViewContainer"] {
+    background-color: #24101a !important;
+}
+
+/* Ensure all text inputs, textareas, and form elements match theme */
+input, textarea, select {
+    background-color: #24101a !important;
+    color: #fafafa !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
 }

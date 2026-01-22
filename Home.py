@@ -63,7 +63,7 @@ svg_night = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill=
 greeting_styles = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-    body { margin: 0; background: transparent; font-family: 'Inter', sans-serif; }
+    body { margin: 0; background: #24101a; font-family: 'Inter', sans-serif; }
     .ds-greeting-container {
         display: flex;
         align-items: center;
@@ -136,7 +136,7 @@ col1, col2, col3 = st.columns(3)
 # Custom metric styling
 def render_metric(label, value, delta=None, color="#f6b900"):
     st.markdown(f"""
-    <div class="ds-card" style="padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+    <div class="ds-card" style="padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); background: #24101a;">
         <div style="font-size: 0.9rem; color: #888; text-transform: uppercase; letter-spacing: 1px;">{label}</div>
         <div style="font-size: 2.2rem; font-weight: 800; color: {color}; margin: 5px 0;">{value}</div>
         {f'<div style="font-size: 0.8rem; color: #4caf50;">{delta}</div>' if delta else ''}
@@ -166,7 +166,7 @@ with c1:
     
     if not my_tasks:
         st.markdown("""
-        <div class="ds-card" style="text-align:center; padding:30px; opacity:0.7;">
+            <div class="ds-card" style="text-align:center; padding:30px; opacity:0.7; background: #24101a;">
             <h3>🎉 All Caught Up!</h3>
             <p>You have no pending tasks.</p>
         </div>
@@ -175,7 +175,7 @@ with c1:
     for t in my_tasks[:5]:
         color = t.get('urgency_color', '#4caf50')
         st.markdown(f"""
-        <div class="ds-card" style="border-left: 5px solid {color}; padding: 12px 15px; margin-bottom: 10px; transition: transform 0.2s;">
+            <div class="ds-card" style="border-left: 5px solid {color}; padding: 12px 15px; margin-bottom: 10px; transition: transform 0.2s; background: #24101a;">
             <div style="font-weight: 600; font-size: 1.1rem; display:flex; justify-content:space-between; align-items:center;">
                 <span>{t['title']}</span>
                 <span class="ds-badge" style="font-size:0.75rem; background:rgba(255,255,255,0.1);">{t['priority']}</span>
@@ -201,7 +201,7 @@ with c2:
         for n in notifs[:4]:
             border = "#d32f2f" if n['type'] == 'warning' else "#f6b900"
             st.markdown(f"""
-            <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid {border};">
+                <div style="background: #24101a; border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid {border};">
                 <div style="font-weight: 600; font-size: 0.9rem;">{n['title']}</div>
                 <div style="font-size: 0.8rem; color: #aaa; margin-top: 2px;">{n['message']}</div>
             </div>

@@ -80,8 +80,7 @@ def render_custom_sidebar():
                 if current_id:
                     for name, w_id in ws_map.items():
                         if w_id == current_id:
-                            if name in ws_names:
-                                current_index = ws_names.index(name)
+                            current_index = ws_names.index(name)
                             break
                 
                 st.markdown('<p style="font-size: 0.75rem; color: #666; font-weight: 600; padding-left: 5px; margin-bottom: 2px;">WORKSPACE</p>', unsafe_allow_html=True)
