@@ -7,7 +7,7 @@ import html
 st.set_page_config(page_title="Workspaces | DreamShift EMS", page_icon="static/icons/workspaces.svg", layout="wide", initial_sidebar_state="expanded")
 
 # Load custom CSS and setup
-from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
+from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar, get_svg
 
 # Hide default sidebar navigation and show custom sidebar
 hide_streamlit_sidebar()
@@ -124,19 +124,19 @@ if not selected_ws:
 
 ws_stats = db.get_workspace_stats(ws_id)
 
-# Header
-render_html(
-    """
+# --- HEADER WITH CUSTOM SVG ---
+ws_icon = get_svg("workspaces.svg", width=34, height=34) or ":material/domain:"
+
+st.markdown(f"""
 <div class="ds-page-head">
   <div>
-    <h1 class="ds-page-title" style="display:flex; align-items:center; gap:10px;">
-        :material/domain: Workspaces
+    <h1 class="ds-page-title" style="display:flex; align-items:center; gap:12px;">
+        {ws_icon} Workspaces
     </h1>
     <p class="ds-page-sub">Manage your organization units and teams</p>
   </div>
 </div>
-"""
-)
+""", unsafe_allow_html=True)
 
 # ------------------------------------------------------------
 # Header + metrics

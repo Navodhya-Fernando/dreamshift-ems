@@ -15,6 +15,16 @@ def load_global_css():
     else:
         st.error("⚠️ CSS file not found: static/styles.css")
 
+def get_svg(filename, width=24, height=24, color=None):
+    """
+    Reads a local SVG file from static/icons/ and returns it as an HTML string.
+    """
+    icon_path = Path(f"static/icons/{filename}")
+    if icon_path.exists():
+        svg_content = icon_path.read_text()
+        # Optional: styling injection could go here, but usually raw SVG is best
+        return f'<div style="width:{width}px; height:{height}px; display:flex; align-items:center; justify-content:center;">{svg_content}</div>'
+    return ""
 
 def hide_streamlit_sidebar():
     """
@@ -136,12 +146,11 @@ def render_custom_sidebar():
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("🚪 Log out", use_container_width=True):
+        if st.button("Log out", icon=":material/logout:", use_container_width=True):
             # Clear session
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             # Redirect
-            st.switch_page("pages/0_🚪_Sign_In.py")
             st.switch_page("pages/0_🚪_Sign_In.py")
 
 

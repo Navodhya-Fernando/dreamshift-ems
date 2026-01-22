@@ -7,7 +7,7 @@ import streamlit as st
 import datetime
 import time
 from src.database import DreamShiftDB
-from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
+from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar, get_svg
 from src.chat_ui import build_threads, render_comment
 
 st.set_page_config(page_title="Task Details | DreamShift EMS", page_icon="static/icons/tasks.svg", layout="wide", initial_sidebar_state="expanded")
@@ -335,11 +335,3 @@ for c in threads:
             task_id=task_id,
             indent=True
         )
-
-# 1. Use 2-column layout: left (main), right (metadata).
-# 2. Use global card class for all cards.
-# 3. Comments: tight spacing, clear author/timestamp, subtle dividers.
-# 4. Add empty state card (ds-empty-state) if no comments/activity.
-# 5. Consistent button/input styles.
-# 6. Add skeleton loader (ds-skeleton) for loading states.
-# 7. Ensure consistent section/card/inline gaps using ds-gap-section, ds-gap-card, ds-gap-inline classes.
