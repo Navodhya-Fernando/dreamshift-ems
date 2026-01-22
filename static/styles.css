@@ -182,6 +182,24 @@ a[data-testid="stPageLink-NavLink"][aria-current="page"] {
     opacity: 0.8;
 }
 
+/* Workspace switcher: minimal pill style */
+[data-testid="stSidebar"] [data-baseweb="select"] > div {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+    border-radius: 999px !important;
+    min-height: 36px;
+    padding-left: 12px;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within {
+    box-shadow: 0 0 0 2px rgba(246,185,0,0.25) !important;
+    border-color: rgba(246,185,0,0.5) !important;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] input {
+    font-size: 0.9rem !important;
+}
+
 [data-baseweb="popover"] {
     background: var(--card) !important;
     border: 1px solid var(--border) !important;

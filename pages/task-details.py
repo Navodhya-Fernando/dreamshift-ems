@@ -4,7 +4,11 @@ from bson import ObjectId
 from src.database import DreamShiftDB
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
 from src.chat_ui import render_chat_interface
-from src.mailer import notify_admins_extension
+try:
+    from src.mailer import notify_admins_extension
+except Exception:
+    def notify_admins_extension(*_args, **_kwargs):
+        return None
 
 st.set_page_config(page_title="Task Details", layout="wide")
 load_global_css()
