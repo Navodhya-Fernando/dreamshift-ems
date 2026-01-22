@@ -12,8 +12,20 @@ st.set_page_config(
     page_title="🏠 Home - DreamShift EMS",
     page_icon="🚀",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"  # Collapse default sidebar
 )
+
+# Import UI utilities
+from src.ui import load_global_css, hide_default_sidebar, render_custom_sidebar
+
+# Hide default Streamlit sidebar
+hide_default_sidebar()
+
+# Load global CSS
+load_global_css()
+
+# Render custom sidebar
+render_custom_sidebar()
 
 # Base CSS - Applied to ALL pages
 st.markdown("""

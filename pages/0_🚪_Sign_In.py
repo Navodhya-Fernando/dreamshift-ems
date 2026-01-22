@@ -15,6 +15,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# Load UI utilities
+from src.ui import load_global_css, hide_default_sidebar
+
+# Hide default Streamlit sidebar
+hide_default_sidebar()
+
+# Load global CSS
+load_global_css()
+
 db = DreamShiftDB()
 
 # If already authenticated, push token to URL and go home

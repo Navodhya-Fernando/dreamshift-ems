@@ -6,11 +6,20 @@ Shows project info, tasks, and basic chat
 import streamlit as st
 import datetime
 from src.database import DreamShiftDB
-from src.ui import load_global_css
+from src.ui import load_global_css, hide_default_sidebar, render_custom_sidebar
 from src.chat_ui import build_threads, render_comment
 
-st.set_page_config(page_title="Project Details", page_icon="📁", layout="wide")
+st.set_page_config(page_title="Project Details", page_icon="📁", layout="wide", initial_sidebar_state="collapsed")
+
+# Hide default Streamlit sidebar
+hide_default_sidebar()
+
+# Load global CSS
 load_global_css()
+
+# Render custom sidebar
+render_custom_sidebar()
+
 db = DreamShiftDB()
 
 # Auth
@@ -148,7 +157,7 @@ with f1:
     pinned_only = st.toggle("Pinned only", value=False)
 with f2:
     members = db.get_workspace_members_for_mentions(workspace_id) or []
-    mention_options = ["None"] + [f"{m['name']} ({m['email']})" for m in members]
+    mention_options = ["None"] + [f"{m['name']} ({m['email']}) {'✓' if m.get('is_member') else '○'}" for m in members]
     selected = st.selectbox("Mention", mention_options)
 
 if "compose_comment" not in st.session_state:

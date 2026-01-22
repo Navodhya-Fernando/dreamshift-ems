@@ -4,24 +4,27 @@ import html
 from bson import ObjectId
 from src.database import DreamShiftDB
 
-# ------------------------------------------------------------
+# Page config
+st.set_page_config(page_title="Task Templates - DreamShift EMS", page_icon="🎯", layout="wide", initial_sidebar_state="collapsed")
+
+# Load base CSS and setup
+from src.ui import load_global_css, hide_default_sidebar, render_custom_sidebar
+
+# Hide default Streamlit sidebar
+hide_default_sidebar()
+
+# Load global CSS
+load_global_css()
+
+# Render custom sidebar
+render_custom_sidebar()
+
 # Helpers
-# ------------------------------------------------------------
 def render_html(html_str: str):
     """Strip leading whitespace so Streamlit does not treat it as code."""
     cleaned = "\n".join([line.lstrip() for line in html_str.split("\n")])
     st.markdown(cleaned, unsafe_allow_html=True)
 
-# ------------------------------------------------------------
-# Page config
-# ------------------------------------------------------------
-st.set_page_config(page_title="Task Templates - DreamShift EMS", page_icon="🎯", layout="wide")
-
-# Load base CSS
-from src.ui import load_global_css
-load_global_css()
-
-# ------------------------------------------------------------
 # App
 # ------------------------------------------------------------
 db = DreamShiftDB()

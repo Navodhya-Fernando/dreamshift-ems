@@ -14,11 +14,19 @@ from components.calendar import (
     get_week_range
 )
 
-st.set_page_config(page_title="📅 Calendar", page_icon="📅", layout="wide")
+st.set_page_config(page_title="📅 Calendar", page_icon="📅", layout="wide", initial_sidebar_state="collapsed")
 
-# Load custom CSS
-from src.ui import load_global_css
+# Load custom CSS and setup
+from src.ui import load_global_css, hide_default_sidebar, render_custom_sidebar
+
+# Hide default Streamlit sidebar
+hide_default_sidebar()
+
+# Load global CSS
 load_global_css()
+
+# Render custom sidebar
+render_custom_sidebar()
 
 db = DreamShiftDB()
 

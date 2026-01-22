@@ -262,6 +262,10 @@ class DreamShiftDB:
 
     def get_user_workspaces(self, email):
         return list(self.db.workspaces.find({"members.email": email}))
+    
+    def get_all_workspaces(self):
+        """Get all workspaces (for users to see and switch between)."""
+        return list(self.db.workspaces.find())
 
     def get_user_role(self, workspace_id, email):
         """Get user's role in a workspace. Returns None if not a member."""
@@ -616,9 +620,23 @@ class DreamShiftDB:
         return out
 
     def get_workspace_members_for_mentions(self, workspace_id: str = None):
-        """Get all users (not just workspace members) for mention autocomplete."""
-        # Return all users in the system instead of just workspace members
-        return self.get_all_users_for_mentions()
+        """Get all users for mention autocomplete with membership status indicator."""
+        users = self.get_all_users_for_mentions()
+        
+        # If workspace_id provided, add member status
+        if workspace_id:
+            ws_members = self.get_workspace_members(workspace_id)
+            ws_member_emails = {m.get("email") for m in ws_members}
+            
+            for user in users:
+                if user.get("email") in ws_member_emails:
+                    user["is_member"] = True
+                    user["member_status"] = "In Workspace"
+                else:
+                    user["is_member"] = False
+                    user["member_status"] = "Not in Workspace"
+        
+        return users
     
     def add_comment(self, entity_type, entity_id, user_email, text, workspace_id=None, project_id=None, task_id=None, parent_comment_id=None):
         """Add comment to task or project with reactions, pin support, and threading."""

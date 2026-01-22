@@ -3,7 +3,19 @@ import datetime
 import html
 from src.database import DreamShiftDB
 
-st.set_page_config(page_title="Profile", page_icon="👤", layout="wide")
+st.set_page_config(page_title="Profile", page_icon="👤", layout="wide", initial_sidebar_state="collapsed")
+
+# Load UI utilities
+from src.ui import load_global_css, hide_default_sidebar, render_custom_sidebar
+
+# Hide default Streamlit sidebar
+hide_default_sidebar()
+
+# Load global CSS
+load_global_css()
+
+# Render custom sidebar
+render_custom_sidebar()
 
 db = DreamShiftDB()
 

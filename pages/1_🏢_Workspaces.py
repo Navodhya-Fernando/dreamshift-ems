@@ -3,26 +3,28 @@ from src.database import DreamShiftDB
 import datetime
 import html
 
-# ------------------------------------------------------------
+# Page config
+st.set_page_config(page_title="Workspaces | DreamShift EMS", page_icon="🏢", layout="wide", initial_sidebar_state="collapsed")
+
+# Load custom CSS and setup
+from src.ui import load_global_css, hide_default_sidebar, render_custom_sidebar
+
+# Hide default Streamlit sidebar
+hide_default_sidebar()
+
+# Load global CSS
+load_global_css()
+
+# Render custom sidebar
+render_custom_sidebar()
+
 # Helpers
-# ------------------------------------------------------------
 def render_html(html_str: str):
     """Strip leading whitespace so Streamlit does not treat it as code."""
     cleaned = "\n".join([line.lstrip() for line in html_str.split("\n")])
     st.markdown(cleaned, unsafe_allow_html=True)
 
-# ------------------------------------------------------------
-# Page config
-# ------------------------------------------------------------
-st.set_page_config(page_title="Workspaces | DreamShift EMS", page_icon="🏢", layout="wide")
-
-# Load custom CSS
-from src.ui import load_global_css
-load_global_css()
-
-# ------------------------------------------------------------
 # App
-# ------------------------------------------------------------
 db = DreamShiftDB()
 
 # Auth
@@ -33,11 +35,11 @@ if "user_email" not in st.session_state:
 user_email = st.session_state.user_email
 user = db.get_user(user_email)
 
-# Workspaces
-workspaces = db.get_user_workspaces(user_email)
+# Get all workspaces (not just user's)
+all_workspaces = db.get_all_workspaces()
 
-# Empty state: create first workspace
-if not workspaces:
+# Empty state: no workspaces exist
+if not all_workspaces:
     render_html(
         """
 <div class="ds-card">
@@ -63,37 +65,63 @@ if not workspaces:
                 st.error("Please enter a workspace name.")
     st.stop()
 
+# Get user's workspaces (those they're members of)
+user_workspaces = db.get_user_workspaces(user_email)
+user_ws_ids = {str(ws["_id"]) for ws in user_workspaces}
+
+# Try to use previous selection, fallback to first workspace
+previous_ws_id = st.session_state.get("current_ws_id")
+if previous_ws_id and any(str(ws["_id"]) == previous_ws_id for ws in all_workspaces):
+    selected_ws_id = previous_ws_id
+else:
+    selected_ws_id = str(all_workspaces[0]["_id"]) if all_workspaces else None
+
 # ------------------------------------------------------------
 # Sidebar: minimal selector
 # ------------------------------------------------------------
 with st.sidebar:
     # Keep it simple and consistent with your global sidebar styling
     st.markdown("### Workspace")
-    ws_map = {ws["name"]: str(ws["_id"]) for ws in workspaces}
-    selected_name = st.selectbox("", list(ws_map.keys()), key="ws_selector", label_visibility="collapsed")
-
+    ws_map = {ws["name"]: str(ws["_id"]) for ws in all_workspaces}
+    ws_names = list(ws_map.keys())
+    
+    # Find the display name for current selection
+    current_name = next((name for name, id in ws_map.items() if id == selected_ws_id), ws_names[0] if ws_names else None)
+    current_index = ws_names.index(current_name) if current_name in ws_names else 0
+    
+    selected_name = st.selectbox("", ws_names, key="ws_selector", label_visibility="collapsed", index=current_index)
     ws_id = ws_map[selected_name]
     st.session_state.current_ws_id = ws_id
     st.session_state.current_ws_name = selected_name
 
+    # Check if user is member of selected workspace
     role = db.get_user_role(ws_id, user_email)
-    if role is None:
-        st.error("⚠️ You are not a member of this workspace. Please contact the workspace owner to be added.")
-        st.stop()
-    st.session_state.user_role = role
-
+    is_member = role is not None
+    st.session_state.user_role = role if is_member else "Guest"
+    st.session_state.is_workspace_member = is_member
+    
+    # Show membership status and role
+    if is_member:
+        membership_badge = f'<span class="ds-pill ds-pill-accent">✓ {html.escape(role)}</span>'
+    else:
+        membership_badge = '<span class="ds-pill" style="color: rgba(255,255,255,0.65);">○ Guest</span>'
+    
     st.markdown(
         f"""
-        <div style="margin-top:10px;">
-          <span class="ds-pill ds-pill-accent">{html.escape(role)}</span>
-          <span class="ds-pill" style="margin-left:8px;">{html.escape(selected_name)}</span>
+        <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+          {membership_badge}
+          <span class="ds-pill">{html.escape(selected_name)}</span>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 # Selected workspace + stats
-selected_ws = next(ws for ws in workspaces if str(ws["_id"]) == ws_id)
+selected_ws = next((ws for ws in all_workspaces if str(ws["_id"]) == ws_id), None)
+if not selected_ws:
+    st.error("Workspace not found.")
+    st.stop()
+
 ws_stats = db.get_workspace_stats(ws_id)
 
 # ------------------------------------------------------------
@@ -223,7 +251,7 @@ with tab_projects:
         )
         st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
 
-        if role in ["Owner", "Workspace Admin"]:
+        if st.session_state.user_role in ["Owner", "Workspace Admin"]:
             with st.expander("Create Project", expanded=True):
                 with st.form("new_project_form"):
                     proj_name = st.text_input("Project Name", placeholder="e.g., Website Redesign")
@@ -304,7 +332,7 @@ with tab_team:
             )
 
             # Role management (Owner only, not self)
-            if role == "Owner" and member["email"] != user_email:
+            if st.session_state.user_role == "Owner" and member["email"] != user_email:
                 col_x, col_y = st.columns([3, 1])
                 with col_x:
                     new_role = st.selectbox(
@@ -328,7 +356,7 @@ with tab_team:
                             st.rerun()
 
     # Invite section
-    if role in ["Owner", "Workspace Admin"]:
+    if st.session_state.user_role in ["Owner", "Workspace Admin"]:
         st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
         with st.expander("Invite Member", expanded=False):
             with st.form("invite_member"):
@@ -383,7 +411,7 @@ with tab_settings:
     
     st.markdown("<div style='height:14px;'></div>", unsafe_allow_html=True)
 
-    if role != "Owner":
+    if st.session_state.user_role != "Owner":
         st.info("Only workspace owners can modify settings.")
     else:
         with st.form("edit_workspace"):
@@ -454,7 +482,7 @@ with tab_analytics:
 
     st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
 
-    if role in ["Owner", "Workspace Admin"]:
+    if st.session_state.user_role in ["Owner", "Workspace Admin"]:
         render_html(
             """
 <div class="ds-card-tight">

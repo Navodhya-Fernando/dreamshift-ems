@@ -107,10 +107,18 @@ def status_badge(s: str):
     return s, klass
 
 # ---------- page ----------
-st.set_page_config(page_title="Tasks - DreamShift", page_icon="✅", layout="wide")
+st.set_page_config(page_title="Tasks - DreamShift", page_icon="✅", layout="wide", initial_sidebar_state="collapsed")
 
-from src.ui import load_global_css
+from src.ui import load_global_css, hide_default_sidebar, render_custom_sidebar
+
+# Hide default Streamlit sidebar
+hide_default_sidebar()
+
+# Load global CSS
 load_global_css()
+
+# Render custom sidebar
+render_custom_sidebar()
 
 db = DreamShiftDB()
 
