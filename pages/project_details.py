@@ -9,7 +9,7 @@ from src.database import DreamShiftDB
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
 from src.chat_ui import build_threads, render_comment
 
-st.set_page_config(page_title="Project Details | DreamShift EMS", page_icon="📁", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Project Details | DreamShift EMS", page_icon="static/icons/projects.svg", layout="wide", initial_sidebar_state="expanded")
 
 # Hide default sidebar navigation and show custom sidebar
 hide_streamlit_sidebar()

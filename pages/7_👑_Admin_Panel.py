@@ -3,7 +3,7 @@ from src.database import DreamShiftDB
 import datetime
 import pandas as pd
 
-st.set_page_config(page_title="Admin Panel | DreamShift EMS", page_icon="👑", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Admin Panel | DreamShift EMS", page_icon="static/icons/admin.svg", layout="wide", initial_sidebar_state="expanded")
 
 # Load UI utilities
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar

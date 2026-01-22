@@ -5,7 +5,7 @@ from bson import ObjectId
 from src.database import DreamShiftDB
 
 # Page config
-st.set_page_config(page_title="Projects | DreamShift EMS", page_icon="📁", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Projects | DreamShift EMS", page_icon="static/icons/projects.svg", layout="wide", initial_sidebar_state="expanded")
 
 # Load custom CSS and setup
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar

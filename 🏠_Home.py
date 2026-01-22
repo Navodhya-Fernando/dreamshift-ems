@@ -9,10 +9,10 @@ import html
 
 # Page config
 st.set_page_config(
-    page_title="🏠 Home - DreamShift EMS",
-    page_icon="🚀",
-    layout="wide",
-    initial_sidebar_state="expanded"
+  page_title="Home - DreamShift EMS",
+  page_icon="static/icons/home.svg",
+  layout="wide",
+  initial_sidebar_state="expanded"
 )
 
 # Import UI utilities

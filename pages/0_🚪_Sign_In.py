@@ -11,7 +11,7 @@ from src.mailer import send_email
 # 1. Page Config: "centered" layout is crucial here
 st.set_page_config(
     page_title="Sign In - DreamShift EMS",
-    page_icon="🚪",
+    page_icon="static/icons/login.svg",
     layout="centered",
     initial_sidebar_state="collapsed",
 )

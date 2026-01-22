@@ -1,7 +1,7 @@
 import streamlit as st
 from src.database import DreamShiftDB
 
-st.set_page_config(page_title="Verify Email Change", page_icon="✉️", layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Verify Email Change", page_icon="static/icons/mail.svg", layout="centered", initial_sidebar_state="expanded")
 
 db = DreamShiftDB()
 

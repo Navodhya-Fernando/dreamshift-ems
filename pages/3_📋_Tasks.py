@@ -12,7 +12,7 @@ import html
 from src.database import DreamShiftDB
 from src.ui import load_global_css, render_custom_sidebar
 
-st.set_page_config(page_title="Tasks | DreamShift EMS", page_icon="📋", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Tasks | DreamShift EMS", page_icon="static/icons/tasks.svg", layout="wide", initial_sidebar_state="expanded")
 render_custom_sidebar()
 load_global_css()
 
@@ -112,7 +112,7 @@ def status_badge(s: str):
     return s, klass
 
 # ---------- page ----------
-st.set_page_config(page_title="Tasks | DreamShift EMS", page_icon="✅", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Tasks | DreamShift EMS", page_icon="static/icons/tasks.svg", layout="wide", initial_sidebar_state="expanded")
 
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
 

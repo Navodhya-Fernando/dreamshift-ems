@@ -14,7 +14,7 @@ from components.calendar import (
     get_week_range
 )
 
-st.set_page_config(page_title="Calendar | DreamShift EMS", page_icon="📅", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Calendar | DreamShift EMS", page_icon="static/icons/calendar.svg", layout="wide", initial_sidebar_state="expanded")
 
 # Load custom CSS and setup
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar

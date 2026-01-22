@@ -5,7 +5,7 @@ from src.database import DreamShiftDB
 
 st.set_page_config(
     page_title="Reset Password - DreamShift EMS",
-    page_icon="🔐",
+    page_icon="static/icons/lock.svg",
     layout="centered",
     initial_sidebar_state="collapsed",
 )

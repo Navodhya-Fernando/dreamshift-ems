@@ -3,7 +3,7 @@ import datetime
 import html
 from src.database import DreamShiftDB
 
-st.set_page_config(page_title="Profile | DreamShift EMS", page_icon="👤", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Profile | DreamShift EMS", page_icon="static/icons/profile.svg", layout="wide", initial_sidebar_state="expanded")
 
 # Load UI utilities
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar

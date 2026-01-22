@@ -4,7 +4,7 @@ import datetime
 import html
 
 # Page config
-st.set_page_config(page_title="Workspaces | DreamShift EMS", page_icon="🏢", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Workspaces | DreamShift EMS", page_icon="static/icons/workspaces.svg", layout="wide", initial_sidebar_state="expanded")
 
 # Load custom CSS and setup
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
