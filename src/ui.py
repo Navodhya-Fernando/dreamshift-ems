@@ -7,11 +7,20 @@ def load_global_css():
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 def hide_streamlit_sidebar():
-    """Hide the default Streamlit sidebar and use only custom sidebar"""
+    """Hide the default Streamlit sidebar UI elements, keep custom sidebar visible"""
     st.markdown("""
     <style>
-        [data-testid="stSidebar"] {
+        /* Hide default Streamlit sidebar header elements */
+        [data-testid="stSidebar"] [data-testid="stSidebarNav"] {
             display: none;
+        }
+        /* Hide the logo and collapse button */
+        [data-testid="stSidebar"] > div:first-child {
+            display: none;
+        }
+        /* Ensure sidebar container stays visible for custom content */
+        [data-testid="stSidebar"] {
+            display: flex !important;
         }
     </style>
     """, unsafe_allow_html=True)
