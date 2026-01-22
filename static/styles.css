@@ -81,9 +81,9 @@
     max-width: 100% !important;
     padding: 10px 20px !important;
     margin: 6px 0 !important;
-    background-color: var(--accent-yellow) !important;
-    color: var(--accent-dark) !important;
-    border: 1px solid var(--accent-yellow) !important;
+    background-color: #f6b900 !important;
+    color: #411c30 !important;
+    border: 1px solid #f6b900 !important;
     border-radius: 10px !important;
     font-weight: 800 !important;
     font-size: 14px !important;
@@ -93,19 +93,19 @@
 }
 
 .stButton > button:hover, .stFormSubmitButton > button:hover {
-    background-color: var(--accent-yellow-hover) !important;
-    color: var(--accent-dark) !important;
+    background-color: #ffe500 !important;
+    color: #411c30 !important;
     box-shadow: 0 10px 26px rgba(246, 185, 0, 0.32) !important;
-    border-color: var(--accent-yellow-hover) !important;
+    border-color: #ffe500 !important;
     transform: none !important;
 }
 
 /* Primary buttons - yellow accent */
 .stButton > button[kind="primary"],
 .stFormSubmitButton > button[kind="primary"] {
-    background-color: var(--accent-yellow) !important;
-    color: var(--accent-dark) !important;
-    border: 1px solid var(--accent-yellow) !important;
+    background-color: #f6b900 !important;
+    color: #411c30 !important;
+    border: 1px solid #f6b900 !important;
     box-shadow: 0 6px 18px rgba(246, 185, 0, 0.22) !important;
     font-weight: 800 !important;
     text-transform: none !important;
@@ -113,8 +113,8 @@
 
 .stButton > button[kind="primary"]:hover,
 .stFormSubmitButton > button[kind="primary"]:hover {
-    background-color: var(--accent-yellow-hover) !important;
-    color: var(--accent-dark) !important;
+    background-color: #ffe500 !important;
+    color: #411c30 !important;
     box-shadow: 0 10px 26px rgba(246, 185, 0, 0.32) !important;
 }
 
