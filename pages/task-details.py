@@ -1,8 +1,9 @@
 import streamlit as st
 import time
+from bson import ObjectId
 from src.database import DreamShiftDB
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
-from src.chat_ui import render_comment
+from src.chat_ui import render_chat_interface
 from src.mailer import notify_admins_extension
 
 st.set_page_config(page_title="Task Details", layout="wide")
@@ -17,12 +18,13 @@ if not tid:
     if st.button("Go to Tasks"): st.switch_page("pages/tasks.py")
     st.stop()
 
-task = db.db.tasks.find_one({"_id": db.ObjectId(tid)})
+task = db.db.tasks.find_one({"_id": ObjectId(tid)})
 if not task: st.error("Task not found."); st.stop()
 
 # --- HEADER ---
 col_back, col_title = st.columns([1, 6])
-if col_back.button("Back"): st.switch_page("pages/tasks.py")
+if col_back.button("Back"):
+    st.switch_page("pages/tasks.py")
 col_title.markdown(f"## {task.get('title')}")
 
 # --- MAIN LAYOUT ---
@@ -57,31 +59,7 @@ with left:
                 st.rerun()
 
     # --- COMMENTS ---
-    st.markdown("---")
-    st.markdown("### 💬 Discussion")
-    comments = db.get_comments("task", tid)
-    
-    # Render existing comments
-    for c in comments:
-        render_comment(
-            c, 
-            current_user_email=st.session_state.user_email,
-            can_pin=True,
-            db=db,
-            entity_type="task",
-            entity_id=tid,
-            workspace_id=task['workspace_id'],
-            project_id=task.get('project_id'),
-            task_id=tid
-        )
-        
-    # Post new comment
-    with st.form("post_comment"):
-        txt = st.text_area("Write a comment (@mention teammates by name)...")
-        if st.form_submit_button("Post Comment"):
-            if txt:
-                db.add_comment("task", tid, st.session_state.user_email, txt, workspace_id=task['workspace_id'])
-                st.rerun()
+    render_chat_interface(tid, "task")
 
 with right:
     st.markdown("### ⚙️ Details")

@@ -1,92 +1,167 @@
 /* --- GLOBAL VARIABLES --- */
 :root {
     --primary-color: #f6b900;
+    --primary-hover: #ffe500;
+    --primary-text: #411c30;
     --bg-color: #24101a;
-    --sidebar-bg: #161b22;
-    --text-color: #fafafa;
-    --card-bg: #24101a;
+    --sidebar-bg: #1e0d16; /* Slightly darker shade of main bg */
+    --card-bg: #2d1522;
+    --text-color: #ffffff;
+    --text-muted: #b0b3b8;
     --border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* --- SIDEBAR CONTAINER --- */
-/* Target the main Streamlit sidebar container */
+/* --- MAIN CONTAINER & BACKGROUND --- */
+.stApp {
+    background-color: var(--bg-color);
+}
+
+section[data-testid="stAppViewContainer"] {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* --- SIDEBAR STYLING --- */
 [data-testid="stSidebar"] {
-    background-color: var(--sidebar-bg);
+    background-color: var(--sidebar-bg) !important;
     border-right: 1px solid var(--border-color);
 }
 
-/* HIDE the default Streamlit Navigation List */
+/* Hide default nav */
 [data-testid="stSidebarNav"] {
     display: none !important;
 }
 
-/* --- CUSTOM NAVIGATION LINKS (st.page_link) --- */
-
-/* Reset default button styles for page links */
-button[kind="secondary"] {
-    border: none !important;
-    background: transparent !important;
-}
-
-/* Style the actual link container */
+/* Custom Page Links in Sidebar */
 a[data-testid="stPageLink-NavLink"] {
     background-color: transparent;
     border: none;
-    color: #b0b3b8; /* Muted text color */
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: all 0.2s ease-in-out;
-    margin-bottom: 2px;
-    text-decoration: none !important;
+    color: var(--text-color);
+    font-weight: 500;
+    padding: 10px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin-bottom: 4px;
     display: flex;
     align-items: center;
-    font-size: 0.95rem;
+    text-decoration: none !important;
 }
 
-/* Hover State */
 a[data-testid="stPageLink-NavLink"]:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: #fff;
-    transform: translateX(3px); /* Subtle slide effect */
+    background-color: rgba(255, 255, 255, 0.08);
+    transform: translateX(4px);
 }
 
-/* Active/Current Page State */
 a[data-testid="stPageLink-NavLink"][aria-current="page"] {
-    background-color: rgba(246, 185, 0, 0.15); /* Low opacity yellow */
+    background-color: rgba(246, 185, 0, 0.1);
     color: var(--primary-color);
-    font-weight: 600;
     border-left: 3px solid var(--primary-color);
 }
 
-/* Icons inside the links */
-a[data-testid="stPageLink-NavLink"] svg {
-    fill: currentColor;
+/* --- BUTTONS --- */
+/* Primary Buttons */
+button[kind="primary"],
+button[data-testid="baseButton-primary"] {
+    background-color: var(--primary-color) !important;
+    color: var(--primary-text) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
+    transition: all 0.2s ease !important;
+    padding: 0.5rem 1rem !important;
 }
 
-/* --- GENERAL UI COMPONENTS --- */
+button[kind="primary"]:hover,
+button[data-testid="baseButton-primary"]:hover {
+    background-color: var(--primary-hover) !important;
+    color: var(--primary-text) !important; /* Text remains same */
+    box-shadow: 0 4px 12px rgba(246, 185, 0, 0.3);
+}
 
-/* Cards (Used in Dashboards) */
+/* Secondary Buttons */
+button[kind="secondary"] {
+    background-color: transparent !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+button[kind="secondary"]:hover {
+    border-color: var(--primary-color) !important;
+    color: var(--primary-color) !important;
+}
+
+/* --- FORMS --- */
+input, textarea, select, [data-baseweb="select"] div {
+    background-color: #1a0b12 !important; /* Darker than bg */
+    color: #fff !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+}
+
+/* --- CARDS & CHAT --- */
 .ds-card {
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
-/* Page Headers */
+/* Modern Chat / Comment Styles */
+.ds-chat-card {
+    background: transparent;
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 0;
+    margin-bottom: 8px;
+    transition: background 0.2s;
+}
+
+.ds-chat-card:hover {
+    background: rgba(255,255,255,0.02);
+}
+
+.ds-chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.ds-chat-author {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 0.95rem;
+}
+
+.ds-chat-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.ds-chat-body {
+    color: #e0e0e0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    padding-left: 0;
+}
+
+/* Nested Threads */
+.ds-indent-1 { margin-left: 20px; border-left: 2px solid rgba(255,255,255,0.05); padding-left: 15px; }
+.ds-indent-2 { margin-left: 40px; border-left: 2px solid rgba(255,255,255,0.05); padding-left: 15px; }
+.ds-indent-3 { margin-left: 60px; border-left: 2px solid rgba(255,255,255,0.05); padding-left: 15px; }
+
+/* Metrics & Headers */
+.ds-header-title {
+    color: #fff;
+    font-weight: 800;
+}
+
 .ds-header-flex {
     display: flex;
     align-items: center;
     gap: 15px;
     margin-bottom: 30px;
-}
-
-.ds-header-title {
-    margin: 0;
-    font-weight: 700;
-    font-size: 2rem;
 }
 
 /* Badges */
@@ -99,21 +174,19 @@ a[data-testid="stPageLink-NavLink"] svg {
     display: inline-block;
 }
 
-/* Adjust Streamlit's top padding */
+/* Adjust block container */
 .block-container {
     padding-top: 3rem;
     max-width: 95rem;
 }
-/* --- SIDEBAR FORM ELEMENTS (Workspace Switcher) --- */
 
-/* Style the label "Select Workspace" (even if hidden, good practice) */
+/* Sidebar form elements */
 [data-testid="stSidebar"] label {
     color: #b0b3b8 !important;
     font-size: 0.8rem;
     font-weight: 600;
 }
 
-/* The Selectbox Container */
 [data-testid="stSidebar"] [data-baseweb="select"] > div {
     background-color: rgba(255, 255, 255, 0.05) !important;
     border-color: rgba(255, 255, 255, 0.1) !important;
@@ -121,63 +194,21 @@ a[data-testid="stPageLink-NavLink"] svg {
     border-radius: 8px;
 }
 
-/* The Selectbox Text */
 [data-testid="stSidebar"] [data-baseweb="select"] span {
     color: #eee !important;
 }
 
-/* The Dropdown Menu Items */
 [data-baseweb="popover"] [role="option"] {
     background-color: #1e2329 !important;
     color: #eee !important;
 }
 
-/* Hover effect on options */
 [data-baseweb="popover"] [role="option"]:hover {
     background-color: rgba(246, 185, 0, 0.2) !important;
     color: #f6b900 !important;
 }
 
-/* Hide the default Streamlit "Running" man animation in the top right */
+/* Hide status widget */
 [data-testid="stStatusWidget"] {
     display: none;
-}
-
-/* --- PRIMARY BUTTONS STYLING --- */
-/* Ensure all primary buttons use brand colors */
-button[kind="primary"],
-button[data-testid="baseButton-primary"] {
-    background-color: #f6b900 !important;
-    color: #411c30 !important;
-    border: none !important;
-    font-weight: 600 !important;
-}
-
-button[kind="primary"]:hover,
-button[data-testid="baseButton-primary"]:hover {
-    background-color: #ffc933 !important;
-    color: #411c30 !important;
-}
-
-/* Secondary buttons keep their transparent style */
-button[kind="secondary"] {
-    background: transparent !important;
-    color: #b0b3b8 !important;
-}
-
-button[kind="secondary"]:hover {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    color: #fff !important;
-}
-
-/* Global background color for main content area */
-section[data-testid="stAppViewContainer"] {
-    background-color: #24101a !important;
-}
-
-/* Ensure all text inputs, textareas, and form elements match theme */
-input, textarea, select {
-    background-color: #24101a !important;
-    color: #fafafa !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
 }

@@ -14,10 +14,10 @@ st.markdown(f"""<div class="ds-header-flex">{icon}<h1 class="ds-header-title">Ta
 
 ws_id = st.session_state.get("current_ws_id")
 if not ws_id: 
-    st.warning("Select a workspace.")
+    st.warning("Please select a workspace from the sidebar.")
     st.stop()
 
-# Workspace member options (names, not emails)
+# --- FETCH MEMBERS FOR ASSIGNEE DROPDOWN ---
 members = db.get_workspace_members(ws_id)
 member_display = []
 member_lookup = {}
@@ -26,66 +26,85 @@ for m in members:
     email = m.get("email")
     if name and email:
         display = name
+        # Handle duplicate names
         if display in member_lookup:
             display = f"{name} ({email})"
         member_display.append(display)
         member_lookup[display] = email
-default_assignee = None
-for disp, email in member_lookup.items():
-    if email == st.session_state.user_email:
-        default_assignee = disp
-        break
 
-# --- CONTROLS ---
-col_filter, col_add = st.columns([3, 1])
-with col_filter:
-    statuses = db.get_workspace_statuses(ws_id)
-    filter_status = st.selectbox("Status Filter", ["All", "Active"] + statuses)
+# Default assignee is current user
+default_assignee_idx = 0
+if st.session_state.user_email in member_lookup.values():
+    current_user_name = next(name for name, email in member_lookup.items() if email == st.session_state.user_email)
+    if current_user_name in member_display:
+        default_assignee_idx = member_display.index(current_user_name)
 
-with col_add:
-    with st.popover("➕ New Task"):
-        with st.form("quick_add_task"):
-            title = st.text_input("Task Title")
-            assignee_display = st.selectbox("Assignee", member_display or ["Unassigned"], index=member_display.index(default_assignee) if default_assignee in member_display else 0)
-            date = st.date_input("Due Date")
-            priority = st.selectbox("Priority", ["Low", "Medium", "High", "Urgent"])
-            if st.form_submit_button("Create"):
-                assignee_email = member_lookup.get(assignee_display)
-                db.create_task(ws_id, title, "", date, assignee_email, "To Do", priority, None, st.session_state.user_email)
-                st.success("Created!")
+# --- BETTER TASK CREATION FORM ---
+with st.expander("➕ Create New Task", expanded=False):
+    with st.form("create_task_form"):
+        c1, c2 = st.columns([2, 1])
+        with c1:
+            task_name = st.text_input("Task Name", placeholder="e.g. Fix Navigation Bar")
+        with c2:
+            priority = st.selectbox("Priority", ["Low", "Medium", "High", "Critical"], index=1)
+            
+        c3, c4 = st.columns(2)
+        with c3:
+            assignee = st.selectbox("Assignee", member_display or ["Unassigned"], index=default_assignee_idx)
+        with c4:
+            due_date = st.date_input("Due Date", value=datetime.date.today() + datetime.timedelta(days=1))
+            
+        if st.form_submit_button("Create Task", type="primary", use_container_width=True):
+            if not task_name:
+                st.error("Task Name is required.")
+            else:
+                assignee_email = member_lookup.get(assignee)
+                db.create_task(
+                    ws_id=ws_id,
+                    title=task_name,
+                    desc="", # Description is optional/empty initially
+                    due_date=due_date,
+                    assignee=assignee_email,
+                    status="To Do",
+                    priority=priority,
+                    project_id=None,
+                    creator=st.session_state.user_email
+                )
+                st.success("Task created!")
                 st.rerun()
 
-# --- QUERY ---
-query = {"workspace_id": ws_id}
-if filter_status != "All":
-    if filter_status == "Active":
-        query["status"] = {"$ne": "Completed"}
-    else:
-        query["status"] = filter_status
+# --- TASK LIST (Kanban/List Hybrid) ---
+st.markdown("### Active Tasks")
 
-tasks = db.get_tasks_with_urgency(query)
+tasks = db.get_tasks_with_urgency({"workspace_id": ws_id, "status": {"$ne": "Completed"}})
 
-# --- LIST VIEW ---
-st.markdown("### Task List")
 if not tasks:
-    st.info("No tasks found matching this filter.")
+    st.info("No active tasks in this workspace.")
 
 for t in tasks:
-    urgency = t.get('urgency_color', '#ccc')
-    assignee_email = t.get('assignee')
-    assignee_display = next((d for d, em in member_lookup.items() if em == assignee_email), assignee_email or 'Unassigned')
+    urgency_color = t.get('urgency_color', '#ccc')
     
-    # Card Layout
-    c1, c2, c3, c4 = st.columns([4, 2, 2, 1])
-    with c1:
-        st.markdown(f"**{t['title']}**")
-        st.caption(f"Assignee: {assignee_display}")
-    with c2:
-        st.markdown(f"<span style='color:{urgency}'>● {t.get('due_date').strftime('%b %d') if t.get('due_date') else 'No Date'}</span>", unsafe_allow_html=True)
-    with c3:
-        st.markdown(f"<span class='ds-badge'>{t['status']}</span>", unsafe_allow_html=True)
-    with c4:
-        if st.button("Open", key=f"list_{t['_id']}"):
+    # Clean card layout
+    st.markdown(f"""
+    <div class="ds-card" style="padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="flex-grow: 1;">
+            <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px;">{t['title']}</div>
+            <div style="font-size: 0.85rem; color: #b0b3b8; display: flex; gap: 15px;">
+                <span>👤 {next((k for k,v in member_lookup.items() if v == t.get('assignee')), 'Unassigned')}</span>
+                <span style="color: {urgency_color};">📅 {t.get('due_date').strftime('%b %d') if t.get('due_date') else 'No Date'}</span>
+                <span>🔥 {t.get('priority')}</span>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <span class="ds-badge">{t['status']}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Invisible button overlay logic usually requires trickier CSS or just placing a button below/beside
+    # For Streamlit, placing the button explicitly is safer
+    col_btn = st.columns([0.9, 0.1])
+    with col_btn[1]:
+         if st.button("➤", key=f"open_{t['_id']}", help="Open Details"):
             st.session_state.selected_task_id = str(t['_id'])
             st.switch_page("pages/task-details.py")
-    st.divider()

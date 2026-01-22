@@ -17,12 +17,16 @@ stats = db.get_user_stats(st.session_state.user_email)
 col1, col2 = st.columns([1, 2])
 
 with col1:
+    name = user.get('name', 'Member') if user else 'Member'
+    email = user.get('email', 'Unknown') if user else 'unknown'
+    role = user.get('role', 'Member') if user else 'Member'
+
     st.markdown(f"""
     <div class="ds-card" style="text-align:center;">
-        <h1 style="font-size:3rem;">👤</h1>
-        <h2>{user['name']}</h2>
-        <p style="color:#888;">{user['email']}</p>
-        <div class="ds-badge" style="margin:auto;">{user.get('role', 'Member')}</div>
+        <div style="font-size:3rem;">👤</div>
+        <h2 style="margin-bottom:4px;">{name}</h2>
+        <p style="color:#888; margin:0 0 8px 0;">{email}</p>
+        <div class="ds-badge" style="margin:auto;">{role}</div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -31,11 +35,28 @@ with col1:
         st.switch_page("pages/sign-in.py")
 
 with col2:
-    st.subheader("Performance")
+    st.markdown("### Performance")
     c1, c2 = st.columns(2)
-    c1.metric("Tasks Completed", stats['completed'])
-    c2.metric("On-Time Rate", f"{stats['rate']}%")
+    c1.metric("Tasks Completed", stats.get('completed', 0))
+    c2.metric("On-Time Rate", f"{stats.get('rate', 0)}%")
     
-    st.subheader("Account Security")
-    if st.button("Reset Password"):
-        st.switch_page("pages/password-reset.py")
+    st.markdown("### Account Security")
+    sec_left, sec_right = st.columns([0.4, 0.6])
+    with sec_left:
+        st.markdown("""
+        <div class="ds-card" style="padding:14px;">
+            <div style="font-weight:700;">Password</div>
+            <div style="color:#888; font-size:0.9rem;">Last changed: Recently</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with sec_right:
+        if st.button("Reset Password", use_container_width=True):
+            st.switch_page("pages/password-reset.py")
+    
+    st.markdown("### Preferences")
+    st.markdown("""
+    <div class="ds-card" style="padding:14px;">
+        <div style="font-weight:700; margin-bottom:6px;">Notifications</div>
+        <div style="color:#9ea0a6;">Mentions, reminders, and admin alerts will appear in Inbox. Email digests coming soon.</div>
+    </div>
+    """, unsafe_allow_html=True)

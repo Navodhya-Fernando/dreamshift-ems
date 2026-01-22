@@ -326,3 +326,96 @@ def render_comment(
                     st.rerun()
                 else:
                     st.error("Reply cannot be empty.")
+
+
+def render_chat_interface(context_id, context_type="task"):
+    """
+    Renders a modern, ClickUp-style chat/comment section.
+    
+    Args:
+        context_id (str): The ID of the task or project.
+        context_type (str): 'task' or 'project'.
+    """
+    from src.database import DreamShiftDB
+    db = DreamShiftDB()
+    user_email = st.session_state.user_email
+    
+    st.markdown("---")
+    st.markdown("### 💬 Comments")
+
+    # --- 1. NEW COMMENT INPUT (Top, like modern apps) ---
+    with st.container():
+        with st.form(key=f"chat_form_{context_id}", clear_on_submit=True):
+            col_in, col_btn = st.columns([0.85, 0.15])
+            with col_in:
+                new_comment = st.text_area(
+                    "Write a comment...", 
+                    height=80, 
+                    placeholder="Type your message here... Use @ to mention someone.",
+                    label_visibility="collapsed"
+                )
+            with col_btn:
+                st.markdown("<br>", unsafe_allow_html=True)
+                submitted = st.form_submit_button("Send", type="primary", use_container_width=True)
+            
+            if submitted and new_comment.strip():
+                comment_data = {
+                    "context_id": context_id,
+                    "context_type": context_type,
+                    "author": user_email,
+                    "text": new_comment,
+                    "timestamp": datetime.datetime.utcnow(),
+                    "mentions": [], # Parser logic would go here
+                    "likes": []
+                }
+                db.db.comments.insert_one(comment_data)
+                st.rerun()
+
+    # --- 2. COMMENTS FEED ---
+    comments = list(db.db.comments.find({"context_id": context_id}).sort("timestamp", -1))
+    
+    if not comments:
+        st.markdown("""
+            <div style="text-align: center; color: #b0b3b8; padding: 40px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
+                No comments yet. Be the first to start the conversation!
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        for c in comments:
+            author_name = c['author'].split('@')[0].title() # Simple name extraction
+            time_str = c['timestamp'].strftime("%b %d, %I:%M %p")
+            initial = author_name[0] if author_name else "U"
+            
+            # ClickUp-style Comment Card HTML
+            st.markdown(f"""
+            <div class="ds-chat-card">
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <div style="
+                        width: 32px; height: 32px; 
+                        border-radius: 50%; 
+                        background: #f6b900; 
+                        color: #411c30; 
+                        display: flex; align-items: center; justify-content: center; 
+                        font-weight: 800; font-size: 14px;
+                        flex-shrink: 0;
+                    ">
+                        {initial}
+                    </div>
+                    
+                    <div style="flex-grow: 1;">
+                        <div class="ds-chat-header">
+                            <span class="ds-chat-author">{author_name}</span>
+                            <span class="ds-chat-time">{time_str}</span>
+                        </div>
+                        <div class="ds-chat-body">
+                            {html.escape(c['text'])}
+                        </div>
+                        
+                        <div style="margin-top: 8px; display: flex; gap: 15px; font-size: 0.75rem; color: #b0b3b8; cursor: pointer;">
+                            <span style="hover:color:#fff;">Reply</span>
+                            <span style="hover:color:#fff;">👍 Like</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
