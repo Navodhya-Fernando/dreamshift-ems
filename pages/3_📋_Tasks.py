@@ -233,31 +233,29 @@ project_names = list(project_map.keys())
 member_labels, label_to_email = _member_options(db, ws_id, user_email)
 
 # Compact filter row: place all filters in a single st.columns row, short labels.
-with st.columns([2.2, 1.2, 1.4, 1.4]):
-    # Layout: search + project + assignee + priority (cleaner row)
-    f1, f2, f3, f4 = st.columns([2.2, 1.2, 1.4, 1.4])
+f1, f2, f3, f4 = st.columns([2.2, 1.2, 1.4, 1.4])
 
-    with f1:
-        search_query = st.text_input("Search", placeholder="Search title or description...", label_visibility="collapsed")
+with f1:
+    search_query = st.text_input("Search", placeholder="Search title or description...", label_visibility="collapsed")
 
-    with f2:
-        project_choice = st.selectbox(
-            "Project",
-            ["All Projects"] + project_names,
-            label_visibility="collapsed"
-        )
+with f2:
+    project_choice = st.selectbox(
+        "Project",
+        ["All Projects"] + project_names,
+        label_visibility="collapsed"
+    )
 
-    with f3:
-        # Show names but filter by email
-        assignee_choice = st.selectbox(
-            "Assignee",
-            ["All Team Members", "My Tasks"] + member_labels,
-            label_visibility="collapsed"
-        )
+with f3:
+    # Show names but filter by email
+    assignee_choice = st.selectbox(
+        "Assignee",
+        ["All Team Members", "My Tasks"] + member_labels,
+        label_visibility="collapsed"
+    )
 
-    with f4:
-        priority_choice = st.multiselect(
-            "Priority",
+with f4:
+    priority_choice = st.multiselect(
+        "Priority",
             ["Low", "Normal", "High", "Urgent"],
             default=["Low", "Normal", "High", "Urgent"],
             label_visibility="collapsed"
