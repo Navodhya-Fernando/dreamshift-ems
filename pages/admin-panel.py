@@ -1,9 +1,10 @@
 import streamlit as st
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar, get_svg
 
-st.set_page_config(page_title="Admin", layout="wide")
+st.set_page_config(page_title="Admin Panel", layout="wide")
 load_global_css()
 hide_streamlit_sidebar()
+render_custom_sidebar()
 render_custom_sidebar()
 
 if st.session_state.get("user_role") not in ["Owner", "Workspace Admin"]:

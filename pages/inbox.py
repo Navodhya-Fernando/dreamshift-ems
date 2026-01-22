@@ -6,6 +6,7 @@ st.set_page_config(page_title="Inbox", layout="wide")
 load_global_css()
 hide_streamlit_sidebar()
 render_custom_sidebar()
+render_custom_sidebar()
 
 db = DreamShiftDB()
 icon = get_svg("mail.svg", 36, 36) or ":material/notifications:"

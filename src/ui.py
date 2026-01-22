@@ -6,6 +6,16 @@ def load_global_css():
     with open("static/styles.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
+def hide_streamlit_sidebar():
+    """Hide the default Streamlit sidebar and use only custom sidebar"""
+    st.markdown("""
+    <style>
+        [data-testid="stSidebar"] {
+            display: none;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
 def get_svg(filename, width=30, height=30):
     """Returns SVG string wrapped in a div for flexbox alignment"""
     path = Path(f"static/icons/{filename}")

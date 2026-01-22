@@ -6,6 +6,7 @@ st.set_page_config(page_title="Profile", layout="wide")
 load_global_css()
 hide_streamlit_sidebar()
 render_custom_sidebar()
+render_custom_sidebar()
 db = DreamShiftDB()
 
 icon = get_svg("profile.svg", 36, 36) or ":material/person:"

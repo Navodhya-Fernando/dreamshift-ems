@@ -6,6 +6,7 @@ st.set_page_config(page_title="Project Details", layout="wide")
 load_global_css()
 hide_streamlit_sidebar()
 render_custom_sidebar()
+render_custom_sidebar()
 db = DreamShiftDB()
 
 pid = st.session_state.get("selected_project_id")

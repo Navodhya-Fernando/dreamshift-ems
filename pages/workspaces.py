@@ -6,6 +6,7 @@ st.set_page_config(page_title="Workspaces", layout="wide")
 load_global_css()
 hide_streamlit_sidebar()
 render_custom_sidebar()
+render_custom_sidebar()
 
 db = DreamShiftDB()
 ws_id = st.session_state.get("current_ws_id")

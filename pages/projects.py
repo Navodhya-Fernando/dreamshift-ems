@@ -6,6 +6,7 @@ st.set_page_config(page_title="Projects", layout="wide")
 load_global_css()
 hide_streamlit_sidebar()
 render_custom_sidebar()
+render_custom_sidebar()
 db = DreamShiftDB()
 
 icon = get_svg("projects.svg", 36, 36) or ":material/folder:"
