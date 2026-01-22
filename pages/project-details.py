@@ -10,9 +10,15 @@ render_custom_sidebar()
 db = DreamShiftDB()
 
 pid = st.session_state.get("selected_project_id")
-if not pid: st.switch_page("pages/projects.py")
+if not pid:
+    st.switch_page("pages/projects.py")
 
 proj = db.db.projects.find_one({"_id": db.ObjectId(pid)})
+if not proj:
+    st.error("Project not found.")
+    if st.button("Back to Projects"):
+        st.switch_page("pages/projects.py")
+    st.stop()
 
 # --- HEADER ---
 c1, c2 = st.columns([1, 6])
