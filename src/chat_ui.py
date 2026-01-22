@@ -4,14 +4,17 @@ import html
 import re
 import streamlit as st
 
+# Reactions are kept as stable keys (DB-friendly). UI renders as text labels (no emojis/material).
 REACTION_ORDER = ["thumbs_up", "heart", "party", "eyes", "check"]
-REACTION_ICONS = {
-    "thumbs_up": ":material/thumb_up:",
-    "heart": ":material/favorite:",
-    "party": ":material/celebration:",
-    "eyes": ":material/visibility:",
-    "check": ":material/done:"
+
+REACTION_LABELS = {
+    "thumbs_up": "Like",
+    "heart": "Love",
+    "party": "Celebrate",
+    "eyes": "Seen",
+    "check": "Approve",
 }
+
 
 def fmt_ts(dt) -> str:
     """Format timestamp in a clean, readable way."""
@@ -19,29 +22,25 @@ def fmt_ts(dt) -> str:
         return ""
     if isinstance(dt, datetime.date) and not isinstance(dt, datetime.datetime):
         return dt.strftime("%b %d, %Y")
-    # Use %I for 12-hour format with leading zero removed for single digits
     time_str = dt.strftime("%b %d, %I:%M %p")
-    # Remove leading zero from hour if present (e.g., "06:54" -> "6:54")
     time_str = time_str.replace(" 0", " ")
     return time_str
+
 
 def strip_html_tags(text: str) -> str:
     """Remove any HTML tags from text (for cleaning old data)."""
     if not text:
         return ""
-    # Fully unescape (handles double-encoded content) then strip tags/entities
     s = text
-    for _ in range(5):  # iterate to resolve nested encodings
+    for _ in range(5):
         new_s = html.unescape(s)
         if new_s == s:
             break
         s = new_s
-
-    # Remove real HTML tags
     s = re.sub(r"<[^>]+>", "", s)
-    # Remove any encoded tags that might remain (e.g., &lt;div&gt;)
     s = re.sub(r"&lt;[^&]*&gt;", "", s, flags=re.IGNORECASE)
     return s
+
 
 def safe_text_with_mentions(text: str) -> str:
     """
@@ -52,21 +51,25 @@ def safe_text_with_mentions(text: str) -> str:
     cleaned = strip_html_tags(text or "")
     escaped = html.escape(cleaned).replace("`", "&#96;")
 
-    mention_pattern = re.compile(r"(@(?:[A-Za-z][A-Za-z0-9 .'-]{0,48}|[\w\.\-\+]+@[\w\.-]+))(?=$|\s|[.,;:!?])")
+    mention_pattern = re.compile(
+        r"(@(?:[A-Za-z][A-Za-z0-9 .'-]{0,48}|[\w\.\-\+]+@[\w\.-]+))(?=$|\s|[.,;:!?])"
+    )
     highlighted = mention_pattern.sub(r"<span class='ds-mention'>\1</span>", escaped)
     return highlighted
+
 
 def calculate_thread_depth(comment_id: str, children_map: dict, depth: int = 0) -> int:
     """Calculate the maximum depth of a comment thread."""
     if comment_id not in children_map:
         return depth
-    
+
     max_child_depth = depth
     for child in children_map.get(comment_id, []):
         child_depth = calculate_thread_depth(str(child["_id"]), children_map, depth + 1)
         max_child_depth = max(max_child_depth, child_depth)
-    
+
     return max_child_depth
+
 
 def get_urgency_class(priority: str) -> str:
     """Map priority to CSS urgency class for color coding."""
@@ -74,9 +77,10 @@ def get_urgency_class(priority: str) -> str:
         "Low": "ds-task-low",
         "Medium": "ds-task-medium",
         "High": "ds-task-high",
-        "Critical": "ds-task-critical"
+        "Critical": "ds-task-critical",
     }
     return priority_map.get(priority, "ds-task-medium")
+
 
 def build_threads(comments: list[dict]):
     top_level = [c for c in comments if not c.get("parent_comment_id")]
@@ -86,8 +90,11 @@ def build_threads(comments: list[dict]):
         if pid:
             children_map.setdefault(str(pid), []).append(c)
     for pid in children_map:
-        children_map[pid] = sorted(children_map[pid], key=lambda x: x.get("created_at") or datetime.datetime.min)
+        children_map[pid] = sorted(
+            children_map[pid], key=lambda x: x.get("created_at") or datetime.datetime.min
+        )
     return top_level, children_map
+
 
 def render_comment(
     c: dict,
@@ -105,12 +112,12 @@ def render_comment(
     is_admin: bool = False,
 ):
     """
-    Render a comment with advanced features:
+    Render a modern, minimal comment item with:
     - Thread depth limiting (max 3 levels)
-    - Edit history tracking
+    - Edit history indicator
     - Quote reply support
     - Admin override capabilities
-    - Restore deleted comments
+    - Restore deleted comments (24h)
     """
     cid = str(c["_id"])
     is_author = (c.get("user_email") == current_user_email)
@@ -123,7 +130,7 @@ def render_comment(
     author = c.get("user_name") or c.get("user_email") or "Unknown"
     author_safe = html.escape(author)
 
-    # Check if comment can be restored (deleted within 24 hours)
+    # Determine restore eligibility (deleted within 24 hours)
     can_restore = False
     if is_deleted and is_author:
         deleted_at = c.get("deleted_at")
@@ -131,44 +138,47 @@ def render_comment(
             hours_since_delete = (datetime.datetime.utcnow() - deleted_at).total_seconds() / 3600
             can_restore = hours_since_delete <= 24
 
-    # Hide deleted comments unless author/admin can still restore
+    # Hide deleted comments unless author/admin can restore/see
     if is_deleted:
-        if not can_restore:
+        if not can_restore and not is_admin:
             return
         if not (is_author or is_admin):
             return
 
-    # Body (escape user text, then highlight mentions)
+    # Body text
     body_html = (
         "<span class='ds-deleted'>This comment was deleted.</span>"
         if is_deleted
         else safe_text_with_mentions(c.get("text", ""))
     )
 
-    # Quoted text if present (build without triple-quote indentation to avoid markdown parsing issues)
+    # Quote block (minimal)
     quoted_text = c.get("quoted_text")
     quoted_author = c.get("quoted_author")
     quote_html = ""
     if quoted_text and not is_deleted:
         q_author = html.escape(quoted_author or "Someone")
-        q_text = html.escape(quoted_text[:100])
-        if len(quoted_text) > 100:
-            q_text += "..."
+        q_text = html.escape(quoted_text[:140])
+        if len(quoted_text) > 140:
+            q_text += "…"
         quote_html = (
             "<div class='ds-quote'>"
-            f"<div class='ds-quote-author'>@{q_author} said:</div>"
+            f"<div class='ds-quote-author'>{q_author}</div>"
             f"<div class='ds-quote-text'>{q_text}</div>"
             "</div>"
         )
 
-    # Badges (ensure proper escaping)
-    pinned_badge_html = "<span class='ds-pin-badge'>Pinned</span>" if is_pinned else ""
-    edited_badge_html = "<span class='ds-edited'>Edited</span>" if edited_at else ""
-    edit_history_html = f"<span class='ds-edit-history' title='Click to view edit history'>✏️ {edit_count} edit{'s' if edit_count != 1 else ''}</span>" if edit_count > 0 else ""
+    # Badges (text-only, no emojis)
+    pinned_badge_html = "<span class='ds-pill ds-pill-accent'>Pinned</span>" if is_pinned else ""
+    edited_badge_html = "<span class='ds-pill'>Edited</span>" if edited_at else ""
+    edit_history_html = (
+        f"<span class='ds-pill ds-pill-ghost' title='Edit count'>{edit_count} edit{'s' if edit_count != 1 else ''}</span>"
+        if edit_count > 0
+        else ""
+    )
 
-    # Depth-based indentation class
-    indent_class = ""
-    if depth == 0:
+    # Thread indentation class
+    if depth <= 0:
         indent_class = ""
     elif depth == 1:
         indent_class = " ds-indent-1"
@@ -177,15 +187,17 @@ def render_comment(
     else:
         indent_class = " ds-indent-3"
 
-    # Build card classes
-    deleted_class = ' ds-deleted-card' if (is_deleted and not can_restore) else ''
+    deleted_class = " ds-deleted-card" if is_deleted else ""
 
-    # Render comment card (ClickUp-style: clean header with just author + time)
+    # Render card
     card_html = (
         f"<div class='ds-chat-card{indent_class}{deleted_class}'>"
-        "<div class='ds-chat-header'>"
-        f"<div class='ds-chat-author'>{author_safe}</div>"
-        f"<div class='ds-chat-time'>{fmt_ts(c.get('created_at'))}</div>"
+        "<div class='ds-chat-top'>"
+        f"<div class='ds-chat-meta'>"
+        f"<span class='ds-chat-author'>{author_safe}</span>"
+        f"<span class='ds-chat-time'>{fmt_ts(c.get('created_at'))}</span>"
+        "</div>"
+        f"<div class='ds-chat-badges'>{pinned_badge_html}{edited_badge_html}{edit_history_html}</div>"
         "</div>"
         f"{quote_html}"
         f"<div class='ds-chat-body'>{body_html}</div>"
@@ -193,97 +205,83 @@ def render_comment(
     )
     st.markdown(card_html, unsafe_allow_html=True)
 
-    # Depth limiting: Show "Continue thread" if depth >= 3
+    # Depth limiting
     if depth >= 3:
         st.markdown(
-            "<a href='#' class='ds-continue-thread' onclick='return false;'>💬 Continue thread →</a>",
-            unsafe_allow_html=True
+            "<div class='ds-thread-cap'>Thread continues…</div>",
+            unsafe_allow_html=True,
         )
-        return  # Stop rendering deeper comments
+        return
 
-    # Show badges above action bar
-    badge_row = f"{pinned_badge_html}{edited_badge_html}{edit_history_html}"
-    if badge_row.strip():
-        st.markdown(badge_row, unsafe_allow_html=True)
+    # Only show actions if not deleted (deleted UI kept minimal)
+    if is_deleted:
+        # Restore options, if any
+        cols = st.columns([1, 6])
+        if can_restore:
+            with cols[0]:
+                if st.button("Restore", key=f"restore_{cid}", type="secondary"):
+                    db.restore_comment(cid, current_user_email)
+                    st.rerun()
+        if is_admin and not is_author:
+            with cols[1]:
+                if st.button("Admin delete", key=f"admin_del_{cid}", type="secondary"):
+                    db.delete_comment(cid, current_user_email, is_admin_action=True)
+                    st.rerun()
+        return
 
-    # Check if there are ANY actions available before rendering action bar
-    has_actions = (
-        True or  # Reply always available unless deleted
-        can_pin or
-        (is_author and not is_deleted) or
-        can_restore or
-        (is_admin and not is_author)
-    )
+    # Action row (minimal, ClickUp-like)
+    a1, a2, a3, a4, a5 = st.columns([0.9, 0.9, 1.3, 0.9, 6.0])
 
-    # Only render action bar if there are actions
-    if has_actions and not is_deleted:
-        # ===== ClickUp-style action bar (icon buttons + reaction popover) =====
-        a1, a2, a3, a4, a5 = st.columns([0.55, 0.55, 0.55, 0.55, 6.8])
+    with a1:
+        if st.button("Reply", key=f"reply_{cid}", type="secondary", help="Reply to this comment"):
+            st.session_state.reply_to_comment_id = cid
+            st.session_state.edit_comment_id = None
+            st.rerun()
 
-        with a1:
-            if st.button("↩︎", key=f"reply_{cid}", disabled=is_deleted, help="Reply", type="secondary"):
-                st.session_state.reply_to_comment_id = cid
-                st.session_state.edit_comment_id = None
+    with a2:
+        if can_pin:
+            label = "Unpin" if is_pinned else "Pin"
+            if st.button(label, key=f"pin_{cid}", type="secondary"):
+                db.toggle_pin_comment(cid, current_user_email, (not is_pinned))
                 st.rerun()
 
-        with a2:
-            if can_pin:
-                pin_icon = "📌" if is_pinned else "📍"
-                pin_help = "Unpin" if is_pinned else "Pin"
-                if st.button(pin_icon, key=f"pin_{cid}", help=pin_help, type="secondary"):
-                    db.toggle_pin_comment(cid, current_user_email, (not is_pinned))
-                    st.rerun()
+    with a3:
+        # Reactions popover (text labels)
+        with st.popover("React", use_container_width=False):
+            st.markdown("<div class='ds-react-title'>Reactions</div>", unsafe_allow_html=True)
+            reactions = c.get("reactions", {}) or {}
 
-        with a3:
-            # One reaction button -> popover menu (closest to ClickUp possible in Streamlit)
-            with st.popover("😊", use_container_width=False):
-                st.markdown("React")
-                reactions = c.get("reactions", {}) or {}
+            rcols = st.columns(len(REACTION_ORDER))
+            for col, rk in zip(rcols, REACTION_ORDER):
+                users = reactions.get(rk, []) or []
+                count = len(users)
+                label = REACTION_LABELS.get(rk, rk)
+                btn_label = f"{label} ({count})" if count else label
 
-                r1, r2, r3, r4, r5 = st.columns(5)
-                for col, emoji in zip([r1, r2, r3, r4, r5], REACTION_ORDER):
-                    users = reactions.get(emoji, []) or []
-                    count = len(users)
-                    label = f"{emoji} {count}" if count else emoji
-                    with col:
-                        if st.button(label, key=f"react_{cid}_{emoji}", type="secondary"):
-                            db.toggle_reaction(cid, emoji, current_user_email)
-                            st.rerun()
+                with col:
+                    if st.button(btn_label, key=f"react_{cid}_{rk}", type="secondary"):
+                        db.toggle_reaction(cid, rk, current_user_email)
+                        st.rerun()
 
-        with a4:
-            # Edit (only author + not deleted)
-            if is_author and not is_deleted:
-                if st.button("✏️", key=f"edit_{cid}", help="Edit", type="secondary"):
-                    st.session_state.edit_comment_id = cid
+    with a4:
+        if is_author:
+            if st.button("Edit", key=f"edit_{cid}", type="secondary"):
+                st.session_state.edit_comment_id = cid
+                st.session_state.reply_to_comment_id = None
+                st.rerun()
+
+    with a5:
+        right = st.columns([1.1, 5.9])
+        with right[0]:
+            if is_author:
+                if st.button("Delete", key=f"del_{cid}", type="secondary"):
+                    db.delete_comment(cid, current_user_email)
+                    st.session_state.edit_comment_id = None
                     st.session_state.reply_to_comment_id = None
                     st.rerun()
 
-        with a5:
-            # Delete / Restore / Admin delete on right (keep compact)
-            right = st.columns([0.6, 0.6, 0.6, 6.2])
-
-            if is_author and not is_deleted:
-                with right[0]:
-                    if st.button("🗑️", key=f"del_{cid}", help="Delete", type="secondary"):
-                        db.delete_comment(cid, current_user_email)
-                        st.session_state.edit_comment_id = None
-                        st.session_state.reply_to_comment_id = None
-                        st.rerun()
-
-            if can_restore:
-                with right[1]:
-                    if st.button("♻️", key=f"restore_{cid}", help="Restore", type="secondary"):
-                        db.restore_comment(cid, current_user_email)
-                        st.rerun()
-
-            if is_admin and not is_author:
-                with right[2]:
-                    if st.button("🔨", key=f"admin_del_{cid}", help="Admin delete", type="secondary"):
-                        db.delete_comment(cid, current_user_email, is_admin_action=True)
-                        st.rerun()
-
     # Inline edit
-    if st.session_state.get("edit_comment_id") == cid and is_author and not is_deleted:
+    if st.session_state.get("edit_comment_id") == cid and is_author:
         with st.form(f"edit_form_{cid}"):
             new_text = st.text_area("Edit comment", value=c.get("text", ""), height=90)
             b1, b2 = st.columns(2)
@@ -301,7 +299,7 @@ def render_comment(
                     st.error("Comment cannot be empty.")
 
     # Inline reply
-    if st.session_state.get("reply_to_comment_id") == cid and not is_deleted:
+    if st.session_state.get("reply_to_comment_id") == cid:
         with st.form(f"reply_form_{cid}"):
             reply_text = st.text_area("Reply", placeholder="Write a reply...", height=90)
             b1, b2 = st.columns(2)
@@ -320,7 +318,7 @@ def render_comment(
                         workspace_id=workspace_id,
                         project_id=project_id,
                         task_id=task_id,
-                        parent_comment_id=cid
+                        parent_comment_id=cid,
                     )
                     st.session_state.reply_to_comment_id = None
                     st.rerun()
@@ -328,94 +326,109 @@ def render_comment(
                     st.error("Reply cannot be empty.")
 
 
-def render_chat_interface(context_id, context_type="task"):
+def render_chat_interface(
+    *,
+    comments: list[dict],
+    current_user_email: str,
+    can_pin: bool,
+    db,
+    entity_type: str,
+    entity_id: str,
+    workspace_id: str | None = None,
+    project_id: str | None = None,
+    task_id: str | None = None,
+    is_admin: bool = False,
+):
     """
-    Renders a modern, ClickUp-style chat/comment section.
-    
-    Args:
-        context_id (str): The ID of the task or project.
-        context_type (str): 'task' or 'project'.
-    """
-    from src.database import DreamShiftDB
-    db = DreamShiftDB()
-    user_email = st.session_state.user_email
-    
-    st.markdown("---")
-    st.markdown("### 💬 Comments")
+    Modern, minimal comment section (ClickUp-ish).
 
-    # --- 1. NEW COMMENT INPUT (Top, like modern apps) ---
-    with st.container():
-        with st.form(key=f"chat_form_{context_id}", clear_on_submit=True):
-            col_in, col_btn = st.columns([0.85, 0.15])
-            with col_in:
-                new_comment = st.text_area(
-                    "Write a comment...", 
-                    height=80, 
-                    placeholder="Type your message here... Use @ to mention someone.",
-                    label_visibility="collapsed"
+    IMPORTANT:
+    This version intentionally avoids:
+    - Material icons
+    - Emoji headings
+    - Direct db.db.comments usage
+
+    You pass comments in, and this module renders + calls db methods you already have:
+      - db.add_comment(...)
+      - db.delete_comment(...)
+      - db.restore_comment(...)
+      - db.edit_comment(...)
+      - db.toggle_pin_comment(...)
+      - db.toggle_reaction(...)
+
+    It also supports threading via parent_comment_id.
+    """
+    st.markdown("<div class='ds-comments'>", unsafe_allow_html=True)
+    st.markdown("<div class='ds-comments-title'>Comments</div>", unsafe_allow_html=True)
+
+    # New comment composer (top)
+    with st.form(key=f"comment_new_{entity_type}_{entity_id}", clear_on_submit=True):
+        new_text = st.text_area(
+            "Write a comment",
+            placeholder="Write a comment… Use @ to mention someone.",
+            height=90,
+            label_visibility="collapsed",
+        )
+        c1, c2 = st.columns([1, 5])
+        submit = c1.form_submit_button("Send", type="primary", use_container_width=True)
+        cancel = c2.form_submit_button("Cancel", type="secondary", use_container_width=True)
+
+        if cancel:
+            st.rerun()
+
+        if submit:
+            if not new_text.strip():
+                st.error("Comment cannot be empty.")
+            else:
+                db.add_comment(
+                    entity_type=entity_type,
+                    entity_id=entity_id,
+                    user_email=current_user_email,
+                    text=new_text.strip(),
+                    workspace_id=workspace_id,
+                    project_id=project_id,
+                    task_id=task_id,
+                    parent_comment_id=None,
                 )
-            with col_btn:
-                st.markdown("<br>", unsafe_allow_html=True)
-                submitted = st.form_submit_button("Send", type="primary", use_container_width=True)
-            
-            if submitted and new_comment.strip():
-                comment_data = {
-                    "context_id": context_id,
-                    "context_type": context_type,
-                    "author": user_email,
-                    "text": new_comment,
-                    "timestamp": datetime.datetime.utcnow(),
-                    "mentions": [], # Parser logic would go here
-                    "likes": []
-                }
-                db.db.comments.insert_one(comment_data)
                 st.rerun()
 
-    # --- 2. COMMENTS FEED ---
-    comments = list(db.db.comments.find({"context_id": context_id}).sort("timestamp", -1))
-    
+    # Render thread
     if not comments:
-        st.markdown("""
-            <div style="text-align: center; color: #b0b3b8; padding: 40px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
-                No comments yet. Be the first to start the conversation!
-            </div>
-        """, unsafe_allow_html=True)
-    else:
-        for c in comments:
-            author_name = c['author'].split('@')[0].title() # Simple name extraction
-            time_str = c['timestamp'].strftime("%b %d, %I:%M %p")
-            initial = author_name[0] if author_name else "U"
-            
-            # ClickUp-style Comment Card HTML
-            st.markdown(f"""
-            <div class="ds-chat-card">
-                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                    <div style="
-                        width: 32px; height: 32px; 
-                        border-radius: 50%; 
-                        background: #f6b900; 
-                        color: #411c30; 
-                        display: flex; align-items: center; justify-content: center; 
-                        font-weight: 800; font-size: 14px;
-                        flex-shrink: 0;
-                    ">
-                        {initial}
-                    </div>
-                    
-                    <div style="flex-grow: 1;">
-                        <div class="ds-chat-header">
-                            <span class="ds-chat-author">{author_name}</span>
-                            <span class="ds-chat-time">{time_str}</span>
-                        </div>
-                        <div class="ds-chat-body">
-                            {html.escape(c['text'])}
-                        </div>
-                        
-                        <div style="margin-top: 8px; display: flex; gap: 15px; font-size: 0.75rem; color: #b0b3b8; cursor: pointer;">
-                            <span style="hover:color:#fff;">Reply</span>
-                            <span style="hover:color:#fff;">👍 Like</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+        st.markdown(
+            "<div class='ds-empty'>No comments yet.</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
+    top_level, children_map = build_threads(comments)
+
+    # Sort newest-first for top level (professional feed behavior)
+    top_level_sorted = sorted(
+        top_level,
+        key=lambda x: x.get("created_at") or datetime.datetime.min,
+        reverse=True,
+    )
+
+    def render_tree(node: dict, depth: int):
+        render_comment(
+            node,
+            current_user_email=current_user_email,
+            can_pin=can_pin,
+            db=db,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            workspace_id=workspace_id,
+            project_id=project_id,
+            task_id=task_id,
+            indent=(depth > 0),
+            depth=depth,
+            is_admin=is_admin,
+        )
+        for child in children_map.get(str(node["_id"]), []):
+            render_tree(child, depth + 1)
+
+    for comment in top_level_sorted:
+        render_tree(comment, 0)
+
+    st.markdown("</div>", unsafe_allow_html=True)
