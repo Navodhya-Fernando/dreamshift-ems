@@ -303,6 +303,14 @@ div[data-testid="stForm"] {
     background: var(--bg-main) !important;
 }
 
+body {
+    background: var(--bg-main) !important;
+}
+
+.stApp {
+    background: var(--bg-main) !important;
+}
+
 .block-container {
     background: var(--bg-main) !important;
     padding: 2rem !important;
