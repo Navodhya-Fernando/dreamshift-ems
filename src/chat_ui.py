@@ -47,21 +47,13 @@ def safe_text_with_mentions(text: str) -> str:
     """
     1. Strip any old HTML tags
     2. Escape user input so it cannot break your HTML
-    3. Highlight @mentions with styled spans
+    3. Highlight @mentions (name or email) with styled spans
     """
-    # First, strip any old HTML tags from database
     cleaned = strip_html_tags(text or "")
-    
-    # Escape the cleaned text
-    escaped = html.escape(cleaned).replace("`", "&#96;")  # neutralize backticks so markdown won't code-wrap
-    
-    # Highlight mentions (supports both @email and @user formats)
-    highlighted = re.sub(
-        r"(@[\w\.\-\+@]+)",
-        r"<span class='ds-mention'>\1</span>",
-        escaped
-    )
-    
+    escaped = html.escape(cleaned).replace("`", "&#96;")
+
+    mention_pattern = re.compile(r"(@(?:[A-Za-z][A-Za-z0-9 .'-]{0,48}|[\w\.\-\+]+@[\w\.-]+))(?=$|\s|[.,;:!?])")
+    highlighted = mention_pattern.sub(r"<span class='ds-mention'>\1</span>", escaped)
     return highlighted
 
 def calculate_thread_depth(comment_id: str, children_map: dict, depth: int = 0) -> int:

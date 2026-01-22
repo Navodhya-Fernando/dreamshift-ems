@@ -30,11 +30,21 @@ if not ws_id:
         st.stop()
 
 # --- TABBED VIEW ---
-tab1, tab2 = st.tabs(["👥 Team Members", "⚙️ Settings"])
+tab1, tab2 = st.tabs(["Team Members", "Settings"])
+
+# Quick create a new workspace
+with st.expander("Create Workspace"):
+    with st.form("create_ws_inline"):
+        name = st.text_input("Workspace Name")
+        if st.form_submit_button("Create"):
+            new_id = db.create_workspace(name, st.session_state.user_email)
+            st.success("Workspace created")
+            st.session_state.current_ws_id = str(new_id)
+            st.rerun()
 
 with tab1:
     ws = db.db.workspaces.find_one({"_id": db.ObjectId(ws_id)})
-    members = ws.get('members', [])
+    members = db.get_workspace_members(ws_id)
     
     # Add Member Form
     with st.form("add_member"):
@@ -51,7 +61,7 @@ with tab1:
     st.markdown("### Current Team")
     for m in members:
         col1, col2, col3 = st.columns([3, 1, 1])
-        col1.write(f"**{m['email']}**")
+        col1.write(f"**{m.get('name') or m['email']}**")
         col2.caption(m['role'])
         if col3.button("Remove", key=f"rm_{m['email']}"):
             db.remove_workspace_member(ws_id, m['email'])

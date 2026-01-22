@@ -77,7 +77,7 @@ with left:
         
     # Post new comment
     with st.form("post_comment"):
-        txt = st.text_area("Write a comment (@mention supported)...")
+        txt = st.text_area("Write a comment (@mention teammates by name)...")
         if st.form_submit_button("Post Comment"):
             if txt:
                 db.add_comment("task", tid, st.session_state.user_email, txt, workspace_id=task['workspace_id'])

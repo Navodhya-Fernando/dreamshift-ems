@@ -1,6 +1,7 @@
 import streamlit as st
 from src.database import DreamShiftDB
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
+from src.chat_ui import render_comment
 
 st.set_page_config(page_title="Project Details", layout="wide")
 load_global_css()
@@ -25,9 +26,22 @@ st.divider()
 with st.expander("Add Task to Project"):
     with st.form("add_p_task"):
         t_title = st.text_input("Task Title")
-        t_assignee = st.text_input("Assignee", value=st.session_state.user_email)
+        members = db.get_workspace_members(proj['workspace_id'])
+        member_display = []
+        member_lookup = {}
+        for m in members:
+            name = m.get("name") or m.get("email")
+            email = m.get("email")
+            if name and email:
+                display = name
+                if display in member_lookup:
+                    display = f"{name} ({email})"
+                member_display.append(display)
+                member_lookup[display] = email
+        default_assignee = next((d for d, em in member_lookup.items() if em == st.session_state.user_email), None)
+        t_assignee = st.selectbox("Assignee", member_display or ["Unassigned"], index=member_display.index(default_assignee) if default_assignee in member_display else 0)
         if st.form_submit_button("Add Task"):
-            db.create_task(proj['workspace_id'], t_title, "", None, t_assignee, "To Do", "Medium", pid, st.session_state.user_email)
+            db.create_task(proj['workspace_id'], t_title, "", None, member_lookup.get(t_assignee), "To Do", "Medium", pid, st.session_state.user_email)
             st.rerun()
 
 # --- PROJECT TASKS ---
@@ -43,3 +57,29 @@ else:
         if col3.button("View", key=f"p_{t['_id']}"):
             st.session_state.selected_task_id = str(t['_id'])
             st.switch_page("pages/task-details.py")
+
+# --- PROJECT DISCUSSION ---
+st.markdown("---")
+st.markdown("## Discussion")
+comments = db.get_comments("project", pid)
+
+# Render comments
+for c in comments:
+    render_comment(
+        c,
+        current_user_email=st.session_state.user_email,
+        can_pin=True,
+        db=db,
+        entity_type="project",
+        entity_id=pid,
+        workspace_id=proj['workspace_id'],
+        project_id=pid,
+        task_id=None
+    )
+
+with st.form("project_comment"):
+    txt = st.text_area("Write a comment (@mention teammates by name)...")
+    if st.form_submit_button("Post Comment"):
+        if txt:
+            db.add_comment("project", pid, st.session_state.user_email, txt, workspace_id=proj['workspace_id'])
+            st.rerun()

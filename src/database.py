@@ -116,8 +116,24 @@ class DreamShiftDB:
     # ==========================================
 
     def get_user_workspaces(self, email):
-           """Return ALL workspaces - no restrictions."""
-           return list(self.db.workspaces.find({}))
+        """Return ALL workspaces - no restrictions."""
+        return list(self.db.workspaces.find({}))
+
+    def get_workspace_members(self, workspace_id):
+        """Return workspace members enriched with names (fallback to email username)."""
+        ws = self.db.workspaces.find_one({"_id": ObjectId(workspace_id)})
+        members = ws.get('members', []) if ws else []
+        emails = [m.get('email') for m in members if m.get('email')]
+        user_map = {u['email']: u for u in self.db.users.find({"email": {"$in": emails}})} if emails else {}
+
+        enriched = []
+        for m in members:
+            email = m.get('email')
+            role = m.get('role')
+            user = user_map.get(email)
+            name = (user.get('name') if user else None) or (email.split('@')[0].replace('.', ' ').title() if email else 'Member')
+            enriched.append({"email": email, "role": role, "name": name})
+        return enriched
     
     def create_workspace(self, name, owner_email):
         doc = {
@@ -232,7 +248,9 @@ class DreamShiftDB:
         self.db.comments.insert_one(comment)
         
         # 🔔 INBOX ONLY: Handle Mentions
-        self.handle_mentions(text, user_email, f"{entity_type}:{entity_id}")
+        source_display = user['name'] if user and user.get('name') else user_email
+        workspace_id = kwargs.get('workspace_id')
+        self.handle_mentions(text, source_display, f"{entity_type}:{entity_id}", workspace_id=workspace_id)
 
     def get_comments(self, entity_type, entity_id):
         return list(self.db.comments.find({
@@ -316,8 +334,26 @@ class DreamShiftDB:
     def mark_notification_read(self, nid):
         self.db.notifications.update_one({"_id": ObjectId(nid)}, {"$set": {"read": True}})
 
-    def handle_mentions(self, text, source_user, link):
-        """Parses @email mentions and creates Inbox notifications."""
-        emails = re.findall(r"@([\w\.-]+@[\w\.-]+)", text)
-        for email in emails:
+    def handle_mentions(self, text, source_user, link, workspace_id=None):
+        """Parses @mentions (name or email) and creates Inbox notifications."""
+        targets = set()
+
+        name_lookup = {}
+        if workspace_id:
+            for m in self.get_workspace_members(workspace_id):
+                name = (m.get('name') or '').strip()
+                email = m.get('email')
+                if name and email and name.lower() not in name_lookup:
+                    name_lookup[name.lower()] = email
+
+        pattern = re.compile(r"@([A-Za-z][A-Za-z0-9 .'-]{0,48}|[\w\.\-\+]+@[\w\.-]+)(?=$|\s|[.,;:!?])")
+        for mention in pattern.findall(text or ""):
+            if '@' in mention:
+                targets.add(mention.lower())
+            else:
+                email = name_lookup.get(mention.lower())
+                if email:
+                    targets.add(email.lower())
+
+        for email in targets:
             self.create_notification(email, "Mentioned", f"{source_user} mentioned you.", "mention", link)
