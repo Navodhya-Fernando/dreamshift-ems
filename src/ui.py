@@ -42,53 +42,62 @@ def hide_streamlit_sidebar():
 
 def render_custom_sidebar():
     """
-    Render a custom sidebar with icon-based navigation using Streamlit components.
-    Uses st.sidebar to create a fixed sidebar with icon navigation.
+    Render a custom sidebar with icon-based navigation using st.page_link.
+    Creates a fixed sidebar with clickable icon navigation.
     """
     # Add CSS for custom sidebar styling
     st.markdown(
         """
         <style>
-        /* Push main content to account for sidebar */
-        .appview-container {
-            margin-left: 0;
-        }
-        
-        /* Style sidebar */
+        /* Style sidebar container */
         [data-testid="stSidebar"] {
-            background: linear-gradient(135deg, #411c30 0%, #24101a 100%);
+            background: linear-gradient(135deg, #411c30 0%, #24101a 100%) !important;
             width: 80px !important;
         }
         
         [data-testid="stSidebar"] > div:first-child {
             width: 80px !important;
-            padding: 0 !important;
         }
         
-        /* Style sidebar buttons */
-        [data-testid="stSidebar"] .stButton > button {
+        /* Hide sidebar label/title */
+        [data-testid="stSidebar"] .stMarkdown {
+            height: 20px;
+        }
+        
+        /* Style page links to look like icon buttons */
+        [data-testid="stSidebar"] [data-testid="stPageLink-nav"] {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 100%;
             height: 60px;
             font-size: 24px;
-            border: 2px solid transparent;
             background: transparent;
             color: rgba(255,255,255,0.7);
             margin: 4px 0;
             border-radius: 8px;
+            border: 2px solid transparent;
             transition: all 0.2s ease;
-            padding: 0;
+            text-decoration: none;
+            padding: 0 !important;
         }
         
-        [data-testid="stSidebar"] .stButton > button:hover {
-            background: rgba(246,185,0,0.15);
-            color: #f6b900;
-            border-color: rgba(246,185,0,0.3);
+        [data-testid="stSidebar"] [data-testid="stPageLink-nav"]:hover {
+            background: rgba(246,185,0,0.15) !important;
+            color: #f6b900 !important;
+            border-color: rgba(246,185,0,0.3) !important;
             transform: scale(1.05);
         }
         
-        /* Hide button text, show only icons */
-        [data-testid="stSidebar"] .stButton > button > p {
+        /* Hide page link text, show only the icon part */
+        [data-testid="stSidebar"] [data-testid="stPageLink-nav"] span {
             display: none;
+        }
+        
+        [data-testid="stSidebar"] [data-testid="stPageLink-nav"] .st-emotion-cache-1gulkj5 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         </style>
         """,
@@ -98,26 +107,25 @@ def render_custom_sidebar():
     # Create navigation in sidebar
     with st.sidebar:
         st.markdown(
-            "<div style='height: 20px;'></div>",
+            "<div style='height: 10px;'></div>",
             unsafe_allow_html=True,
         )
         
         nav_items = [
             ("🏠", "🏠_Home.py"),
-            ("🏢", "1_🏢_Workspaces.py"),
-            ("📁", "2_📁_Projects.py"),
-            ("📋", "3_📋_Tasks.py"),
-            ("📅", "4_📅_Calendar.py"),
-            ("👤", "5_👤_Profile.py"),
-            ("⚙️", "6_⚙️_Settings.py"),
-            ("👑", "7_👑_Admin_Panel.py"),
-            ("🎯", "8_🎯_Task_Templates.py"),
-            ("🔍", "9_🔍_Debug.py"),
+            ("🏢", "pages/1_🏢_Workspaces.py"),
+            ("📁", "pages/2_📁_Projects.py"),
+            ("📋", "pages/3_📋_Tasks.py"),
+            ("📅", "pages/4_📅_Calendar.py"),
+            ("👤", "pages/5_👤_Profile.py"),
+            ("⚙️", "pages/6_⚙️_Settings.py"),
+            ("👑", "pages/7_👑_Admin_Panel.py"),
+            ("🎯", "pages/8_🎯_Task_Templates.py"),
+            ("🔍", "pages/9_🔍_Debug.py"),
         ]
         
         for icon, page in nav_items:
-            if st.button(icon, key=f"nav_{page}", use_container_width=True):
-                st.switch_page(f"pages/{page}" if page != "🏠_Home.py" else page)
+            st.page_link(page, label=icon, icon=None)
 
 
 
