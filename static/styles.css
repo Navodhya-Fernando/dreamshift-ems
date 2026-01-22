@@ -20,7 +20,6 @@
     background-color: var(--bg-main) !important;
 }
 
-
 /* =========================================
    2. BUTTON STYLING (Strict Enforcement)
    ========================================= */
@@ -38,7 +37,7 @@
     transition: all 0.2s ease !important;
     box-shadow: 0 4px 12px rgba(246, 185, 0, 0.2) !important;
     text-transform: none !important;
-    width: auto !important; /* Prevents full-width stretch unless specified */
+    width: auto !important;
 }
 
 /* Hover State */
@@ -75,19 +74,30 @@
     border-color: rgba(255, 255, 255, 0.3) !important;
 }
 
-/* =========================================
-   3. LOGIN PAGE LAYOUT (Fix Stretched UI)
-   ========================================= */
-
-/* Constrain the main container width for the login page */
-.main .block-container {
-    max-width: 500px !important; /* Forces the centered card look */
-    padding-top: 3rem !important;
-    padding-bottom: 2rem !important;
-    margin: 0 auto !important;
+/* Logout Button Special Styling */
+.ds-logout-btn .stButton > button {
+    background: rgba(255, 77, 77, 0.1) !important;
+    border: 1px solid rgba(255, 77, 77, 0.3) !important;
+    color: rgba(255, 200, 200, 0.9) !important;
+    box-shadow: none !important;
+}
+.ds-logout-btn .stButton > button:hover {
+    background: rgba(255, 77, 77, 0.2) !important;
+    border-color: rgba(255, 77, 77, 0.6) !important;
+    color: #fff !important;
 }
 
-/* The Login Card Wrapper */
+/* =========================================
+   3. LAYOUT & CARDS
+   ========================================= */
+
+/* Login Page Constraint */
+.main .block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+}
+
+/* Centered Login Wrapper */
 .ds-login-wrap {
     background-color: var(--bg-container);
     border: 1px solid var(--border-color);
@@ -96,109 +106,109 @@
     box-shadow: var(--shadow-lg);
     text-align: center;
     margin-bottom: 20px;
+    max-width: 450px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-/* Typography */
-.ds-login-title {
-    font-size: 2.2rem;
-    font-weight: 900;
-    margin: 0;
-    color: #fff;
-    line-height: 1.1;
+/* Standard Card */
+.ds-card {
+    background: var(--bg-container);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
-.ds-login-title span {
-    color: var(--accent-yellow);
-}
-
-.ds-login-sub {
-    color: rgba(255, 255, 255, 0.6);
-    margin-top: 8px;
-    font-size: 0.95rem;
+/* Page Headers */
+.ds-page-head {
     margin-bottom: 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 16px;
+}
+.ds-page-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+}
+.ds-page-sub {
+    color: rgba(255,255,255,0.6);
+    margin-top: 4px;
+    font-size: 1rem;
+}
+
+/* Metrics Grid */
+.ds-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.ds-metric {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+}
+.ds-metric-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 8px;
+}
+.ds-metric-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #fff;
 }
 
 /* Inputs */
 .stTextInput input[type="text"], 
-.stTextInput input[type="password"] {
+.stTextInput input[type="password"],
+.stDateInput input {
     background-color: #24101a !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     color: #fff !important;
     border-radius: 8px !important;
-    padding: 12px !important;
+    padding: 10px !important;
 }
-
-.stTextInput input:focus {
+.stTextInput input:focus, .stDateInput input:focus {
     border-color: var(--accent-yellow) !important;
     box-shadow: 0 0 0 1px var(--accent-yellow) !important;
 }
 
-/* Remove default Streamlit gaps */
-.stForm > div {
-    padding-bottom: 0 !important;
-}
-
-/* =========================================
-   4. SIDEBAR & NAVIGATION
-   ========================================= */
+/* Sidebar Customization */
 [data-testid="stSidebar"] {
     background-color: var(--bg-container) !important;
     border-right: 1px solid var(--border-color) !important;
 }
 
-/* Navigation Icons */
-[data-testid="stSidebar"] .stButton > button {
-    background: transparent !important;
-    border: none !important;
-    color: rgba(255,255,255,0.5) !important;
-    font-size: 24px !important;
-    box-shadow: none !important;
-    padding: 5px !important;
-    width: 100% !important;
+/* Badges & Pills */
+.ds-badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.8);
+    font-size: 0.75rem;
+    font-weight: 600;
 }
-
-[data-testid="stSidebar"] .stButton > button:hover {
-    color: var(--accent-yellow) !important;
-    background: rgba(255,255,255,0.05) !important;
-    transform: none !important;
+.ds-badge-accent {
+    background: rgba(246, 185, 0, 0.2);
+    color: #f6b900;
+    border: 1px solid rgba(246, 185, 0, 0.4);
 }
-
-/* =========================================
-   5. UTILITIES (Chat Cards, Pills, etc.)
-   ========================================= */
-
-/* ClickUp-style Chat Card */
-.ds-chat-card {
-    background: #411c30;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
+.ds-badge-ok {
+    background: rgba(46, 227, 122, 0.2);
+    color: #2fe37a;
+    border: 1px solid rgba(46, 227, 122, 0.4);
 }
-
-.ds-chat-author {
-    color: var(--accent-yellow);
-    font-weight: 800;
-    font-size: 14px;
+.ds-badge-warn {
+    background: rgba(255, 176, 32, 0.2);
+    color: #ffb020;
+    border: 1px solid rgba(255, 176, 32, 0.4);
 }
-
-.ds-chat-text {
-    color: rgba(255,255,255,0.9);
-    font-size: 14px;
-    margin-top: 6px;
-    line-height: 1.5;
-}
-
-/* Pills */
-.ds-pill {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 12px;
-    color: var(--text-secondary);
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
