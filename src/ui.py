@@ -16,117 +16,132 @@ def load_global_css():
         st.error("⚠️ CSS file not found: static/styles.css")
 
 
-
-
-# NOTE: hide_streamlit_sidebar() function removed - no longer needed
-# We now use Streamlit's initial_sidebar_state="expanded" for all pages
-# and render_custom_sidebar() to display our professional navigation
-# def hide_streamlit_sidebar():
-#     """Hide the default Streamlit sidebar completely"""
-#     st.markdown(
-#         """
-#         <style>
-#         /* Hide default Streamlit sidebar */
-#         [data-testid="stSidebarNav"] {
-#             display: none !important;
-#         }
-#         section[data-testid="stSidebar"] {
-#             display: none !important;
-#             width: 0 !important;
-#         }
-#         [data-testid="stSidebar"] {
-#             display: none !important;
-#             width: 0 !important;
-#         }
-#         </style>
-#         """,
-#         unsafe_allow_html=True,
-#     )
+def hide_streamlit_sidebar():
+    """
+    Hide ONLY the default Streamlit navigation menu,
+    but keep the sidebar container visible for custom content.
+    """
+    st.markdown(
+        """
+        <style>
+        /* Hide the default navigation menu */
+        [data-testid="stSidebarNav"] {
+            display: none !important;
+        }
+        /* Hide the default sidebar header (contains the collapse button space) */
+        [data-testid="stSidebarHeader"] {
+            display: none !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_custom_sidebar():
     """
-    Render a professional, ClickUp-like sidebar with:
-    1. Current Workspace header (Avatar + Name)
-    2. Main Navigation (Material Icons)
-    3. Admin Section (Conditional)
-    4. Logout button at bottom
+    Render a professional sidebar with:
+    1. Functional Workspace Switcher (Selectbox)
+    2. ClickUp-style Navigation Groups
+    3. User Profile & Logout at the bottom
     """
-    # Define navigation items: (Label, Page Path, Material Icon)
-    # Note: Page paths must match your actual filenames exactly.
-    nav_links = [
-        ("Home", "🏠_Home.py", ":material/home:"),
-        ("Workspaces", "pages/1_🏢_Workspaces.py", ":material/domain:"),
-        ("Projects", "pages/2_📁_Projects.py", ":material/folder:"),
-        ("Tasks", "pages/3_📋_Tasks.py", ":material/check_circle:"),
-        ("Calendar", "pages/4_📅_Calendar.py", ":material/calendar_month:"),
-        ("Profile", "pages/5_👤_Profile.py", ":material/account_circle:"),
-        ("Settings", "pages/6_⚙️_Settings.py", ":material/settings:"),
-    ]
+    # Import here to avoid circular dependencies at module level
+    from src.database import DreamShiftDB
+    db = DreamShiftDB()
 
     with st.sidebar:
-        # --- 1. WORKSPACE HEADER (ClickUp Style) ---
-        current_ws = st.session_state.get("current_ws_name", "Select Workspace")
-        role = st.session_state.get("user_role", "Guest")
+        # --- 1. WORKSPACE SWITCHER ---
+        # Ensure user is logged in
+        user_email = st.session_state.get("user_email")
         
-        # Determine avatar letter
-        avatar_letter = current_ws[0].upper() if current_ws and current_ws != "Select Workspace" else "W"
+        if user_email:
+            st.markdown("<div style='margin-bottom: 10px; color: rgba(255,255,255,0.5); font-size: 0.8rem; font-weight: 600; text-transform: uppercase;'>Workspace</div>", unsafe_allow_html=True)
+            
+            # Fetch workspaces for the user
+            workspaces = db.get_user_workspaces(user_email)
+            
+            if workspaces:
+                ws_map = {ws['name']: str(ws['_id']) for ws in workspaces}
+                current_ws_id = st.session_state.get("current_ws_id")
+                
+                # Find current index
+                current_index = 0
+                if current_ws_id:
+                    ws_ids = list(ws_map.values())
+                    if str(current_ws_id) in ws_ids:
+                        current_index = ws_ids.index(str(current_ws_id))
 
-        # Render Workspace Card using HTML/CSS
-        st.markdown(f"""
-        <div style="
-            background: rgba(255,255,255,0.05); 
-            border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 12px; 
-            padding: 12px; 
-            margin-top: 10px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: all 0.2s ease;">
-            <div style="
-                min-width: 36px; height: 36px; 
-                background: linear-gradient(135deg, #f6b900 0%, #ffcf33 100%); 
-                border-radius: 8px; 
-                display: flex; align-items: center; justify-content: center; 
-                font-weight: 800; color: #411c30; font-size: 18px;
-                box-shadow: 0 2px 8px rgba(246,185,0,0.3);">
-                {avatar_letter}
-            </div>
-            <div style="overflow: hidden;">
-                <div style="font-weight: 700; font-size: 14px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.3px;">
-                    {current_ws}
-                </div>
-                <div style="font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">
-                    {role}
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+                # Render Switcher
+                selected_ws_name = st.selectbox(
+                    "Select Workspace",
+                    options=list(ws_map.keys()),
+                    index=current_index,
+                    label_visibility="collapsed",
+                    key="sidebar_ws_selector"
+                )
+
+                # Handle Switch Logic
+                new_ws_id = ws_map[selected_ws_name]
+                if str(new_ws_id) != str(current_ws_id):
+                    st.session_state.current_ws_id = new_ws_id
+                    st.session_state.current_ws_name = selected_ws_name
+                    # Fetch new role
+                    role = db.get_user_role(new_ws_id, user_email)
+                    st.session_state.user_role = role
+                    st.rerun()
+            else:
+                st.info("No workspaces found.")
+
+        st.markdown("---")
 
         # --- 2. MAIN NAVIGATION ---
-        st.markdown("<div style='color:rgba(255,255,255,0.4); font-size:11px; font-weight:700; margin-bottom:12px; padding-left:4px; text-transform:uppercase; letter-spacing: 0.8px;'>Menu</div>", unsafe_allow_html=True)
         
-        for label, page, icon in nav_links:
-            st.page_link(page, label=label, icon=icon)
+        # Section: APPS
+        st.markdown("<div style='margin-bottom: 8px; color: rgba(255,255,255,0.5); font-size: 0.8rem; font-weight: 600; text-transform: uppercase;'>Apps</div>", unsafe_allow_html=True)
+        st.page_link("🏠_Home.py", label="Home", icon=":material/home:")
+        st.page_link("pages/3_📋_Tasks.py", label="Tasks", icon=":material/check_circle:")
+        st.page_link("pages/2_📁_Projects.py", label="Projects", icon=":material/folder:")
+        st.page_link("pages/4_📅_Calendar.py", label="Calendar", icon=":material/calendar_month:")
+
+        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+
+        # Section: MANAGEMENT
+        st.markdown("<div style='margin-bottom: 8px; color: rgba(255,255,255,0.5); font-size: 0.8rem; font-weight: 600; text-transform: uppercase;'>Management</div>", unsafe_allow_html=True)
+        st.page_link("pages/1_🏢_Workspaces.py", label="Workspaces", icon=":material/domain:")
+        st.page_link("pages/5_👤_Profile.py", label="My Profile", icon=":material/account_circle:")
+        st.page_link("pages/6_⚙️_Settings.py", label="Settings", icon=":material/settings:")
 
         # --- 3. ADMIN SECTION (Conditional) ---
         if st.session_state.get("user_role") in ["Owner", "Workspace Admin"]:
-            st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
-            st.markdown("<div style='color:rgba(255,255,255,0.4); font-size:11px; font-weight:700; margin-bottom:12px; padding-left:4px; text-transform:uppercase; letter-spacing: 0.8px;'>Admin</div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='margin-bottom: 8px; color: #f6b900; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;'>Admin Zone</div>", unsafe_allow_html=True)
             st.page_link("pages/7_👑_Admin_Panel.py", label="Admin Panel", icon=":material/admin_panel_settings:")
 
         # --- 4. FOOTER & LOGOUT ---
-        st.markdown("<div style='margin-top: auto; padding-top: 40px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
         
-        # Visual divider handled by CSS or st.markdown if needed, but spacing is usually enough
+        # User Info Card
+        user_name = st.session_state.get("user_name", "User")
+        user_role = st.session_state.get("user_role", "Guest")
+        
+        st.markdown(f"""
+        <div style="
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 0.9rem; font-weight: 700; color: #fff;">{user_name}</div>
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">{user_role}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
         if st.button("🚪 Log out", use_container_width=True):
-            # Clear session state
+            # Clear session
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
-            
-            # Force redirect to login
+            # Redirect
+            st.switch_page("pages/0_🚪_Sign_In.py")
             st.switch_page("pages/0_🚪_Sign_In.py")
 
 

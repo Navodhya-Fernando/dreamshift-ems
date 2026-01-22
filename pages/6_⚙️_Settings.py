@@ -5,9 +5,10 @@ import hashlib
 st.set_page_config(page_title="Settings | DreamShift EMS", page_icon="⚙️", layout="wide", initial_sidebar_state="expanded")
 
 # Load UI utilities
-from src.ui import load_global_css, render_custom_sidebar
+from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
 
-# Render custom sidebar
+# Hide default sidebar navigation and show custom sidebar
+hide_streamlit_sidebar()
 render_custom_sidebar()
 
 # Load global CSS
