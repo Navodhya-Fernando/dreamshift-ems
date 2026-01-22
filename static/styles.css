@@ -104,3 +104,41 @@ a[data-testid="stPageLink-NavLink"] svg {
     padding-top: 3rem;
     max-width: 95rem;
 }
+/* --- SIDEBAR FORM ELEMENTS (Workspace Switcher) --- */
+
+/* Style the label "Select Workspace" (even if hidden, good practice) */
+[data-testid="stSidebar"] label {
+    color: #b0b3b8 !important;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* The Selectbox Container */
+[data-testid="stSidebar"] [data-baseweb="select"] > div {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border-radius: 8px;
+}
+
+/* The Selectbox Text */
+[data-testid="stSidebar"] [data-baseweb="select"] span {
+    color: #eee !important;
+}
+
+/* The Dropdown Menu Items */
+[data-baseweb="popover"] [role="option"] {
+    background-color: #1e2329 !important;
+    color: #eee !important;
+}
+
+/* Hover effect on options */
+[data-baseweb="popover"] [role="option"]:hover {
+    background-color: rgba(246, 185, 0, 0.2) !important;
+    color: #f6b900 !important;
+}
+
+/* Hide the default Streamlit "Running" man animation in the top right */
+[data-testid="stStatusWidget"] {
+    display: none;
+}
