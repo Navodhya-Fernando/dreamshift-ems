@@ -78,7 +78,9 @@ h1, h2, h3, h4 {
 }
 
 /* Hide Streamlit default nav */
-[data-testid="stSidebarNav"] {
+[data-testid="stSidebarNav"],
+section[data-testid="stSidebarNav"],
+[data-testid="stSidebarNav"] * {
   display: none !important;
 }
 
@@ -92,18 +94,38 @@ h1, h2, h3, h4 {
 /* Sidebar select box */
 [data-testid="stSidebar"] [data-baseweb="select"] > div {
   background-color: rgba(255, 255, 255, 0.05) !important;
-  border-color: rgba(255, 255, 255, 0.10) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
   color: var(--text-color) !important;
   border-radius: 10px;
+  min-height: 42px;
+  box-shadow: none !important;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within {
+  border-color: rgba(246,185,0,0.45) !important;
+  box-shadow: var(--ring) !important;
 }
 
 [data-testid="stSidebar"] [data-baseweb="select"] span {
   color: var(--text-color) !important;
 }
 
+[data-baseweb="popover"] {
+  background: var(--surface-1) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-2) !important;
+}
+
+[data-baseweb="popover"] [role="listbox"] {
+  padding: 6px 0;
+}
+
 [data-baseweb="popover"] [role="option"] {
-  background-color: #1e2329 !important;
+  background-color: transparent !important;
   color: #eee !important;
+  border-radius: 8px;
+  margin: 0 6px;
+  padding: 8px 12px;
 }
 
 [data-baseweb="popover"] [role="option"]:hover {

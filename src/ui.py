@@ -127,6 +127,10 @@ def render_custom_sidebar():
       Home, Workspaces, Projects, Tasks, Inbox, Profile, Settings, Log Out, Workspace Switcher (and nothing else)
       No emoji icons; use SVGs.
     """
+    # Ensure default nav is hidden and global styles are injected before we draw
+    hide_streamlit_sidebar()
+    load_global_css()
+
     db = DreamShiftDB()
 
     with st.sidebar:
