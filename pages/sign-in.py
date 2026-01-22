@@ -15,7 +15,7 @@ except Exception as e:
     db_connected = False
 
 if st.session_state.get("user_email"):
-    st.switch_page("🏠_Home.py")
+    st.switch_page("Home.py")
 
 st.markdown('<div class="ds-login-wrap">', unsafe_allow_html=True)
 st.markdown("""
@@ -40,7 +40,7 @@ if db_connected:
                     st.session_state.user_name = user['name']
                     st.success(f"Welcome back, {user['name']}!")
                     time.sleep(0.5)
-                    st.switch_page("🏠_Home.py")
+                    st.switch_page("Home.py")
                 else:
                     st.error("Invalid email or password.")
         
