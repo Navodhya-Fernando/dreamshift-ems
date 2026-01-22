@@ -72,7 +72,7 @@ def render_month_view(year, month, tasks_by_date, color_mode="Priority", heatmap
                 
                 # Click handler for day (opens task drawer)
                 if st.button(
-                    "📋",
+                    "●",
                     key=f"day_btn_{date_obj}",
                     help=f"View tasks for {date_obj.strftime('%b %d')}",
                     disabled=len(day_tasks) == 0

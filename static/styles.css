@@ -1,8 +1,4 @@
 /* static/styles.css */
-
-/* =========================================
-   1. CORE VARIABLES & THEME
-   ========================================= */
 :root {
     --bg-main: #24101a;
     --bg-container: #411c30;
@@ -10,205 +6,86 @@
     --text-secondary: #cccccc;
     --accent-yellow: #f6b900;
     --accent-yellow-hover: #ffe500;
-    --accent-dark: #411c30;
     --border-color: #5a2d45;
     --shadow-lg: 0 18px 60px rgba(0, 0, 0, 0.55);
 }
 
-/* Force global background */
-.stApp {
-    background-color: var(--bg-main) !important;
-}
+.stApp { background-color: var(--bg-main) !important; }
 
-/* =========================================
-   2. BUTTON STYLING (Strict Enforcement)
-   ========================================= */
-
-/* Default Streamlit Buttons (Primary & Secondary) */
-.stButton > button, 
-.stFormSubmitButton > button {
-    background-color: var(--accent-yellow) !important;
-    color: var(--accent-dark) !important;
-    border: 1px solid var(--accent-yellow) !important;
-    border-radius: 8px !important;
-    font-weight: 800 !important;
-    font-size: 15px !important;
-    padding: 10px 24px !important;
-    transition: all 0.2s ease !important;
-    box-shadow: 0 4px 12px rgba(246, 185, 0, 0.2) !important;
-    text-transform: none !important;
-    width: auto !important;
-}
-
-/* Hover State */
-.stButton > button:hover, 
-.stFormSubmitButton > button:hover {
-    background-color: var(--accent-yellow-hover) !important;
-    color: var(--accent-dark) !important;
-    border-color: var(--accent-yellow-hover) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 20px rgba(246, 185, 0, 0.4) !important;
-}
-
-/* Active/Focus State */
-.stButton > button:active, 
-.stButton > button:focus {
-    background-color: var(--accent-yellow) !important;
-    color: var(--accent-dark) !important;
-    border-color: var(--accent-yellow) !important;
-    outline: none !important;
-}
-
-/* Secondary Actions (Transparent/Outline) */
-.ds-secondary .stButton > button {
-    background: transparent !important;
-    color: rgba(255, 255, 255, 0.7) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: none !important;
-    font-weight: 600 !important;
-}
-
-.ds-secondary .stButton > button:hover {
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: #fff !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-}
-
-/* Logout Button Special Styling */
-.ds-logout-btn .stButton > button {
-    background: rgba(255, 77, 77, 0.1) !important;
-    border: 1px solid rgba(255, 77, 77, 0.3) !important;
-    color: rgba(255, 200, 200, 0.9) !important;
-    box-shadow: none !important;
-}
-.ds-logout-btn .stButton > button:hover {
-    background: rgba(255, 77, 77, 0.2) !important;
-    border-color: rgba(255, 77, 77, 0.6) !important;
-    color: #fff !important;
-}
-
-/* =========================================
-   3. LAYOUT & CARDS
-   ========================================= */
-
-/* Login Page Constraint */
-.main .block-container {
-    padding-top: 2rem !important;
-    padding-bottom: 2rem !important;
-}
-
-/* Centered Login Wrapper */
-.ds-login-wrap {
-    background-color: var(--bg-container);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 40px;
-    box-shadow: var(--shadow-lg);
-    text-align: center;
+/* --- HEADERS (SVG + Title in one line) --- */
+.ds-header-flex {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     margin-bottom: 20px;
-    max-width: 450px;
-    margin-left: auto;
-    margin-right: auto;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.ds-header-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    line-height: 1.1;
 }
 
-/* Standard Card */
+/* --- CLOCKIFY-STYLE TIMER --- */
+.ds-timer-card {
+    background: #1a0f14;
+    border: 1px solid #f6b900;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(246, 185, 0, 0.15);
+}
+.ds-timer-display {
+    font-family: 'Courier New', monospace;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #f6b900;
+    margin: 4px 0 10px;
+}
+
+/* --- BUTTONS --- */
+.stButton > button, .stFormSubmitButton > button {
+    background-color: var(--accent-yellow) !important;
+    color: #411c30 !important;
+    border: 1px solid var(--accent-yellow) !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
+    transition: all 0.2s ease !important;
+}
+.stButton > button:hover {
+    background-color: var(--accent-yellow-hover) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(246, 185, 0, 0.3);
+}
+
+/* --- CARDS & METRICS --- */
 .ds-card {
     background: var(--bg-container);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
-
-/* Page Headers */
-.ds-page-head {
-    margin-bottom: 24px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    padding-bottom: 16px;
-}
-.ds-page-title {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #fff;
-    margin: 0;
-}
-.ds-page-sub {
-    color: rgba(255,255,255,0.6);
-    margin-top: 4px;
-    font-size: 1rem;
-}
-
-/* Metrics Grid */
-.ds-metrics {
+.ds-metric-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
 }
-.ds-metric {
+.ds-metric-box {
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-}
-.ds-metric-label {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: rgba(255,255,255,0.5);
-    margin-bottom: 8px;
-}
-.ds-metric-value {
-    font-size: 1.8rem;
-    font-weight: 800;
-    color: #fff;
+    border-radius: 10px;
+    padding: 15px;
 }
 
-/* Inputs */
-.stTextInput input[type="text"], 
-.stTextInput input[type="password"],
-.stDateInput input {
-    background-color: #24101a !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: #fff !important;
-    border-radius: 8px !important;
-    padding: 10px !important;
-}
-.stTextInput input:focus, .stDateInput input:focus {
-    border-color: var(--accent-yellow) !important;
-    box-shadow: 0 0 0 1px var(--accent-yellow) !important;
-}
-
-/* Sidebar Customization */
-[data-testid="stSidebar"] {
-    background-color: var(--bg-container) !important;
-    border-right: 1px solid var(--border-color) !important;
-}
-
-/* Badges & Pills */
-.ds-badge {
-    padding: 4px 8px;
-    border-radius: 6px;
-    background: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.8);
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-.ds-badge-accent {
-    background: rgba(246, 185, 0, 0.2);
-    color: #f6b900;
-    border: 1px solid rgba(246, 185, 0, 0.4);
-}
-.ds-badge-ok {
-    background: rgba(46, 227, 122, 0.2);
-    color: #2fe37a;
-    border: 1px solid rgba(46, 227, 122, 0.4);
-}
-.ds-badge-warn {
-    background: rgba(255, 176, 32, 0.2);
-    color: #ffb020;
-    border: 1px solid rgba(255, 176, 32, 0.4);
+/* --- INPUTS --- */
+input, textarea, select {
+    background-color: #2e1422 !important;
+    color: white !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    border-radius: 6px !important;
 }
