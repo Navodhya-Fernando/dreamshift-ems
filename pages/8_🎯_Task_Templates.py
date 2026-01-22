@@ -40,14 +40,14 @@ st.markdown(
 )
 
 # --- MASTER DETAIL LAYOUT ---
-col_list, col_detail = st.columns([1, 2])
+col_list, col_editor = st.columns([1, 2])
 
 # 1. LIST (Left)
 with col_list:
-    st.markdown("### Templates")
+    st.markdown("##### SAVED TEMPLATES")
     templates = db.get_task_templates(st.session_state.current_ws_id) or []
 
-    if st.button("+ New Template", use_container_width=True):
+    if st.button("+ Create New Template", use_container_width=True):
         st.session_state.selected_template = None
         st.rerun()
 
@@ -74,8 +74,8 @@ with col_list:
             st.session_state.selected_template = tpl_id
             st.rerun()
 
-# 2. DETAIL (Right)
-with col_detail:
+# 2. EDITOR (Right)
+with col_editor:
     tpl_id = st.session_state.get("selected_template")
 
     if tpl_id:

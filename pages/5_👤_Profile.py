@@ -57,20 +57,18 @@ st.markdown(
 col_left, col_right = st.columns([1, 2])
 
 with col_left:
-    st.markdown(
-        f"""
-        <div class="ds-card" style="text-align:center; padding:30px;">
-            <div style="width:80px; height:80px; margin:0 auto 15px; background:rgba(246,185,0,0.2); color:#f6b900; font-size:32px; font-weight:900; display:flex; align-items:center; justify-content:center; border-radius:50%; border:2px solid #f6b900;">
-                {initial}
-            </div>
-            <h2 style="margin:0; font-size:1.5rem;">{name}</h2>
-            <p style="color:rgba(255,255,255,0.5); margin:5px 0 20px;">{user.get('email','')}</p>
-            <span class="ds-pill ds-pill-accent">{role_title}</span>
-            <div style="margin-top:20px; font-size:12px; color:#666;">Joined: {fmt_date(joined)}</div>
+    st.markdown(f"""
+    <div class="ds-card" style="text-align:center; padding:32px;">
+        <div style="width:80px; height:80px; margin:0 auto 16px; background:rgba(246,185,0,0.1); color:#f6b900; font-size:32px; font-weight:900; display:flex; align-items:center; justify-content:center; border-radius:50%; border:2px solid #f6b900;">
+            {initial}
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        <h3 style="margin:0; color:#fff;">{name}</h3>
+        <p style="color:rgba(255,255,255,0.5); font-size:14px;">{user.get('email','')}</p>
+        <div style="margin-top:16px;">
+            <span class="ds-pill">{role_title}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 with col_right:
     st.markdown("### Performance")
@@ -81,28 +79,21 @@ with col_right:
 
     st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
-    with st.expander(":material/edit: Edit Profile Details", expanded=False):
-        with st.form("profile_edit"):
-            new_name = st.text_input("Display Name", value=name)
-            new_role = st.text_input("Job Title", value=role_title)
-
+    with st.expander(":material/edit: Edit Profile Details"):
+        with st.form("edit_profile"):
+            new_name = st.text_input("Full Name", value=name)
+            new_title = st.text_input("Job Title", value=role_title)
+            
             if st.form_submit_button("Save Changes", use_container_width=True):
-                db.update_user_profile_fields(
-                    user.get("email", ""),
-                    {
-                        "name": new_name,
-                        "profile.role_title": new_role,
-                    },
-                )
-                st.success("Profile updated")
+                db.update_user_profile_fields(user.get('email', ''), {
+                    "name": new_name,
+                    "profile.role_title": new_title
+                })
+                st.success("Profile updated!")
                 st.rerun()
 
-    with st.expander(":material/lock: Security & Sessions", expanded=False):
-        st.info(
-            "To change your password, please use the reset flow on the login page for maximum security.",
-            icon=":material/lock:",
-        )
-        if st.button("Log out on all devices", type="primary"):
-            db.delete_sessions_for_user(user.get("email", ""))
-            st.success("Sessions cleared. Please sign in again.")
+    with st.expander(":material/lock: Security Settings"):
+        st.warning("Password management is handled via the secure reset flow.", icon=":material/lock:")
+        if st.button("Log out of all devices", type="primary", use_container_width=True):
+            db.delete_sessions_for_user(user.get('email', ''))
             st.switch_page("pages/0_🚪_Sign_In.py")

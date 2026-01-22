@@ -26,31 +26,26 @@ if "user_email" not in st.session_state:
 if "cal_date" not in st.session_state:
     st.session_state.cal_date = datetime.date.today()
 
-# --- HEADER ---
+# --- HEADER & ACTIONS ---
 c1, c2 = st.columns([3, 1])
 with c1:
-    st.markdown(
-        """
-        <div class="ds-page-head">
-          <h1 class="ds-page-title" style="display:flex; align-items:center; gap:10px;">
-            :material/calendar_month: Calendar
-          </h1>
-          <p class="ds-page-sub">Visualize deadlines and sync with Google Calendar</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("""
+    <div class="ds-page-head">
+      <h1 class="ds-page-title" style="display:flex; align-items:center; gap:10px;">
+        :material/calendar_month: Calendar
+      </h1>
+      <p class="ds-page-sub">Visualize deadlines and schedule</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 with c2:
-    st.markdown("<div style='text-align:right; padding-top:10px;'>", unsafe_allow_html=True)
-    if st.button(":material/sync: Sync to Google Calendar", use_container_width=True):
+    if st.button(":material/sync: Sync with Google", use_container_width=True):
         creds = authorize_gcal()
         if creds:
-            synced = sync_all_tasks_to_gcal(db, st.session_state.user_email, creds)
-            st.toast(f"Synced {synced} tasks", icon=":material/event_available:")
+            count = sync_all_tasks_to_gcal(db, st.session_state.user_email, creds)
+            st.toast(f"Synced {count} tasks", icon=":material/check:")
         else:
-            st.error("Google authorization failed")
-    st.markdown("</div>", unsafe_allow_html=True)
+            st.error("Authentication failed")
 
 # --- CALENDAR CONTROLS ---
 nav_col, _ = st.columns([2, 5])
