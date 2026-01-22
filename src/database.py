@@ -6,44 +6,66 @@ import bcrypt
 
 class DreamShiftDB:
     def __init__(self):
-        # Connect to MongoDB
-        MONGO_URI = os.getenv("MONGO_URI")
-        DB_NAME = os.getenv("DB_NAME", "dreamshift_db")
+        # UPDATED: Matches your .env variable name 'MONGODB_URI'
+        MONGO_URI = os.getenv("MONGODB_URI") 
+        DB_NAME = os.getenv("DB_NAME", "dreamshift")
+        
         if not MONGO_URI:
-            raise ValueError("MONGO_URI not set in environment variables.")
-        self.client = MongoClient(MONGO_URI)
-        self.db = self.client[DB_NAME]
+            raise ValueError("MONGODB_URI not found in .env file.")
+            
+        try:
+            self.client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+            # Trigger a connection check immediately
+            self.client.admin.command('ping')
+            self.db = self.client[DB_NAME]
+            print("✅ MongoDB connected successfully")
+        except Exception as e:
+            print(f"❌ MongoDB Connection Failed: {e}")
+            print("   Make sure:")
+            print("   1. MONGODB_URI in .env is correct")
+            print("   2. Your IP is whitelisted in MongoDB Atlas Network Access")
+            print("   3. Credentials (username/password) are correct")
+            raise e
 
-    # --- USER & AUTH ---
-    def get_user(self, email):
-        return self.db.users.find_one({"email": email})
+    # --- AUTHENTICATION ---
+    def create_user(self, email, password, name):
+        """Creates a new user in the database"""
+        # Check if user exists
+        if self.db.users.find_one({"email": email}):
+            return False, "Email already registered."
+        
+        # Hash password
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        user_doc = {
+            "email": email,
+            "password": hashed,
+            "name": name,
+            "created_at": datetime.datetime.utcnow(),
+            "preferences": {"email_notifications": True},
+            "role": "Member" # Default role
+        }
+        self.db.users.insert_one(user_doc)
+        return True, "Account created successfully."
 
     def authenticate_user(self, email, password):
-        user = self.get_user(email)
+        user = self.db.users.find_one({"email": email})
         if user and bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
             return user
         return None
 
-    # --- NOTIFICATIONS (New) ---
-    def create_notification(self, user_email, title, message, notif_type="info", link=None):
-        """Types: info, warning, mention, deadline"""
-        self.db.notifications.insert_one({
-            "user_email": user_email,
-            "title": title,
-            "message": message,
-            "type": notif_type,
-            "link": link,
-            "read": False,
-            "created_at": datetime.datetime.utcnow()
-        })
+    # --- WORKSPACES ---
+    def get_user_workspaces(self, email):
+        return list(self.db.workspaces.find({"members.email": email}))
+    
+    def get_user_role(self, ws_id, email):
+        ws = self.db.workspaces.find_one({"_id": ObjectId(ws_id)})
+        if ws:
+            for m in ws.get('members', []):
+                if m['email'] == email:
+                    return m.get('role', 'Member')
+        return "Guest"
 
-    def get_unread_notifications(self, user_email):
-        return list(self.db.notifications.find({"user_email": user_email, "read": False}).sort("created_at", -1))
-
-    def mark_notification_read(self, notif_id):
-        self.db.notifications.update_one({"_id": ObjectId(notif_id)}, {"$set": {"read": True}})
-
-    # --- WORKSPACES & STATUSES ---
     def get_workspace_statuses(self, workspace_id):
         ws = self.db.workspaces.find_one({"_id": ObjectId(workspace_id)})
         return ws.get("custom_statuses", ["To Do", "In Progress", "Completed"]) if ws else ["To Do", "In Progress", "Completed"]
@@ -52,11 +74,19 @@ class DreamShiftDB:
         self.db.workspaces.update_one({"_id": ObjectId(workspace_id)}, {"$set": {"custom_statuses": statuses}})
 
     # --- TASKS ---
-    def get_tasks(self, query):
-        return list(self.db.tasks.find(query))
+    def get_tasks_with_urgency(self, query):
+        tasks = list(self.db.tasks.find(query))
+        now = datetime.datetime.utcnow()
+        for t in tasks:
+            t['urgency_color'] = "#28a745" # Green
+            if t.get('due_date'):
+                diff = (t['due_date'] - now).total_seconds() / 3600
+                if diff < 24: t['urgency_color'] = "#dc3545" # Red
+                elif diff < 72: t['urgency_color'] = "#ffc107" # Yellow
+        return tasks
 
-    def create_task(self, ws_id, title, desc, due_date, assignee, status, priority, project_id, creator_email):
-        task_id = self.db.tasks.insert_one({
+    def create_task(self, ws_id, title, desc, due_date, assignee, status, priority, project_id, creator):
+        self.db.tasks.insert_one({
             "workspace_id": ws_id,
             "title": title,
             "description": desc,
@@ -65,33 +95,39 @@ class DreamShiftDB:
             "status": status,
             "priority": priority,
             "project_id": project_id,
-            "created_by": creator_email,
+            "created_by": creator,
             "created_at": datetime.datetime.utcnow()
-        }).inserted_id
-        
-        # Notify Assignee
-        if assignee and assignee != creator_email:
-            self.create_notification(assignee, "New Task Assigned", f"You were assigned: {title}", "info")
-        
-        return str(task_id)
+        })
+        # Notify
+        if assignee and assignee != creator:
+            self.create_notification(assignee, "New Task", f"Assigned: {title}", "info")
 
     def update_task_status(self, task_id, status):
         self.db.tasks.update_one({"_id": ObjectId(task_id)}, {"$set": {"status": status}})
 
-    # --- LOG TIME ---
-    def log_time(self, task_id, user_email, seconds):
-        self.db.time_logs.insert_one({
-            "task_id": task_id,
-            "user_email": user_email,
-            "seconds": seconds,
-            "date": datetime.datetime.utcnow()
-        })
+    # --- NOTIFICATIONS ---
+    def get_unread_notifications(self, email):
+        return list(self.db.notifications.find({"user_email": email, "read": False}).sort("created_at", -1))
 
-    # --- MENTIONS ---
+    def create_notification(self, email, title, msg, n_type="info", link=None):
+        self.db.notifications.insert_one({
+            "user_email": email, "title": title, "message": msg,
+            "type": n_type, "link": link, "read": False,
+            "created_at": datetime.datetime.utcnow()
+        })
+    
+    def mark_notification_read(self, nid):
+        self.db.notifications.update_one({"_id": ObjectId(nid)}, {"$set": {"read": True}})
+
     def handle_mentions(self, text, source_user, link):
-        """Parse @mentions and notify users"""
         import re
-        emails = re.findall(r"@[\w\.-]+@[\w\.-]+", text)
+        emails = re.findall(r"@([\w\.-]+@[\w\.-]+)", text)
         for email in emails:
-            clean_email = email[1:] # remove @
-            self.create_notification(clean_email, "You were mentioned", f"{source_user} mentioned you.", "mention", link)
+            self.create_notification(email, "Mentioned", f"{source_user} mentioned you.", "mention", link)
+
+    # --- STATS ---
+    def get_user_stats(self, email):
+        total = self.db.tasks.count_documents({"assignee": email})
+        completed = self.db.tasks.count_documents({"assignee": email, "status": "Completed"})
+        rate = int((completed / total * 100) if total > 0 else 0)
+        return {"assigned": total, "completed": completed, "rate": rate, "week_hours": 0} # Hours placeholder

@@ -1,11 +1,10 @@
 import streamlit as st
 import datetime
 from src.database import DreamShiftDB
-from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar, get_svg
+from src.ui import load_global_css, render_custom_sidebar, get_svg
 from src.mailer import notify_deadline_warning
 
 st.set_page_config(page_title="Home", page_icon="static/icons/home.svg", layout="wide")
-hide_streamlit_sidebar()
 render_custom_sidebar()
 load_global_css()
 
