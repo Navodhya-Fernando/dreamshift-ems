@@ -10,6 +10,11 @@ hide_streamlit_sidebar()
 render_custom_sidebar()
 db = DreamShiftDB()
 
+user_email = st.session_state.get("user_email")
+if not user_email:
+    st.warning("Please sign in to continue.")
+    st.switch_page("pages/sign-in.py")
+
 pid = st.session_state.get("selected_project_id")
 if not pid:
     st.switch_page("pages/projects.py")
@@ -68,7 +73,7 @@ with st.expander("Add Task to Project"):
                         display = f"{name} ({email})"
                     member_display.append(display)
                     member_lookup[display] = email
-            default_assignee = next((d for d, em in member_lookup.items() if em == st.session_state.user_email), None)
+            default_assignee = next((d for d, em in member_lookup.items() if em == user_email), None)
             t_assignee = st.selectbox("Assignee", member_display or ["Unassigned"], index=member_display.index(default_assignee) if default_assignee in member_display else 0)
         with c4:
             t_due = st.date_input("Deadline", value=datetime.date.today() + datetime.timedelta(days=7))
@@ -86,7 +91,7 @@ with st.expander("Add Task to Project"):
                     "To Do",
                     t_priority,
                     pid,
-                    st.session_state.user_email
+                    user_email
                 )
                 st.rerun()
 

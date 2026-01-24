@@ -9,6 +9,11 @@ hide_streamlit_sidebar()
 render_custom_sidebar()
 db = DreamShiftDB()
 
+user_email = st.session_state.get("user_email")
+if not user_email:
+    st.warning("Please sign in to continue.")
+    st.switch_page("pages/sign-in.py")
+
 icon = get_svg("tasks.svg", 36, 36) or ":material/check_circle:"
 st.markdown(f"""<div class="ds-header-flex">{icon}<h1 class="ds-header-title">Tasks</h1></div>""", unsafe_allow_html=True)
 
@@ -34,8 +39,8 @@ for m in members:
 
 # Default assignee is current user
 default_assignee_idx = 0
-if st.session_state.user_email in member_lookup.values():
-    current_user_name = next(name for name, email in member_lookup.items() if email == st.session_state.user_email)
+if user_email in member_lookup.values():
+    current_user_name = next(name for name, email in member_lookup.items() if email == user_email)
     if current_user_name in member_display:
         default_assignee_idx = member_display.index(current_user_name)
 
@@ -68,7 +73,7 @@ with st.expander("Create New Task", expanded=False):
                     status="To Do",
                     priority=priority,
                     project_id=None,
-                    creator=st.session_state.user_email
+                    creator=user_email
                 )
                 st.success("Task created!")
                 st.rerun()
