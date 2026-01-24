@@ -153,24 +153,24 @@ a[data-testid="stPageLink-NavLink"][aria-current="page"] {
 }
 
 [data-testid="stSidebar"] [data-baseweb="select"] > div {
-    background: rgba(255,255,255,0.04) !important;
-    border: 1px solid rgba(255,255,255,0.14) !important;
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
     color: var(--text) !important;
-    border-radius: 10px !important;
-    min-height: 38px;
+    border-radius: 8px !important;
+    min-height: 36px;
     box-shadow: none !important;
     padding-left: 10px;
     transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 [data-testid="stSidebar"] [data-baseweb="select"] > div:hover {
-    background: rgba(255,255,255,0.06) !important;
-    border-color: rgba(255,255,255,0.22) !important;
+    background: rgba(255,255,255,0.05) !important;
+    border-color: rgba(255,255,255,0.2) !important;
 }
 
 [data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within {
-    box-shadow: 0 0 0 2px rgba(246,185,0,0.22) !important;
-    border-color: rgba(246,185,0,0.5) !important;
+    box-shadow: 0 0 0 2px rgba(246,185,0,0.2) !important;
+    border-color: rgba(246,185,0,0.45) !important;
 }
 
 [data-testid="stSidebar"] [data-baseweb="select"] span {
@@ -224,11 +224,11 @@ a[data-testid="stPageLink-NavLink"][aria-current="page"] {
      --------------------------------------------------------- */
 button[kind="primary"],
 button[data-testid="baseButton-primary"] {
-    background: var(--primary) !important;
-    color: var(--primary-text) !important;
+    background: #f6b900 !important;
+    color: #411c30 !important;
     border: none !important;
     border-radius: 10px !important;
-    font-weight: 800 !important;
+    font-weight: 600 !important;
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     padding: 0.5rem 0.9rem !important;
     box-shadow: 0 6px 14px rgba(246,185,0,0.12);
@@ -236,23 +236,23 @@ button[data-testid="baseButton-primary"] {
 
 button[kind="primary"]:hover,
 button[data-testid="baseButton-primary"]:hover {
-    background: var(--primary-hover) !important;
+    background: #ffe500 !important;
     transform: translateY(-1px);
     box-shadow: 0 12px 26px rgba(246,185,0,0.22);
 }
 
 button[kind="secondary"],
 button[data-testid="baseButton-secondary"] {
-    background: var(--primary) !important;
-    color: var(--primary-text) !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
+    background: #f6b900 !important;
+    color: #411c30 !important;
+    border: none !important;
     border-radius: 10px !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
 }
 
 button[kind="secondary"]:hover,
 button[data-testid="baseButton-secondary"]:hover {
-    background: var(--primary-hover) !important;
+    background: #ffe500 !important;
 }
 
 input, textarea, select,
@@ -261,7 +261,7 @@ input, textarea, select,
     background: rgba(255,255,255,0.03) !important;
     color: var(--text) !important;
     border: 1px solid rgba(255,255,255,0.12) !important;
-    border-radius: 10px !important;
+    border-radius: 8px !important;
 }
 
 textarea:focus, input:focus,
