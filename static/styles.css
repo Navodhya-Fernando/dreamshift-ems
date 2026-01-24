@@ -614,6 +614,7 @@ div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within,
     color: rgba(255,255,255,0.88) !important;
     font-size: 14px !important;
     font-weight: 500 !important;
+    caret-color: transparent !important;
 }
 
 /* Dropdown arrow */
@@ -647,4 +648,20 @@ div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within,
 [data-baseweb="popover"] [role="option"][aria-selected="true"] {
     background: rgba(255,255,255,0.08) !important;
     color: rgba(255,255,255,0.95) !important;
+}
+
+/* Reaction popover buttons: transparent background + visible emoji */
+[data-baseweb="popover"] button {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: none !important;
+    color: rgba(255,255,255,0.9) !important;
+}
+
+[data-baseweb="popover"] button * {
+    color: rgba(255,255,255,0.9) !important;
+}
+
+[data-baseweb="popover"] button:hover {
+    background: rgba(255,255,255,0.05) !important;
 }

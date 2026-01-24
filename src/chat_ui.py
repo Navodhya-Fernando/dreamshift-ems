@@ -7,11 +7,11 @@ from bson import ObjectId
 
 REACTION_ORDER = ["thumbs_up", "heart", "party", "eyes", "check"]
 REACTION_ICONS = {
-    "thumbs_up": ":material/thumb_up:",
-    "heart": ":material/favorite:",
-    "party": ":material/celebration:",
-    "eyes": ":material/visibility:",
-    "check": ":material/done:"
+    "thumbs_up": "👍",
+    "heart": "❤️",
+    "party": "🎉",
+    "eyes": "👀",
+    "check": "✅"
 }
 
 def fmt_ts(dt) -> str:
@@ -245,7 +245,8 @@ def render_comment(
                 for col, emoji in zip([r1, r2, r3, r4, r5], REACTION_ORDER):
                     users = reactions.get(emoji, []) or []
                     count = len(users)
-                    label = f"{emoji} {count}" if count else emoji
+                    icon = REACTION_ICONS.get(emoji, emoji)
+                    label = f"{icon} {count}" if count else icon
                     with col:
                         if st.button(label, key=f"react_{cid}_{emoji}", type="secondary"):
                             db.toggle_reaction(cid, emoji, current_user_email)
