@@ -154,90 +154,6 @@ a[data-testid="stPageLink-NavLink"][aria-current="page"] {
     font-weight: 600;
 }
 
-[data-testid="stSidebar"] [data-baseweb="select"] > div {
-    background: rgba(255,255,255,0.03) !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    color: var(--text) !important;
-    border-radius: 8px !important;
-    min-height: 36px;
-    box-shadow: none !important;
-    padding-left: 10px;
-    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-}
-
-[data-testid="stSidebar"] [data-baseweb="select"] > div:hover {
-    background: rgba(255,255,255,0.05) !important;
-    border-color: rgba(255,255,255,0.2) !important;
-}
-
-[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within {
-    box-shadow: 0 0 0 2px rgba(246,185,0,0.2) !important;
-    border-color: rgba(246,185,0,0.45) !important;
-}
-
-[data-testid="stSidebar"] [data-baseweb="select"] span {
-    color: var(--text) !important;
-}
-
-[data-testid="stSidebar"] [data-baseweb="select"] input {
-    color: var(--text) !important;
-    font-weight: 600 !important;
-    font-size: 0.9rem !important;
-}
-
-[data-testid="stSidebar"] [data-baseweb="select"] svg {
-    color: var(--text-muted) !important;
-    opacity: 0.8;
-}
-
-/* Selectbox styling for main content (matches sidebar) */
-div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
-section [data-baseweb="select"] > div {
-    background: rgba(255,255,255,0.03) !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    border-radius: 8px !important;
-    box-shadow: none !important;
-    min-height: 36px;
-}
-
-/* Remove extra inner borders for BaseWeb select */
-[data-baseweb="select"] > div > div,
-[data-baseweb="select"] [role="combobox"] {
-    border: none !important;
-    box-shadow: none !important;
-}
-
-[data-baseweb="popover"] {
-    background: #1c0d14 !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    box-shadow: 0 16px 36px rgba(0,0,0,0.35) !important;
-    border-radius: 12px !important;
-    padding: 6px 0 !important;
-}
-
-[data-baseweb="popover"] [role="listbox"] {
-    padding: 4px 0 !important;
-}
-
-[data-baseweb="popover"] [role="option"] {
-    background: transparent !important;
-    color: var(--text) !important;
-    border-radius: 8px;
-    margin: 2px 8px;
-    padding: 9px 12px;
-    transition: background 0.15s ease, color 0.15s ease;
-}
-
-[data-baseweb="popover"] [role="option"]:hover {
-    background: rgba(255,255,255,0.06) !important;
-    color: var(--text) !important;
-}
-
-[data-baseweb="popover"] [role="option"][aria-selected="true"] {
-    background: rgba(246,185,0,0.14) !important;
-    color: var(--primary) !important;
-}
-
 /* ---------------------------------------------------------
      BUTTONS & INPUTS
      --------------------------------------------------------- */
@@ -295,16 +211,13 @@ div[data-testid="stButton"] > button:hover {
 }
 
 input, textarea, select,
-[data-baseweb="select"] div,
 [data-baseweb="input"] input {
     background: rgba(255,255,255,0.03) !important;
     color: var(--text) !important;
     border: 1px solid rgba(255,255,255,0.12) !important;
     border-radius: 8px !important;
 }
-
-textarea:focus, input:focus,
-[data-baseweb="select"] div:focus-within {
+textarea:focus, input:focus {
     box-shadow: var(--ring) !important;
     border-color: rgba(246,185,0,0.45) !important;
 }
@@ -669,63 +582,69 @@ button[data-testid="baseButton-secondary"]:hover {
     color: #411c30 !important;
 }
 
-/* Clean selectbox styling (all locations) */
+/* =========================================================
+     ULTRA-MINIMAL SELECT / DROPDOWN
+     No focus ring, no glow, no animation
+     ========================================================= */
+
+/* Closed select container */
 div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
 [data-testid="stSidebar"] [data-baseweb="select"] > div,
 section [data-baseweb="select"] > div {
     background: rgba(255,255,255,0.03) !important;
-    border: 1px solid rgba(255,255,255,0.14) !important;
-    border-radius: 10px !important;
-    min-height: 40px !important;
-    box-shadow: none !important;
-    padding-left: 10px !important;
-    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-}
-
-div[data-testid="stSelectbox"] [data-baseweb="select"] > div:hover,
-[data-testid="stSidebar"] [data-baseweb="select"] > div:hover,
-section [data-baseweb="select"] > div:hover {
-    background: rgba(255,255,255,0.05) !important;
-    border-color: rgba(255,255,255,0.22) !important;
-}
-
-div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within,
-[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within,
-section [data-baseweb="select"] > div:focus-within {
-    box-shadow: 0 0 0 3px rgba(246,185,0,0.22) !important;
-    border-color: rgba(246,185,0,0.50) !important;
-}
-
-[data-baseweb="select"] [role="combobox"] {
-    color: rgba(255,255,255,0.92) !important;
-    font-weight: 600 !important;
-}
-
-[data-baseweb="select"] svg {
-    color: rgba(255,255,255,0.60) !important;
-}
-
-[data-baseweb="popover"] {
-    background: #1c0d14 !important;
     border: 1px solid rgba(255,255,255,0.12) !important;
-    border-radius: 12px !important;
-    box-shadow: 0 16px 36px rgba(0,0,0,0.35) !important;
-    padding: 6px 0 !important;
+    border-radius: 8px !important;
+    min-height: 38px !important;
+    box-shadow: none !important;
+    padding: 0 12px !important;
 }
 
+/* REMOVE focus / active effects completely */
+div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus,
+div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within,
+[data-testid="stSidebar"] [data-baseweb="select"] > div:focus,
+[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: rgba(255,255,255,0.12) !important;
+}
+
+/* Selected value text */
+[data-baseweb="select"] [role="combobox"] {
+    color: rgba(255,255,255,0.88) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+}
+
+/* Dropdown arrow */
+[data-baseweb="select"] svg {
+    color: rgba(255,255,255,0.55) !important;
+}
+
+/* Dropdown menu container */
+[data-baseweb="popover"] {
+    background: rgba(20,10,15,0.96) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    padding: 4px 0 !important;
+}
+
+/* Dropdown options */
 [data-baseweb="popover"] [role="option"] {
     background: transparent !important;
-    color: rgba(255,255,255,0.90) !important;
-    border-radius: 10px !important;
-    margin: 2px 8px !important;
-    padding: 10px 12px !important;
+    color: rgba(255,255,255,0.88) !important;
+    font-size: 14px !important;
+    padding: 8px 14px !important;
 }
 
+/* Hover – barely visible */
 [data-baseweb="popover"] [role="option"]:hover {
-    background: rgba(255,255,255,0.06) !important;
+    background: rgba(255,255,255,0.05) !important;
 }
 
+/* Selected option */
 [data-baseweb="popover"] [role="option"][aria-selected="true"] {
-    background: rgba(246,185,0,0.14) !important;
-    color: #f6b900 !important;
+    background: rgba(255,255,255,0.08) !important;
+    color: rgba(255,255,255,0.95) !important;
 }
