@@ -83,12 +83,17 @@ if current_ws_id:
             total = len(p_tasks)
             done = sum(1 for t in p_tasks if t['status'] == 'Completed')
             progress = done / total if total > 0 else 0
+            deadline = p.get('deadline')
             
             st.markdown(f"""
             <div class="ds-card" style="height: 220px; display:flex; flex-direction:column; justify-content:space-between; cursor:pointer;">
                 <div>
                     <div style="display:flex; justify-content:space-between; align-items:start;">
                         <h3 style="margin:0; color:#f6b900;">{p['name']}</h3>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; font-size:0.75rem; color:#cfcfcf;">
+                        <span class="ds-meta-item">Status: {p.get('status','Active')}</span>
+                        <span class="ds-meta-item">Deadline: {deadline.strftime('%b %d') if deadline else '—'}</span>
                     </div>
                     <p style="color:#b0b3b8; font-size:0.85rem; margin-top:10px; line-height:1.4;">
                         {p.get('description','No description')[:80]}...

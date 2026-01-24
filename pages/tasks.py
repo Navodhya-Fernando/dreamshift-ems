@@ -88,7 +88,7 @@ for t in tasks:
     st.markdown(f"""
     <div class="ds-card" style="padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
         <div style="flex-grow: 1;">
-            <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px;">{t['title']}</div>
+            <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; color: #f6b900;">{t['title']}</div>
             <div class="ds-meta">
                 <span class="ds-meta-item">Assignee: {next((k for k,v in member_lookup.items() if v == t.get('assignee')), 'Unassigned')}</span>
                 <span class="ds-meta-item" style="border-color:{urgency_color}; color:{urgency_color};">Due: {t.get('due_date').strftime('%b %d') if t.get('due_date') else 'No Date'}</span>

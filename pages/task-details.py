@@ -29,7 +29,7 @@ if not task: st.error("Task not found."); st.stop()
 col_back, col_title = st.columns([1, 6])
 if col_back.button("Back"):
     st.switch_page("pages/tasks.py")
-col_title.markdown(f"## {task.get('title')}")
+col_title.markdown(f"## <span style='color:#f6b900;'>{task.get('title')}</span>", unsafe_allow_html=True)
 
 # --- MAIN LAYOUT ---
 left, right = st.columns([2, 1])

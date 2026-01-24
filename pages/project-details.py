@@ -1,4 +1,5 @@
 import streamlit as st
+import datetime
 from src.database import DreamShiftDB
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
 from src.chat_ui import render_chat_interface
@@ -23,32 +24,71 @@ if not proj:
 # --- HEADER ---
 c1, c2 = st.columns([1, 6])
 if c1.button("← Back"): st.switch_page("pages/projects.py")
-c2.markdown(f"# {proj['name']}")
-st.markdown(f"*{proj.get('description')}*")
+c2.markdown(f"# <span style='color:#f6b900;'>{proj['name']}</span>", unsafe_allow_html=True)
+if proj.get('description'):
+    st.markdown(f"*{proj.get('description')}*")
+
+meta_cols = st.columns(4)
+deadline = proj.get('deadline')
+ws_name = "—"
+try:
+    ws = db.db.workspaces.find_one({"_id": db.ObjectId(proj.get('workspace_id'))})
+    if ws:
+        ws_name = ws.get('name', ws_name)
+except Exception:
+    ws_name = ws_name
+
+meta_cols[0].markdown(f"**Status**\n\n{proj.get('status', 'Active')}")
+meta_cols[1].markdown(f"**Deadline**\n\n{deadline.strftime('%b %d, %Y') if deadline else '—'}")
+meta_cols[2].markdown(f"**Workspace**\n\n{ws_name}")
+meta_cols[3].markdown(f"**Tasks**\n\n{db.db.tasks.count_documents({'project_id': pid})}")
 
 st.divider()
 
 # --- ADD TASK TO PROJECT ---
 with st.expander("Add Task to Project"):
     with st.form("add_p_task"):
-        t_title = st.text_input("Task Title")
-        members = db.get_workspace_members(proj['workspace_id'])
-        member_display = []
-        member_lookup = {}
-        for m in members:
-            name = m.get("name") or m.get("email")
-            email = m.get("email")
-            if name and email:
-                display = name
-                if display in member_lookup:
-                    display = f"{name} ({email})"
-                member_display.append(display)
-                member_lookup[display] = email
-        default_assignee = next((d for d, em in member_lookup.items() if em == st.session_state.user_email), None)
-        t_assignee = st.selectbox("Assignee", member_display or ["Unassigned"], index=member_display.index(default_assignee) if default_assignee in member_display else 0)
-        if st.form_submit_button("Add Task"):
-            db.create_task(proj['workspace_id'], t_title, "", None, member_lookup.get(t_assignee), "To Do", "Medium", pid, st.session_state.user_email)
-            st.rerun()
+        c1, c2 = st.columns([2, 1])
+        with c1:
+            t_title = st.text_input("Task Title", placeholder="e.g. Finalize UI polish")
+        with c2:
+            t_priority = st.selectbox("Priority", ["Low", "Medium", "High", "Critical"], index=1)
+
+        c3, c4 = st.columns(2)
+        with c3:
+            members = db.get_workspace_members(proj['workspace_id'])
+            member_display = []
+            member_lookup = {}
+            for m in members:
+                name = m.get("name") or m.get("email")
+                email = m.get("email")
+                if name and email:
+                    display = name
+                    if display in member_lookup:
+                        display = f"{name} ({email})"
+                    member_display.append(display)
+                    member_lookup[display] = email
+            default_assignee = next((d for d, em in member_lookup.items() if em == st.session_state.user_email), None)
+            t_assignee = st.selectbox("Assignee", member_display or ["Unassigned"], index=member_display.index(default_assignee) if default_assignee in member_display else 0)
+        with c4:
+            t_due = st.date_input("Deadline", value=datetime.date.today() + datetime.timedelta(days=7))
+
+        if st.form_submit_button("Add Task", type="primary", use_container_width=True):
+            if not t_title:
+                st.error("Task Title is required.")
+            else:
+                db.create_task(
+                    proj['workspace_id'],
+                    t_title,
+                    "",
+                    t_due,
+                    member_lookup.get(t_assignee),
+                    "To Do",
+                    t_priority,
+                    pid,
+                    st.session_state.user_email
+                )
+                st.rerun()
 
 # --- PROJECT TASKS ---
 tasks = db.get_tasks_with_urgency({"project_id": pid})
@@ -57,9 +97,9 @@ if not tasks:
     st.info("No tasks in this project yet.")
 else:
     for t in tasks:
-        col1, col2, col3 = st.columns([4, 2, 1])
-        col1.write(f"**{t['title']}**")
-        col2.caption(t['status'])
+        col1, col2, col3 = st.columns([5, 2, 1])
+        col1.markdown(f"<span style='color:#f6b900; font-weight:700;'>{t['title']}</span>", unsafe_allow_html=True)
+        col2.caption(f"{t.get('status')} · {t.get('priority', 'Medium')}")
         if col3.button("View", key=f"p_{t['_id']}"):
             st.session_state.selected_task_id = str(t['_id'])
             st.switch_page("pages/task-details.py")
