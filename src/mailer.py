@@ -62,7 +62,6 @@ def send_task_assignment_email(to_email, task_title, assigner_name, due_date):
         <p><b>{assigner_name}</b> has assigned you a new task.</p>
         <hr>
         <p><b>Task:</b> {task_title}</p>
-            <a href="{reset_link}" style="background-color: #f6b900; color: #411c30; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
         <hr>
         <p>Log in to DreamShift to view details.</p>
     </div>
