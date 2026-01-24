@@ -9,11 +9,16 @@ hide_streamlit_sidebar()
 render_custom_sidebar()
 db = DreamShiftDB()
 
+user_email = st.session_state.get("user_email")
+if not user_email:
+    st.warning("Please sign in to continue.")
+    st.switch_page("pages/sign-in.py")
+
 icon = get_svg("projects.svg", 36, 36) or ":material/folder:"
 st.markdown(f"""<div class="ds-header-flex">{icon}<h1 class="ds-header-title">Projects</h1></div>""", unsafe_allow_html=True)
 
 # Fetch Workspaces for Dropdown
-user_workspaces = db.get_user_workspaces(st.session_state.user_email)
+user_workspaces = db.get_user_workspaces(user_email)
 ws_options = {w['name']: str(w['_id']) for w in user_workspaces}
 
 # Default to current workspace if set
