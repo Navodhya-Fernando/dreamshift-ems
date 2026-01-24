@@ -70,7 +70,18 @@ with st.expander("Create New Project", expanded=False):
 # --- PROJECT GRID ---
 # Filter by selected workspace
 if current_ws_id:
-    projects = list(db.db.projects.find({"workspace_id": current_ws_id}))
+    all_projects = list(db.db.projects.find({"workspace_id": current_ws_id}))
+    status_options = sorted({p.get("status", "Active") for p in all_projects}) or ["Active"]
+    f1, f2 = st.columns([2, 1])
+    with f1:
+        search_query = st.text_input("Search projects", placeholder="Search by project title")
+    with f2:
+        status_filter = st.multiselect("Filter by Status", status_options, default=status_options)
+
+    projects = [p for p in all_projects if p.get("status", "Active") in status_filter]
+    if search_query:
+        q = search_query.strip().lower()
+        projects = [p for p in projects if q in (p.get("name", "").lower())]
     
     if not projects:
         st.info("No projects found in this workspace.")
@@ -92,7 +103,7 @@ if current_ws_id:
                         <h3 style="margin:0; color:#f6b900;">{p['name']}</h3>
                     </div>
                     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; font-size:0.75rem; color:#cfcfcf;">
-                        <span class="ds-meta-item">Status: {p.get('status','Active')}</span>
+                        <span class="ds-status ds-status--{p.get('status','Active').lower().replace(' ','-')}">{p.get('status','Active')}</span>
                         <span class="ds-meta-item">Deadline: {deadline.strftime('%b %d') if deadline else '—'}</span>
                     </div>
                     <p style="color:#b0b3b8; font-size:0.85rem; margin-top:10px; line-height:1.4;">

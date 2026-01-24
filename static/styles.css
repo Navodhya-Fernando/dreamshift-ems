@@ -395,6 +395,29 @@ textarea:focus, input:focus,
     color: var(--text-soft);
 }
 
+/* Status + Priority color chips */
+.ds-status {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid transparent;
+}
+
+.ds-status--todo { background: rgba(255,255,255,0.06); color: #ffffff; border-color: rgba(255,255,255,0.12); }
+.ds-status--in-progress { background: rgba(33,150,243,0.18); color: #90caf9; border-color: rgba(33,150,243,0.35); }
+.ds-status--review { background: rgba(156,39,176,0.18); color: #ce93d8; border-color: rgba(156,39,176,0.35); }
+.ds-status--completed { background: rgba(76,175,80,0.18); color: #a5d6a7; border-color: rgba(76,175,80,0.35); }
+.ds-status--blocked { background: rgba(211,47,47,0.18); color: #ef9a9a; border-color: rgba(211,47,47,0.35); }
+
+.ds-priority--low { background: rgba(76,175,80,0.14); color: #a5d6a7; border: 1px solid rgba(76,175,80,0.35); }
+.ds-priority--medium { background: rgba(255,193,7,0.14); color: #ffe082; border: 1px solid rgba(255,193,7,0.35); }
+.ds-priority--high { background: rgba(255,152,0,0.16); color: #ffcc80; border: 1px solid rgba(255,152,0,0.35); }
+.ds-priority--critical { background: rgba(244,67,54,0.18); color: #ef9a9a; border: 1px solid rgba(244,67,54,0.35); }
+
 /* ---------------------------------------------------------
      METRICS & TABS
      --------------------------------------------------------- */
@@ -616,6 +639,24 @@ button[data-testid="baseButton-secondary"] {
     box-shadow: 0 6px 14px rgba(246,185,0,0.12) !important;
 }
 
+div[data-testid="stButton"] > button *,
+div[data-testid="stFormSubmitButton"] > button *,
+.stButton > button *,
+.stFormSubmitButton > button *,
+button[kind="primary"] *,
+button[kind="secondary"] *,
+button[data-testid="baseButton-primary"] *,
+button[data-testid="baseButton-secondary"] * {
+    color: #411c30 !important;
+}
+
+/* Link-style buttons */
+div[data-testid="stLinkButton"] a,
+div[data-testid="stLinkButton"] a *,
+[role="button"] * {
+    color: #411c30 !important;
+}
+
 div[data-testid="stButton"] > button:hover,
 div[data-testid="stFormSubmitButton"] > button:hover,
 .stButton > button:hover,
@@ -628,19 +669,63 @@ button[data-testid="baseButton-secondary"]:hover {
     color: #411c30 !important;
 }
 
-/* Unified selectbox styling (all locations) */
+/* Clean selectbox styling (all locations) */
 div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
 [data-testid="stSidebar"] [data-baseweb="select"] > div,
 section [data-baseweb="select"] > div {
     background: rgba(255,255,255,0.03) !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    border-radius: 8px !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+    border-radius: 10px !important;
+    min-height: 40px !important;
     box-shadow: none !important;
-    min-height: 36px !important;
+    padding-left: 10px !important;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
-[data-baseweb="select"] > div > div,
+div[data-testid="stSelectbox"] [data-baseweb="select"] > div:hover,
+[data-testid="stSidebar"] [data-baseweb="select"] > div:hover,
+section [data-baseweb="select"] > div:hover {
+    background: rgba(255,255,255,0.05) !important;
+    border-color: rgba(255,255,255,0.22) !important;
+}
+
+div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within,
+[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within,
+section [data-baseweb="select"] > div:focus-within {
+    box-shadow: 0 0 0 3px rgba(246,185,0,0.22) !important;
+    border-color: rgba(246,185,0,0.50) !important;
+}
+
 [data-baseweb="select"] [role="combobox"] {
-    border: none !important;
-    box-shadow: none !important;
+    color: rgba(255,255,255,0.92) !important;
+    font-weight: 600 !important;
+}
+
+[data-baseweb="select"] svg {
+    color: rgba(255,255,255,0.60) !important;
+}
+
+[data-baseweb="popover"] {
+    background: #1c0d14 !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.35) !important;
+    padding: 6px 0 !important;
+}
+
+[data-baseweb="popover"] [role="option"] {
+    background: transparent !important;
+    color: rgba(255,255,255,0.90) !important;
+    border-radius: 10px !important;
+    margin: 2px 8px !important;
+    padding: 10px 12px !important;
+}
+
+[data-baseweb="popover"] [role="option"]:hover {
+    background: rgba(255,255,255,0.06) !important;
+}
+
+[data-baseweb="popover"] [role="option"][aria-selected="true"] {
+    background: rgba(246,185,0,0.14) !important;
+    color: #f6b900 !important;
 }

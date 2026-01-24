@@ -79,37 +79,61 @@ with st.expander("Create New Task", expanded=False):
                 st.rerun()
 
 # --- TASK LIST (Kanban/List Hybrid) ---
-st.markdown("### Active Tasks")
+st.markdown("### Tasks Board")
 
-tasks = db.get_tasks_with_urgency({"workspace_id": ws_id, "status": {"$ne": "Completed"}})
+statuses = db.get_workspace_statuses(ws_id)
+status_filter_default = [s for s in statuses if s != "Completed"] or statuses
+f1, f2 = st.columns([2, 1])
+with f1:
+    status_filter = st.multiselect("Filter by Status", statuses, default=status_filter_default)
+with f2:
+    priority_filter = st.multiselect("Filter by Priority", ["Low", "Medium", "High", "Critical"], default=["Low", "Medium", "High", "Critical"])
+
+query = {"workspace_id": ws_id}
+if status_filter:
+    query["status"] = {"$in": status_filter}
+if priority_filter:
+    query["priority"] = {"$in": priority_filter}
+
+tasks = db.get_tasks_with_urgency(query)
 
 if not tasks:
     st.info("No active tasks in this workspace.")
+else:
+    # Group tasks by status
+    status_order = [s for s in statuses if s in status_filter] if status_filter else statuses
+    grouped = {s: [] for s in status_order}
+    for t in tasks:
+        s = t.get("status") or "To Do"
+        if s in grouped:
+            grouped[s].append(t)
 
-for t in tasks:
-    urgency_color = t.get('urgency_color', '#ccc')
-    
-    # Clean card layout
-    st.markdown(f"""
-    <div class="ds-card" style="padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-        <div style="flex-grow: 1;">
-            <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; color: #f6b900;">{t['title']}</div>
-            <div class="ds-meta">
-                <span class="ds-meta-item">Assignee: {next((k for k,v in member_lookup.items() if v == t.get('assignee')), 'Unassigned')}</span>
-                <span class="ds-meta-item" style="border-color:{urgency_color}; color:{urgency_color};">Due: {t.get('due_date').strftime('%b %d') if t.get('due_date') else 'No Date'}</span>
-                <span class="ds-meta-item">Priority: {t.get('priority')}</span>
-            </div>
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <span class="ds-badge">{t['status']}</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Invisible button overlay logic usually requires trickier CSS or just placing a button below/beside
-    # For Streamlit, placing the button explicitly is safer
-    col_btn = st.columns([0.9, 0.1])
-    with col_btn[1]:
-        if st.button("Open", key=f"open_{t['_id']}", help="Open Details"):
-            st.session_state.selected_task_id = str(t['_id'])
-            st.switch_page("pages/task-details.py")
+    cols = st.columns(len(status_order) if status_order else 1)
+    for idx, status in enumerate(status_order):
+        with cols[idx]:
+            status_key = status.lower().replace(' ', '-')
+            st.markdown(f"<div class='ds-status ds-status--{status_key}' style='margin-bottom:10px;'>{status}</div>", unsafe_allow_html=True)
+            if not grouped.get(status):
+                st.caption("No tasks")
+            for t in grouped.get(status, []):
+                urgency_color = t.get('urgency_color', '#ccc')
+                priority_key = (t.get('priority') or '').lower()
+                assignee_name = next((k for k, v in member_lookup.items() if v == t.get('assignee')), 'Unassigned')
+
+                with st.container():
+                    st.markdown(f"""
+                    <div class="ds-card" style="padding: 12px; margin-bottom: 10px;">
+                        <div style="font-weight: 700; font-size: 1rem; margin-bottom: 6px; color: #f6b900;">{t['title']}</div>
+                        <div class="ds-meta" style="flex-wrap:wrap;">
+                            <span class="ds-meta-item">Assignee: {assignee_name}</span>
+                            <span class="ds-meta-item" style="border-color:{urgency_color}; color:{urgency_color};">Due: {t.get('due_date').strftime('%b %d') if t.get('due_date') else 'No Date'}</span>
+                            <span class="ds-priority--{priority_key} ds-status">Priority: {t.get('priority')}</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    btn_col = st.columns([1])
+                    with btn_col[0]:
+                        if st.button("Open", key=f"open_{t['_id']}", help="Open Details", use_container_width=True):
+                            st.session_state.selected_task_id = str(t['_id'])
+                            st.switch_page("pages/task-details.py")

@@ -97,14 +97,33 @@ with st.expander("Add Task to Project"):
 
 # --- PROJECT TASKS ---
 tasks = db.get_tasks_with_urgency({"project_id": pid})
+status_options = sorted({t.get("status", "To Do") for t in tasks})
+priority_options = ["Low", "Medium", "High", "Critical"]
+
+f1, f2 = st.columns([2, 1])
+with f1:
+    status_filter = st.multiselect("Filter by Status", status_options, default=status_options)
+with f2:
+    priority_filter = st.multiselect("Filter by Priority", priority_options, default=priority_options)
+
+if status_filter:
+    tasks = [t for t in tasks if t.get("status", "To Do") in status_filter]
+if priority_filter:
+    tasks = [t for t in tasks if t.get("priority", "Medium") in priority_filter]
 
 if not tasks:
     st.info("No tasks in this project yet.")
 else:
     for t in tasks:
+        status_key = (t.get('status') or '').lower().replace(' ', '-')
+        priority_key = (t.get('priority') or '').lower()
         col1, col2, col3 = st.columns([5, 2, 1])
         col1.markdown(f"<span style='color:#f6b900; font-weight:700;'>{t['title']}</span>", unsafe_allow_html=True)
-        col2.caption(f"{t.get('status')} · {t.get('priority', 'Medium')}")
+        col2.markdown(
+            f"<span class='ds-status ds-status--{status_key}'>{t.get('status')}</span> "
+            f"<span class='ds-status ds-priority--{priority_key}'>Priority: {t.get('priority','Medium')}</span>",
+            unsafe_allow_html=True
+        )
         if col3.button("View", key=f"p_{t['_id']}"):
             st.session_state.selected_task_id = str(t['_id'])
             st.switch_page("pages/task-details.py")
