@@ -89,27 +89,22 @@ greeting_html = f"""
     
     let greeting = "Good Morning";
     let svg = `{svg_morning}`;
-    let emoji = "☀️";
     
     if (hour >= 5 && hour < 12) {{
         greeting = "Good Morning";
         svg = `{svg_morning}`;
-        emoji = "☀️";
     }} else if (hour >= 12 && hour < 17) {{
         greeting = "Good Afternoon";
         svg = `{svg_evening}`;
-        emoji = "🌤️";
     }} else if (hour >= 17 && hour < 21) {{
         greeting = "Good Evening";
         svg = `{svg_evening}`;
-        emoji = "🌆";
     }} else {{
         greeting = "Good Night";
         svg = `{svg_night}`;
-        emoji = "🌙";
     }}
     
-    titleDiv.innerText = emoji + " " + greeting + ", {user_name}";
+    titleDiv.innerText = greeting + ", {user_name}";
     iconDiv.innerHTML = svg;
 </script>
 """

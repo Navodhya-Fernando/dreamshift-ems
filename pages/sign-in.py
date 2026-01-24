@@ -45,7 +45,7 @@ if db_connected:
                     st.error("Invalid email or password.")
         
         if st.button("Forgot Password?", type="secondary"):
-            st.switch_page("pages/password_reset.py")
+            st.switch_page("pages/password-reset.py")
 
     # --- CREATE ACCOUNT TAB ---
     with tab2:

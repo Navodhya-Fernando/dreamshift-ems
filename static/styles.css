@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap");
+
 /* =========================================================
      DreamShift EMS - Modern Minimal UI
      Palette: #24101a (bg), #f6b900 (accent), #411c30 (text)
@@ -31,7 +33,7 @@
 * { box-sizing: border-box; }
 
 html, body, [class*="css"] {
-    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
 .stApp,
@@ -188,6 +190,23 @@ a[data-testid="stPageLink-NavLink"][aria-current="page"] {
     opacity: 0.8;
 }
 
+/* Selectbox styling for main content (matches sidebar) */
+div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+section [data-baseweb="select"] > div {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    min-height: 36px;
+}
+
+/* Remove extra inner borders for BaseWeb select */
+[data-baseweb="select"] > div > div,
+[data-baseweb="select"] [role="combobox"] {
+    border: none !important;
+    box-shadow: none !important;
+}
+
 [data-baseweb="popover"] {
     background: #1c0d14 !important;
     border: 1px solid rgba(255,255,255,0.12) !important;
@@ -253,6 +272,26 @@ button[data-testid="baseButton-secondary"] {
 button[kind="secondary"]:hover,
 button[data-testid="baseButton-secondary"]:hover {
     background: #ffe500 !important;
+}
+
+/* Ensure Streamlit button wrappers inherit the same style */
+.stButton > button,
+.stFormSubmitButton > button,
+div[data-testid="stFormSubmitButton"] > button,
+div[data-testid="stButton"] > button {
+    background: #f6b900 !important;
+    color: #411c30 !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+}
+
+.stButton > button:hover,
+.stFormSubmitButton > button:hover,
+div[data-testid="stFormSubmitButton"] > button:hover,
+div[data-testid="stButton"] > button:hover {
+    background: #ffe500 !important;
+    color: #411c30 !important;
 }
 
 input, textarea, select,
@@ -557,3 +596,51 @@ textarea:focus, input:focus,
      UTILITIES
      --------------------------------------------------------- */
 [data-testid="stStatusWidget"] { display: none; }
+
+/* ---------------------------------------------------------
+     HARD OVERRIDES (Buttons & Selects)
+     --------------------------------------------------------- */
+div[data-testid="stButton"] > button,
+div[data-testid="stFormSubmitButton"] > button,
+.stButton > button,
+.stFormSubmitButton > button,
+button[kind="primary"],
+button[kind="secondary"],
+button[data-testid="baseButton-primary"],
+button[data-testid="baseButton-secondary"] {
+    background: #f6b900 !important;
+    color: #411c30 !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 6px 14px rgba(246,185,0,0.12) !important;
+}
+
+div[data-testid="stButton"] > button:hover,
+div[data-testid="stFormSubmitButton"] > button:hover,
+.stButton > button:hover,
+.stFormSubmitButton > button:hover,
+button[kind="primary"]:hover,
+button[kind="secondary"]:hover,
+button[data-testid="baseButton-primary"]:hover,
+button[data-testid="baseButton-secondary"]:hover {
+    background: #ffe500 !important;
+    color: #411c30 !important;
+}
+
+/* Unified selectbox styling (all locations) */
+div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+[data-testid="stSidebar"] [data-baseweb="select"] > div,
+section [data-baseweb="select"] > div {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    min-height: 36px !important;
+}
+
+[data-baseweb="select"] > div > div,
+[data-baseweb="select"] [role="combobox"] {
+    border: none !important;
+    box-shadow: none !important;
+}
