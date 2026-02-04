@@ -172,19 +172,29 @@ class DreamShiftDB:
     # TASKS (Email Trigger)
     # ==========================================
 
-    def create_task(self, ws_id, title, desc, due_date, assignee, status, priority, project_id, creator):
+    def create_task(self, ws_id, title, desc, due_date, assignee, status, priority, project_id, creator, start_date=None):
         task_id = self.db.tasks.insert_one({
             "workspace_id": ws_id,
             "title": title,
             "description": desc,
+            "start_date": datetime.datetime.combine(start_date, datetime.time()) if start_date else None,
             "due_date": datetime.datetime.combine(due_date, datetime.time()) if due_date else None,
+            "end_date": None,
             "assignee": assignee,
             "status": status,
             "priority": priority,
             "project_id": project_id,
             "created_by": creator,
             "created_at": datetime.datetime.utcnow(),
-            "subtasks": []
+            "subtasks": [],
+            "status_history": [
+                {
+                    "from": None,
+                    "to": status,
+                    "by": creator,
+                    "at": datetime.datetime.utcnow()
+                }
+            ]
         }).inserted_id
         
         # 📨 TRIGGER EMAIL + INBOX NOTIFICATION
@@ -208,8 +218,57 @@ class DreamShiftDB:
                 elif diff < 48: t['urgency_color'] = "#f57c00" # Orange
         return tasks
 
-    def update_task_status(self, task_id, status):
-        self.db.tasks.update_one({"_id": ObjectId(task_id)}, {"$set": {"status": status}})
+    def update_task_status(self, task_id, status, user_email=None):
+        task = self.db.tasks.find_one({"_id": ObjectId(task_id)})
+        if not task:
+            return
+
+        updates = {"status": status}
+        if status == "Completed" and not task.get("end_date"):
+            updates["end_date"] = datetime.datetime.utcnow()
+
+        self.db.tasks.update_one(
+            {"_id": ObjectId(task_id)},
+            {
+                "$set": updates,
+                "$push": {
+                    "status_history": {
+                        "from": task.get("status"),
+                        "to": status,
+                        "by": user_email,
+                        "at": datetime.datetime.utcnow()
+                    }
+                }
+            }
+        )
+
+    def update_task_dates(self, task_id, start_date=None, end_date=None):
+        updates = {}
+        if start_date is not None:
+            updates["start_date"] = datetime.datetime.combine(start_date, datetime.time()) if start_date else None
+        if end_date is not None:
+            updates["end_date"] = datetime.datetime.combine(end_date, datetime.time()) if end_date else None
+        if updates:
+            self.db.tasks.update_one({"_id": ObjectId(task_id)}, {"$set": updates})
+
+    # ==========================================
+    # 🧩 TASK TEMPLATES
+    # ==========================================
+
+    def get_task_templates(self, workspace_id):
+        return list(self.db.task_templates.find({"workspace_id": workspace_id}).sort("created_at", -1))
+
+    def create_task_template(self, workspace_id, name, tasks, created_by):
+        return self.db.task_templates.insert_one({
+            "workspace_id": workspace_id,
+            "name": name,
+            "tasks": tasks,
+            "created_by": created_by,
+            "created_at": datetime.datetime.utcnow()
+        }).inserted_id
+
+    def delete_task_template(self, template_id):
+        self.db.task_templates.delete_one({"_id": ObjectId(template_id)})
 
     # ==========================================
     # ☑️ SUBTASKS

@@ -53,10 +53,12 @@ with st.expander("Create New Task", expanded=False):
         with c2:
             priority = st.selectbox("Priority", ["Low", "Medium", "High", "Critical"], index=1)
             
-        c3, c4 = st.columns(2)
+        c3, c4, c5 = st.columns(3)
         with c3:
             assignee = st.selectbox("Assignee", member_display or ["Unassigned"], index=default_assignee_idx)
         with c4:
+            start_date = st.date_input("Start Date", value=datetime.date.today())
+        with c5:
             due_date = st.date_input("Due Date", value=datetime.date.today() + datetime.timedelta(days=1))
             
         if st.form_submit_button("Create Task", type="primary", use_container_width=True):
@@ -73,7 +75,8 @@ with st.expander("Create New Task", expanded=False):
                     status="To Do",
                     priority=priority,
                     project_id=None,
-                    creator=user_email
+                    creator=user_email,
+                    start_date=start_date
                 )
                 st.success("Task created!")
                 st.rerun()
@@ -82,12 +85,12 @@ with st.expander("Create New Task", expanded=False):
 st.markdown("### Tasks Board")
 
 statuses = db.get_workspace_statuses(ws_id)
-status_filter_default = [s for s in statuses if s != "Completed"] or statuses
+status_filter_default = []
 f1, f2 = st.columns([2, 1])
 with f1:
     status_filter = st.multiselect("Filter by Status", statuses, default=status_filter_default)
 with f2:
-    priority_filter = st.multiselect("Filter by Priority", ["Low", "Medium", "High", "Critical"], default=["Low", "Medium", "High", "Critical"])
+    priority_filter = st.multiselect("Filter by Priority", ["Low", "Medium", "High", "Critical"], default=[])
 
 query = {"workspace_id": ws_id}
 if status_filter:

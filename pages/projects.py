@@ -41,9 +41,14 @@ with st.expander("Create New Project", expanded=False):
             workspace_name = st.selectbox("Workspace", list(ws_options.keys()), index=default_ws_index)
         
         with col2:
+            start_date = st.date_input("Start Date", value=datetime.date.today())
             due_date = st.date_input("Due Date", value=datetime.date.today() + datetime.timedelta(days=30))
-            # Placeholder for Task Templates - fetch real ones if implemented
-            task_template = st.selectbox("Task Template", ["None", "Software Dev", "Marketing Campaign", "Onboarding"])
+
+        selected_ws_id = ws_options.get(workspace_name)
+        templates = db.get_task_templates(selected_ws_id) if selected_ws_id else []
+        template_options = ["None"] + [t.get("name", "Template") for t in templates]
+        template_lookup = {t.get("name", "Template"): t for t in templates}
+        task_template_name = st.selectbox("Task Template", template_options)
 
         desc = st.text_area("Description (Optional)", placeholder="What is this project about?", height=100)
         
@@ -52,20 +57,47 @@ with st.expander("Create New Project", expanded=False):
                 st.error("Project Name is required.")
             else:
                 selected_ws_id = ws_options[workspace_name]
+                selected_template = template_lookup.get(task_template_name) if task_template_name != "None" else None
                 
                 # Create Project
                 proj_data = {
                     "workspace_id": selected_ws_id,
                     "name": name,
                     "description": desc,
+                    "start_date": datetime.datetime.combine(start_date, datetime.time()) if start_date else None,
                     "deadline": datetime.datetime.combine(due_date, datetime.time()),
-                    "template": task_template if task_template != "None" else None,
+                    "template": selected_template.get("name") if selected_template else None,
                     "created_by": st.session_state.user_email,
                     "created_at": datetime.datetime.utcnow(),
                     "status": "Active"
                 }
                 
-                db.db.projects.insert_one(proj_data)
+                proj_id = db.db.projects.insert_one(proj_data).inserted_id
+
+                if selected_template:
+                    for t in selected_template.get("tasks", []):
+                        title = (t.get("title") or "").strip()
+                        if not title:
+                            continue
+                        offset_days = t.get("offset_days")
+                        task_due = None
+                        if offset_days is not None and start_date:
+                            try:
+                                task_due = start_date + datetime.timedelta(days=int(offset_days))
+                            except Exception:
+                                task_due = None
+                        db.create_task(
+                            ws_id=selected_ws_id,
+                            title=title,
+                            desc=t.get("description", ""),
+                            due_date=task_due,
+                            assignee=t.get("assignee"),
+                            status=t.get("status", "To Do"),
+                            priority=t.get("priority", "Medium"),
+                            project_id=str(proj_id),
+                            creator=user_email,
+                            start_date=start_date
+                        )
                 
                 # Switch context if needed
                 st.session_state.current_ws_id = selected_ws_id

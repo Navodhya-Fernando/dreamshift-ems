@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import datetime
 from bson import ObjectId
 from src.database import DreamShiftDB
 from src.ui import load_global_css, hide_streamlit_sidebar, render_custom_sidebar
@@ -73,10 +74,46 @@ with right:
     curr_status_idx = statuses.index(task['status']) if task['status'] in statuses else 0
     new_status = st.selectbox("Status", statuses, index=curr_status_idx)
     if new_status != task['status']:
-        db.update_task_status(tid, new_status)
+        db.update_task_status(tid, new_status, st.session_state.user_email)
         st.rerun()
 
     st.markdown("---")
+
+    # DATES
+    st.markdown("### Dates")
+    start_existing = task.get("start_date")
+    end_existing = task.get("end_date")
+    start_default = start_existing.date() if start_existing else datetime.date.today()
+    end_default = end_existing.date() if end_existing else datetime.date.today()
+
+    with st.form("task_dates"):
+        c1, c2 = st.columns(2)
+        with c1:
+            start_date = st.date_input("Start Date", value=start_default)
+        with c2:
+            end_date = st.date_input("End Date", value=end_default)
+        clear_end = st.checkbox("No end date", value=end_existing is None)
+
+        if st.form_submit_button("Save Dates", use_container_width=True):
+            db.update_task_dates(
+                tid,
+                start_date=start_date,
+                end_date=None if clear_end else end_date
+            )
+            st.rerun()
+
+    with st.expander("Status History"):
+        history = task.get("status_history", [])
+        if not history:
+            st.caption("No status changes yet.")
+        else:
+            for h in reversed(history):
+                when = h.get("at")
+                when_str = when.strftime("%b %d, %Y %H:%M") if when else "—"
+                from_status = h.get("from") or "—"
+                to_status = h.get("to") or "—"
+                by_user = h.get("by") or "—"
+                st.write(f"{when_str}: {from_status} → {to_status} (by {by_user})")
     
     # TIME TRACKING
     st.markdown("### Time Tracking")

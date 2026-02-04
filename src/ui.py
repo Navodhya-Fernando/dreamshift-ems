@@ -122,6 +122,7 @@ def render_custom_sidebar():
         st.page_link("pages/workspaces.py", label="Workspaces", icon="🏢")
         st.page_link("pages/projects.py", label="Projects", icon="📁")
         st.page_link("pages/tasks.py", label="Tasks", icon="✅")
+        st.page_link("pages/task-templates.py", label="Templates", icon="🧩")
         st.page_link("pages/inbox.py", label="Inbox", icon="🔔")
         st.page_link("pages/profile.py", label="Profile", icon="👤")
         st.page_link("pages/settings.py", label="Settings", icon="⚙️")

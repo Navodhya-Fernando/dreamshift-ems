@@ -33,8 +33,9 @@ c2.markdown(f"# <span style='color:#f6b900;'>{proj['name']}</span>", unsafe_allo
 if proj.get('description'):
     st.markdown(f"*{proj.get('description')}*")
 
-meta_cols = st.columns(4)
+meta_cols = st.columns(5)
 deadline = proj.get('deadline')
+start_date = proj.get('start_date')
 ws_name = "—"
 try:
     ws = db.db.workspaces.find_one({"_id": db.ObjectId(proj.get('workspace_id'))})
@@ -44,9 +45,10 @@ except Exception:
     ws_name = ws_name
 
 meta_cols[0].markdown(f"**Status**\n\n{proj.get('status', 'Active')}")
-meta_cols[1].markdown(f"**Deadline**\n\n{deadline.strftime('%b %d, %Y') if deadline else '—'}")
-meta_cols[2].markdown(f"**Workspace**\n\n{ws_name}")
-meta_cols[3].markdown(f"**Tasks**\n\n{db.db.tasks.count_documents({'project_id': pid})}")
+meta_cols[1].markdown(f"**Start Date**\n\n{start_date.strftime('%b %d, %Y') if start_date else '—'}")
+meta_cols[2].markdown(f"**Deadline**\n\n{deadline.strftime('%b %d, %Y') if deadline else '—'}")
+meta_cols[3].markdown(f"**Workspace**\n\n{ws_name}")
+meta_cols[4].markdown(f"**Tasks**\n\n{db.db.tasks.count_documents({'project_id': pid})}")
 
 st.divider()
 
@@ -59,7 +61,7 @@ with st.expander("Add Task to Project"):
         with c2:
             t_priority = st.selectbox("Priority", ["Low", "Medium", "High", "Critical"], index=1)
 
-        c3, c4 = st.columns(2)
+        c3, c4, c5 = st.columns(3)
         with c3:
             members = db.get_workspace_members(proj['workspace_id'])
             member_display = []
@@ -76,6 +78,8 @@ with st.expander("Add Task to Project"):
             default_assignee = next((d for d, em in member_lookup.items() if em == user_email), None)
             t_assignee = st.selectbox("Assignee", member_display or ["Unassigned"], index=member_display.index(default_assignee) if default_assignee in member_display else 0)
         with c4:
+            t_start = st.date_input("Start Date", value=datetime.date.today())
+        with c5:
             t_due = st.date_input("Deadline", value=datetime.date.today() + datetime.timedelta(days=7))
 
         if st.form_submit_button("Add Task", type="primary", use_container_width=True):
@@ -91,7 +95,8 @@ with st.expander("Add Task to Project"):
                     "To Do",
                     t_priority,
                     pid,
-                    user_email
+                    user_email,
+                    start_date=t_start
                 )
                 st.rerun()
 

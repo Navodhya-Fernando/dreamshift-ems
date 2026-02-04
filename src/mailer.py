@@ -6,16 +6,16 @@ from email.mime.multipart import MIMEMultipart
 # Environment Variables
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp-relay.brevo.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
-SMTP_USER = os.getenv("BREVO_FROM_EMAIL") 
-SMTP_PASSWORD = os.getenv("BREVO_API_KEY") 
-SENDER_EMAIL = os.getenv("BREVO_FROM_EMAIL", "noreply@dreamshift.net")
+SMTP_USER = os.getenv("SMTP_USER") or os.getenv("BREVO_FROM_EMAIL")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") or os.getenv("BREVO_API_KEY")
+SENDER_EMAIL = os.getenv("SENDER_EMAIL") or os.getenv("BREVO_FROM_EMAIL", "noreply@dreamshift.net")
 
 def send_email(to_email, subject, html_content):
     """
     Generic internal function to send an email. 
     Returns True if successful, False otherwise.
     """
-    if not SMTP_PASSWORD or not to_email:
+    if not SMTP_PASSWORD or not SMTP_USER or not to_email:
         print(f"⚠️ Email skipped: configuration missing or no recipient. (To: {to_email})")
         return False
 
