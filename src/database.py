@@ -7,8 +7,23 @@ from bson.objectid import ObjectId
 import bcrypt
 from src.mailer import send_task_assignment_email, send_password_reset_email, send_mention_email
 
+def _load_streamlit_secrets_to_env():
+    try:
+        import streamlit as st
+    except Exception:
+        return
+
+    try:
+        for key, value in st.secrets.items():
+            if isinstance(value, (dict, list)):
+                continue
+            os.environ.setdefault(str(key), str(value))
+    except Exception:
+        return
+
 class DreamShiftDB:
     def __init__(self):
+        _load_streamlit_secrets_to_env()
         MONGO_URI = os.getenv("MONGODB_URI")
         DB_NAME = os.getenv("DB_NAME", "dreamshift")
         
