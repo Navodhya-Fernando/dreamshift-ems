@@ -5,7 +5,7 @@ import re
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import bcrypt
-from src.mailer import send_task_assignment_email, send_password_reset_email
+from src.mailer import send_task_assignment_email, send_password_reset_email, send_mention_email
 
 class DreamShiftDB:
     def __init__(self):
@@ -88,11 +88,13 @@ class DreamShiftDB:
             "used": False
         })
         
-        # Construct link (adjust domain for production)
-        reset_link = f"http://localhost:8501/password-reset?token={token}" 
+        app_base_url = os.getenv("APP_BASE_URL", "http://localhost:8501").rstrip("/")
+        reset_link = f"{app_base_url}/password-reset?token={token}" 
         
         # 📨 TRIGGER EMAIL
-        send_password_reset_email(email, reset_link)
+        email_ok = send_password_reset_email(email, reset_link)
+        if not email_ok:
+            return False, "Unable to send reset email."
         return True, "Reset link sent to email."
 
     def reset_password_with_token(self, token, new_password):
@@ -199,8 +201,13 @@ class DreamShiftDB:
         
         # 📨 TRIGGER EMAIL + INBOX NOTIFICATION
         if assignee and assignee != creator:
-            # 1. Email
-            send_task_assignment_email(assignee, title, creator, due_date)
+            # 1. Email (respect user preferences)
+            assignee_user = self.get_user(assignee)
+            allow_email = True
+            if assignee_user:
+                allow_email = assignee_user.get("preferences", {}).get("email_notifications", True)
+            if allow_email:
+                send_task_assignment_email(assignee, title, creator, due_date)
             # 2. Inbox
             self.create_notification(assignee, "New Task", f"Assigned: {title}", "info")
             
@@ -306,10 +313,17 @@ class DreamShiftDB:
         comment.update(kwargs)
         self.db.comments.insert_one(comment)
         
-        # 🔔 INBOX ONLY: Handle Mentions
+        # 🔔 INBOX + EMAIL: Handle Mentions
         source_display = user['name'] if user and user.get('name') else user_email
         workspace_id = kwargs.get('workspace_id')
-        self.handle_mentions(text, source_display, f"{entity_type}:{entity_id}", workspace_id=workspace_id)
+        self.handle_mentions(
+            text=text,
+            source_user=source_display,
+            source_email=user_email,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            workspace_id=workspace_id,
+        )
 
     def get_comments(self, entity_type, entity_id):
         return list(self.db.comments.find({
@@ -393,9 +407,9 @@ class DreamShiftDB:
     def mark_notification_read(self, nid):
         self.db.notifications.update_one({"_id": ObjectId(nid)}, {"$set": {"read": True}})
 
-    def handle_mentions(self, text, source_user, link, workspace_id=None):
-        """Parses @mentions (name or email) and creates Inbox notifications."""
-        targets = set()
+    def handle_mentions(self, text, source_user, source_email, entity_type, entity_id, workspace_id=None):
+        """Parses @mentions (name or email), creates Inbox notifications, and sends email."""
+        targets = {}
 
         name_lookup = {}
         if workspace_id:
@@ -408,11 +422,36 @@ class DreamShiftDB:
         pattern = re.compile(r"@([A-Za-z][A-Za-z0-9 .'-]{0,48}|[\w\.\-\+]+@[\w\.-]+)(?=$|\s|[.,;:!?])")
         for mention in pattern.findall(text or ""):
             if '@' in mention:
-                targets.add(mention.lower())
+                targets[mention.lower()] = mention
             else:
                 email = name_lookup.get(mention.lower())
                 if email:
-                    targets.add(email.lower())
+                    targets[email.lower()] = email
 
-        for email in targets:
+        app_base_url = os.getenv("APP_BASE_URL", "http://localhost:8501").rstrip("/")
+        entity_label = "item"
+        link = app_base_url
+
+        if entity_type == "task":
+            task = self.db.tasks.find_one({"_id": ObjectId(entity_id)})
+            if task:
+                entity_label = f"task: {task.get('title', 'Task')}"
+                link = f"{app_base_url}/tasks"
+        elif entity_type == "project":
+            project = self.db.projects.find_one({"_id": ObjectId(entity_id)})
+            if project:
+                entity_label = f"project: {project.get('name', 'Project')}"
+                link = f"{app_base_url}/projects"
+
+        for email in targets.values():
+            if source_email and email.lower() == source_email.lower():
+                continue
+
             self.create_notification(email, "Mentioned", f"{source_user} mentioned you.", "mention", link)
+
+            user = self.get_user(email)
+            allow_email = True
+            if user:
+                allow_email = user.get("preferences", {}).get("email_notifications", True)
+            if allow_email:
+                send_mention_email(email, source_user, entity_label, text, link)
