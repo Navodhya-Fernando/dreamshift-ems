@@ -5,6 +5,8 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password?: string;
+  passwordResetTokenHash?: string;
+  passwordResetExpires?: Date;
   image?: string;
   designation?: string;
   contractExpiry?: Date;
@@ -45,6 +47,8 @@ const UserSchema: Schema = new Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, select: false },
+    passwordResetTokenHash: { type: String, select: false },
+    passwordResetExpires: { type: Date, select: false },
     image: { type: String },
     designation: { type: String },
     contractExpiry: { type: Date },

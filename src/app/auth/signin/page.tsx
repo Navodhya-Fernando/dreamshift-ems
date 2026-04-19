@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Mail, Lock, ArrowRight, Zap } from 'lucide-react';
 import './signin.css';
 
@@ -78,7 +79,7 @@ export default function SignInPage() {
             <div className="form-field">
               <div className="field-label-row">
                 <label>Password</label>
-                <button type="button" className="forgot-link">Forgot password?</button>
+                <Link href="/auth/reset-password" className="forgot-link">Forgot password?</Link>
               </div>
               <div className="input-wrap">
                 <Lock size={14} className="input-icon" />

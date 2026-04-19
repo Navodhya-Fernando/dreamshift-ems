@@ -32,18 +32,41 @@ export async function notifyUser(input: NotifyUserInput): Promise<void> {
     isRead: false,
   });
 
-  const targetUser = await User.findById(userObjectId, { email: 1, name: 1 }).lean();
+  const targetUser = await User.findById(userObjectId, {
+    email: 1,
+    name: 1,
+    notificationPreferences: 1,
+  }).lean();
   if (!targetUser?.email) return;
+
+  const preferences = targetUser.notificationPreferences || {};
+  const emailNotificationsEnabled = Boolean(preferences.emailNotifications ?? true);
+  if (!emailNotificationsEnabled) return;
+
+  const shouldSendForType =
+    input.type === 'assignment'
+      ? Boolean(preferences.taskReminders ?? true)
+      : input.type === 'deadline'
+        ? Boolean(preferences.deadlineAlerts ?? true)
+        : input.type === 'mention'
+          ? Boolean(preferences.messageNotifications ?? true)
+          : true;
+
+  if (!shouldSendForType) return;
 
   const htmlContent =
     input.emailHtml ||
     `<p>${input.message}</p>${input.link ? `<p><a href="${input.link}">Open in DreamShift</a></p>` : ''}`;
 
-  await sendBrevoEmail({
+  const sent = await sendBrevoEmail({
     toEmail: String(targetUser.email),
     toName: String(targetUser.name || ''),
     subject: input.emailSubject || input.title,
     htmlContent,
     textContent: input.message,
   });
+
+  if (!sent) {
+    console.warn(`Failed to send notification email to ${String(targetUser.email)}`);
+  }
 }
