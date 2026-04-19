@@ -1,98 +1,202 @@
-# DreamShift EMS — User Guide
+# DreamShift EMS User Manual
 
-*How to use the app day‑to‑day: workspaces, projects, tasks, and collaboration.*
+This guide explains how to use DreamShift EMS for everyday operations.
 
----
+## 1. Who This Is For
 
-## 1) Sign In
-1. Open the app and sign in with your email and password.
-2. New users can register via **Sign Up**.
-3. You’ll land on **Home** with your personal dashboard.
+- Team members managing assigned work
+- Workspace and project leads coordinating delivery
+- Admins overseeing organization-level operations
 
----
+## 2. Getting Started
 
-## 2) Sidebar Navigation
-The left sidebar is your control center:
-- **Home** — Personal dashboard
-- **Workspaces** — Members and statuses
-- **Projects** — Create and manage projects
-- **Tasks** — Kanban board
-- **Inbox** — Notifications & mentions
-- **Profile** — Your account details
-- **Settings** — Preferences
+### Sign In
 
----
+1. Open the sign-in page.
+2. Enter your email and password.
+3. After login, you will land on the main dashboard.
 
-## 3) Workspaces
-Workspaces define who you work with and how tasks move.
+### Navigation
 
-**Change active workspace**
-1. Use the workspace dropdown in the sidebar.
-2. The app updates projects/tasks based on your selection.
+Use the left sidebar to access:
+- Home
+- Workspaces
+- My Tasks
+- Calendar
+- Analytics
+- Timesheet
+- Messages
+- Notifications
+- Templates
+- Profile
+- Settings
+- Admin (role-based)
 
----
+## 3. Home Dashboard
 
-## 4) Projects
+The Home page shows high-level metrics and quick links.
 
-**Create a project**
-1. Go to **Projects** → **Create New Project**.
-2. Enter name, deadline, and description.
-3. Submit to create the project.
+Use it to:
+- see workload summary,
+- monitor current task state,
+- jump quickly into projects, tasks, or calendar.
 
-**Search & filter**
-- Use the search bar to filter by project title.
-- Use the status filter to narrow the list.
+## 4. Workspaces and Projects
 
-**Open a project**
-- Click a project card to open details.
-- Add tasks directly inside the project.
+### Workspaces
 
----
+Use Workspaces to organize teams and delivery boundaries.
 
-## 5) Tasks (Kanban)
+Typical actions:
+- open an existing workspace,
+- review members and current activity,
+- navigate to linked projects.
 
-**Create a task**
-1. Go to **Tasks** → **Create New Task**.
-2. Set title, assignee, deadline, and priority.
-3. Submit to create.
+### Projects
 
-**Use the Kanban board**
-- Tasks are grouped by status.
-- Use **Filter by Status** and **Filter by Priority**.
-- Click **Open** on a task card to view details.
+Inside Projects, you can:
+- create and edit projects,
+- assign ownership and due windows,
+- track progress and completion.
 
----
+Project pages also support comments and operational context.
 
-## 6) Task Details
-Inside a task you can:
-- Update **Status**
-- Manage **Subtasks**
-- Add **Comments** and @mentions
-- Track time with **Start/Stop Timer**
-- Request a deadline extension
+## 5. Tasks and Execution
 
----
+### My Tasks
 
-## 7) Priorities & Deadlines
-- Priority levels: Low, Medium, High, Critical
-- Deadlines appear on cards and signal urgency
+Use My Tasks to manage personal delivery:
+- track task status,
+- update priority and deadlines,
+- complete subtasks,
+- add comments and collaboration notes.
 
----
+### Task Lifecycle
 
-## 8) Inbox
-- View mentions, assignments, and alerts
-- Open the related item when needed
+Common status flow:
+- To Do
+- In Progress
+- In Review (if used)
+- Done
 
----
+### Time Tracking
 
-## Tips
-- Keep your workspace selection correct
-- Use filters to find tasks quickly
-- Add deadlines for accurate urgency indicators
+In the Time page, you can:
+- pick a task,
+- start/pause tracking,
+- persist tracked time into the task,
+- review logged hours and top tracked tasks.
 
----
+## 6. Calendar
 
-## Troubleshooting
-- **Sign‑in required** → Session expired, log in again
-- **Nothing showing** → Check workspace selection
-- **Forgot password** → Use the password reset link on Sign In
+The Calendar provides a schedule view of planned work.
+
+Use it to:
+- check due items,
+- spot upcoming deadlines,
+- balance workload across time.
+
+## 7. Messages
+
+Messages supports direct and group chat.
+
+### Core Messaging Features
+
+- Recent chats and people panel
+- Direct and group conversations
+- Edit, delete, reply, and reactions
+- Read/delivery state indicators
+- Mention helpers:
+  - use # to reference tasks
+  - use / to reference projects
+
+### Real-Time Sync
+
+Messages update live through event streaming. If live sync is unavailable,
+the app falls back to polling.
+
+## 8. Notifications
+
+The Notifications area shows system and activity updates.
+
+Use it to:
+- monitor new events,
+- track unread counts,
+- jump directly to related entities.
+
+## 9. Profile and Settings
+
+### Profile
+
+- update personal details,
+- review activity-related information,
+- verify account role and metadata.
+
+### Settings
+
+- configure preferences,
+- adjust account behavior,
+- manage user-level options exposed in the UI.
+
+## 10. Admin Console (Authorized Roles)
+
+Users with admin-capable roles can access the Admin page.
+
+### What You Can Do
+
+- monitor workspace intelligence,
+- review people intelligence and risk signals,
+- use intervention queue recommendations,
+- open spotlight panels and deeper diagnostics,
+- create, edit, and offboard users.
+
+### User Management Safety
+
+Create and edit user flows are separated so new user creation does not overwrite existing users.
+
+## 11. System Architecture (Simplified)
+
+```mermaid
+flowchart TD
+    A[User Browser] --> B[Next.js UI]
+    B --> C[API Routes]
+    C --> D[Auth + Access Checks]
+    C --> E[(MongoDB)]
+    C --> F[Message Events]
+    F <--> G[(Redis - optional)]
+    C --> H[Email Provider - optional]
+```
+
+## 12. Troubleshooting
+
+### Cannot Access Admin
+
+- Confirm your account role includes admin-capable access.
+- Sign out and sign in again after role changes.
+
+### Messages Not Updating Live
+
+- Check network connectivity.
+- The system should automatically switch to polling fallback.
+
+### Avatars Not Showing
+
+- Confirm profile image URL is valid and publicly reachable.
+- If image load fails, initials are shown as fallback.
+
+### Date Field Issues
+
+- Use the date picker where provided.
+- Ensure values are valid calendar dates.
+
+## 13. Best Practices
+
+- Keep task statuses current to improve analytics quality.
+- Track time consistently on active tasks.
+- Use task/project mentions in chat to preserve context.
+- Review intervention recommendations regularly if you are an admin.
+
+## 14. Support
+
+For operational or access issues, contact your system administrator.
+For licensing or deployment questions, contact the repository owner.

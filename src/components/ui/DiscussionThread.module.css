@@ -1,0 +1,167 @@
+.discussion {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.composer {
+  display: grid;
+  gap: 8px;
+}
+
+.composerRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  padding: 10px 12px;
+}
+
+.textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.threadList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.node {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-elevated);
+  padding: 10px;
+}
+
+.nodeHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.nodeAuthor {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.nodeBody {
+  margin-top: 6px;
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.deleted {
+  opacity: 0.65;
+  font-style: italic;
+}
+
+.mentions {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.nodeActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.actionBtn {
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 12px;
+}
+
+.actionBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-md);
+}
+
+.reactions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.reactionBtn {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 12px;
+  background: var(--bg-surface);
+}
+
+.reacted {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.replyBox {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.children {
+  margin-top: 8px;
+  margin-left: 18px;
+  padding-left: 10px;
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggestions {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  max-height: 170px;
+  overflow-y: auto;
+}
+
+.suggestion {
+  text-align: left;
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.suggestion:hover {
+  background: var(--bg-hover);
+}
+
+.metaTag {
+  font-size: 11px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+
+.error {
+  color: #ef4444;
+  font-size: 12px;
+}

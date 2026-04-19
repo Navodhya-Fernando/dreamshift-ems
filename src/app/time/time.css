@@ -1,0 +1,471 @@
+.time-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.time-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+}
+
+.time-hero-copy {
+  max-width: 760px;
+}
+
+.time-hero-text {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.65;
+  max-width: 760px;
+}
+
+.time-hero-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.time-meta-pill,
+.time-panel-chip,
+.time-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+
+.time-chip.running {
+  color: #10B981;
+  background: rgba(16,185,129,0.12);
+  border-color: rgba(16,185,129,0.24);
+}
+
+.time-chip.idle {
+  color: #F59E0B;
+  background: rgba(245,158,11,0.12);
+  border-color: rgba(245,158,11,0.24);
+}
+
+.time-hero-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.time-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.time-kpi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+}
+
+.time-layout {
+  display: grid;
+  grid-template-columns: 1.7fr 0.95fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.time-main-column,
+.time-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.time-panel {
+  padding: 18px;
+}
+
+.time-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.time-tracker-shell {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(circle at top left, rgba(91,107,248,0.14), transparent 36%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+}
+
+.time-tracker-form {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1.3fr 1fr;
+}
+
+.time-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.time-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-disabled);
+}
+
+.time-input,
+.time-select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.time-input::placeholder {
+  color: var(--text-disabled);
+}
+
+.time-select option {
+  background: #11131a;
+  color: white;
+}
+
+.time-tracker-status {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.time-clock {
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  min-width: 180px;
+}
+
+.time-active-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.time-active-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.time-action-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.time-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.22);
+}
+
+.time-action-btn.start {
+  background: linear-gradient(180deg, #5B6BF8, #4361ee);
+}
+
+.time-action-btn.stop {
+  background: linear-gradient(180deg, #ef233c, #d90429);
+}
+
+.time-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.time-quick-card {
+  text-align: left;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.time-quick-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-md);
+}
+
+.time-quick-card.active {
+  border-color: rgba(91,107,248,0.4);
+  background: rgba(91,107,248,0.08);
+}
+
+.time-quick-top,
+.time-quick-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.time-quick-title,
+.time-task-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.time-quick-subtitle,
+.time-task-subtitle,
+.time-signal-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.time-quick-footer {
+  font-size: 11px;
+  color: var(--text-disabled);
+}
+
+.time-quick-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.time-table {
+  display: grid;
+  gap: 4px;
+}
+
+.time-table-header,
+.time-table-row {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 0.8fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.time-table-header {
+  padding: 8px 0 10px;
+  color: var(--text-disabled);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+}
+
+.time-table-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.time-table-row:last-child {
+  border-bottom: none;
+}
+
+.time-task-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.time-task-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(91,107,248,0.12);
+  color: #5B6BF8;
+  flex-shrink: 0;
+}
+
+.time-project-cell {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.time-project-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.time-duration-cell {
+  display: grid;
+  gap: 6px;
+}
+
+.time-duration-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.time-duration-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.time-duration-percent {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.time-duration-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+
+.time-duration-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.time-signal-list {
+  display: grid;
+  gap: 10px;
+}
+
+.time-signal-row {
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.time-signal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.time-signal-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.time-signal-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.time-action-links {
+  display: grid;
+  gap: 8px;
+}
+
+.time-action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 12px;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.time-action-link:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-md);
+  transform: translateY(-1px);
+}
+
+.time-empty {
+  padding: 18px 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+  .time-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .time-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .time-hero,
+  .time-panel-header,
+  .time-tracker-status,
+  .time-quick-top,
+  .time-quick-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .time-tracker-form,
+  .time-quick-grid,
+  .time-table-header,
+  .time-table-row {
+    grid-template-columns: 1fr;
+  }
+
+  .time-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .time-action-btn {
+    width: 46px;
+    height: 46px;
+  }
+}

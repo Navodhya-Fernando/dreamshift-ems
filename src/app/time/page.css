@@ -1,0 +1,129 @@
+.time-tracker-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-lg);
+  gap: 2rem;
+}
+
+.timer-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  color: var(--foreground);
+  outline: none;
+}
+
+.timer-input::placeholder {
+  color: #adb5bd;
+}
+
+.timer-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.project-select {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-md);
+  transition: background-color 0.2s;
+}
+
+.project-select:hover {
+  background-color: var(--surface-hover);
+}
+
+.timer-display {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 120px;
+  text-align: center;
+}
+
+.control-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: white;
+}
+
+.btn-start {
+  background-color: var(--primary);
+}
+
+.btn-start:hover {
+  background-color: var(--primary-hover);
+  transform: scale(1.05);
+}
+
+.btn-stop {
+  background-color: #ef233c;
+}
+
+.btn-stop:hover {
+  background-color: #d90429;
+  transform: scale(1.05);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s;
+}
+
+.history-row:last-child {
+  border-bottom: none;
+}
+
+.history-row:hover {
+  background-color: var(--surface-hover);
+}
+
+.history-actions {
+  opacity: 0;
+  transition: opacity 0.2s;
+  cursor: pointer;
+  color: var(--primary);
+}
+
+.history-row:hover .history-actions {
+  opacity: 1;
+}
+
+.mb-4 { margin-bottom: 1rem; }
+.tracking-wider { letter-spacing: 0.05em; }
+.uppercase { text-transform: uppercase; }
+.rounded-lg { border-radius: var(--radius-lg); }
+.text-xs { font-size: 0.75rem; }
+.block { display: block; }
+.flex-1 { flex: 1; }

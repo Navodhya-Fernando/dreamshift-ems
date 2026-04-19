@@ -1,0 +1,55 @@
+.calendar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.rounded-xl {
+  border-radius: var(--radius-xl);
+}
+
+/* Customizing FullCalendar to fit the design system */
+.fc-theme-standard td, .fc-theme-standard th {
+  border-color: var(--border) !important;
+}
+
+.fc-button-primary {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  text-transform: capitalize;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.fc-button-primary:hover {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
+
+.fc-button-primary:disabled {
+  opacity: 0.5;
+}
+
+.fc-toolbar-title {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  color: var(--foreground);
+}
+
+.fc-daygrid-day-number {
+  color: var(--foreground);
+  font-size: 0.875rem;
+}
+
+.fc-col-header-cell-cushion {
+  color: var(--foreground);
+  font-weight: 600;
+  padding: 0.5rem;
+}

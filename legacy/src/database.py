@@ -215,7 +215,7 @@ class DreamShiftDB:
         }).inserted_id
         
         # 📨 TRIGGER EMAIL + INBOX NOTIFICATION
-        if assignee and assignee != creator:
+        if assignee:
             # 1. Email (respect user preferences)
             assignee_user = self.get_user(assignee)
             allow_email = True

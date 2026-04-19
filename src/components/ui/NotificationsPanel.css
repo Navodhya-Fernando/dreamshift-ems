@@ -1,0 +1,136 @@
+.notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 350px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.notifications-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-actions button {
+  background: none;
+  border: none;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.notifications-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  padding: 1rem 1.25rem;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+
+.notification-item:hover {
+  background-color: var(--surface-hover);
+}
+
+.notification-item.unread {
+  background-color: rgba(67, 97, 238, 0.05);
+}
+
+.notif-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.bg-blue { background-color: var(--accent); }
+.bg-orange { background-color: #fca311; }
+.bg-gray { background-color: #adb5bd; }
+
+.notif-content {
+  flex: 1;
+}
+
+.notif-content p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.notif-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.notif-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+}
+
+.notif-mini-btn,
+.notif-mini-link {
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.notif-mini-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  align-self: center;
+}
+
+.notifications-footer {
+  border-top: 1px solid var(--border);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.notifications-footer a {
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.hover\:underline:hover { text-decoration: underline; }
