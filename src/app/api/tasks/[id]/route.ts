@@ -201,20 +201,24 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const updated = await Task.collection.findOne({ _id: taskObjectId });
     const task = updated || currentTask;
 
-    if (nextAssigneeId && nextAssigneeId !== previousAssigneeId && nextAssigneeId !== userId) {
-      void notifyUser({
-        userId: nextAssigneeId,
-        type: 'assignment',
-        title: 'Task assignment updated',
-        message: `You were assigned to "${String(updatePayload.title || currentTask.title || 'Untitled task')}".`,
-        link: `/tasks/${id}`,
-        metadata: {
-          taskId: id,
-          actorId: userId,
-          event: 'task.reassigned',
-        },
-        emailSubject: `Task assignment: ${String(updatePayload.title || currentTask.title || 'Untitled task')}`,
-      });
+    if (nextAssigneeId && nextAssigneeId !== previousAssigneeId) {
+      try {
+        await notifyUser({
+          userId: nextAssigneeId,
+          type: 'assignment',
+          title: 'Task assignment updated',
+          message: `You were assigned to "${String(updatePayload.title || currentTask.title || 'Untitled task')}".`,
+          link: `/tasks/${id}`,
+          metadata: {
+            taskId: id,
+            actorId: userId,
+            event: 'task.reassigned',
+          },
+          emailSubject: `Task assignment: ${String(updatePayload.title || currentTask.title || 'Untitled task')}`,
+        });
+      } catch (notifyError) {
+        console.warn('Failed to send assignment notification on task update:', notifyError);
+      }
     }
     
     return NextResponse.json({ success: true, data: normalizeTask(task, null) }, { status: 200 });

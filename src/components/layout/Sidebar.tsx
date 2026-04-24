@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -35,7 +35,7 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { data: notificationSummary } = useCachedApi<{ unreadCount: number; items: unknown[] }>({
+  const { data: notificationSummary, refresh: refreshNotificationSummary } = useCachedApi<{ unreadCount: number; items: unknown[] }>({
     cacheKey: 'notifications:sidebar',
     initialData: { unreadCount: 0, items: [] },
     fetcher: async () => {
@@ -46,6 +46,17 @@ export default function Sidebar() {
     },
     ttlMs: 20_000,
   });
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void refreshNotificationSummary();
+    }, 15_000);
+
+    return () => window.clearInterval(interval);
+  }, [refreshNotificationSummary]);
+
+  const unreadCount = Number(notificationSummary.unreadCount || 0);
+  const unreadLabel = unreadCount > 99 ? '99+' : String(unreadCount);
   const canAccessAdmin = !session?.user?.role || ['OWNER', 'ADMIN', 'WORKSPACE_ADMIN'].includes(normalizePlatformRole(session.user.role));
 
   const initials = session?.user?.name
@@ -82,12 +93,16 @@ export default function Sidebar() {
 
         <div className="nav-section-label" style={{ marginTop: 8 }}>Other</div>
         {NAV_OTHER.map(({ label, path, icon: Icon }) => {
-          const resolvedBadge = path === '/notifications' ? notificationSummary.unreadCount : undefined;
+          const isNotifications = path === '/notifications';
           return (
           <Link key={path} href={path} className={`nav-link ${isActive(path) ? 'active' : ''}`}>
             <Icon size={16} strokeWidth={isActive(path) ? 2 : 1.75} />
             {label}
-            {resolvedBadge ? <span className="nav-badge">{resolvedBadge}</span> : null}
+            {isNotifications && unreadCount > 0 ? (
+              <span className="nav-badge premium" aria-label={`${unreadCount} unread notifications`}>
+                {unreadLabel}
+              </span>
+            ) : null}
           </Link>
           );
         })}

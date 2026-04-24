@@ -141,6 +141,7 @@ REDIS_URL=redis://localhost:6379
 BREVO_API_KEY=<brevo-api-key>
 BREVO_SENDER_EMAIL=no-reply@your-domain.com
 BREVO_SENDER_NAME=DreamShift EMS
+CRON_SECRET=<strong-random-secret-for-vercel-cron>
 ```
 
 ### Install and Run

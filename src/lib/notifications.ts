@@ -15,6 +15,11 @@ type NotifyUserInput = {
   emailHtml?: string;
 };
 
+type NotifyUserOnceInput = NotifyUserInput & {
+  dedupeKey: string;
+  dedupeWindowHours?: number;
+};
+
 export async function notifyUser(input: NotifyUserInput): Promise<void> {
   if (!input.userId || !mongoose.isValidObjectId(input.userId)) return;
 
@@ -69,4 +74,43 @@ export async function notifyUser(input: NotifyUserInput): Promise<void> {
   if (!sent) {
     console.warn(`Failed to send notification email to ${String(targetUser.email)}`);
   }
+}
+
+export async function notifyUserOnce(input: NotifyUserOnceInput): Promise<boolean> {
+  if (!input.userId || !mongoose.isValidObjectId(input.userId)) return false;
+
+  const dedupeKey = String(input.dedupeKey || '').trim();
+  if (!dedupeKey) return false;
+
+  await dbConnect();
+
+  const userObjectId = new mongoose.Types.ObjectId(input.userId);
+  const dedupeWindowHours = Number(input.dedupeWindowHours || 0);
+  const createdAfter =
+    Number.isFinite(dedupeWindowHours) && dedupeWindowHours > 0
+      ? new Date(Date.now() - dedupeWindowHours * 60 * 60 * 1000)
+      : null;
+
+  const duplicateFilter: Record<string, unknown> = {
+    userId: userObjectId,
+    type: input.type,
+    'metadata.dedupeKey': dedupeKey,
+  };
+
+  if (createdAfter) {
+    duplicateFilter.createdAt = { $gte: createdAfter };
+  }
+
+  const alreadySent = await Notification.exists(duplicateFilter);
+  if (alreadySent) return false;
+
+  await notifyUser({
+    ...input,
+    metadata: {
+      ...(input.metadata || {}),
+      dedupeKey,
+    },
+  });
+
+  return true;
 }

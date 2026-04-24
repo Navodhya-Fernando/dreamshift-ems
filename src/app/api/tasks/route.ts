@@ -201,20 +201,24 @@ export async function POST(req: Request) {
     });
 
     const assigneeId = String(task.assigneeId || body.assigneeId || '');
-    if (assigneeId && assigneeId !== userId) {
-      void notifyUser({
-        userId: assigneeId,
-        type: 'assignment',
-        title: 'New task assigned',
-        message: `You were assigned to "${String(task.title || 'Untitled task')}".`,
-        link: `/tasks/${String(task._id)}`,
-        metadata: {
-          taskId: String(task._id),
-          actorId: userId,
-          event: 'task.assigned',
-        },
-        emailSubject: `New task assigned: ${String(task.title || 'Untitled task')}`,
-      });
+    if (assigneeId) {
+      try {
+        await notifyUser({
+          userId: assigneeId,
+          type: 'assignment',
+          title: 'New task assigned',
+          message: `You were assigned to "${String(task.title || 'Untitled task')}".`,
+          link: `/tasks/${String(task._id)}`,
+          metadata: {
+            taskId: String(task._id),
+            actorId: userId,
+            event: 'task.assigned',
+          },
+          emailSubject: `New task assigned: ${String(task.title || 'Untitled task')}`,
+        });
+      } catch (notifyError) {
+        console.warn('Failed to send assignment notification on task create:', notifyError);
+      }
     }
 
     return NextResponse.json({ success: true, data: task }, { status: 201 });
