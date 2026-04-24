@@ -8,6 +8,7 @@ import Project from '@/models/Project';
 import User from '@/models/User';
 import { hasWorkspaceAccess } from '@/lib/tenancy';
 import { notifyUser } from '@/lib/notifications';
+import { DEFAULT_PROJECT_TASK_STATUSES, normalizeProjectTaskStatuses, normalizeTaskStatusForProject } from '@/lib/taskStatuses';
 
 function normalizeStatus(status?: string) {
   const upper = String(status || 'TODO').toUpperCase().replace(/\s+/g, '_');
@@ -82,7 +83,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const projectFilter: Record<string, unknown> = {
       _id: mongoose.isValidObjectId(resolvedProjectId) ? new mongoose.Types.ObjectId(resolvedProjectId) : resolvedProjectId,
     };
-    const project = await Project.collection.findOne(projectFilter, { projection: { workspaceId: 1, workspace_id: 1 } });
+    const project = await Project.collection.findOne(projectFilter, { projection: { workspaceId: 1, workspace_id: 1, taskStatuses: 1 } });
     if (!project) return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
 
     const workspaceId = project.workspaceId || project.workspace_id;
@@ -140,7 +141,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const allowed = await hasWorkspaceAccess(userId, String(workspaceId));
     if (!allowed) return NextResponse.json({ success: false, error: 'Forbidden task access' }, { status: 403 });
 
-    const nextStatus = normalizeStatus(body.status || String(currentTask.status || 'TODO'));
+    const projectTaskStatuses = normalizeProjectTaskStatuses(project.taskStatuses || DEFAULT_PROJECT_TASK_STATUSES);
+    const nextStatus = normalizeTaskStatusForProject(normalizeStatus(body.status || String(currentTask.status || 'TODO')), projectTaskStatuses);
     const previousAssigneeId = String(currentTask.assigneeId || '');
     const nextAssigneeId = String(body.assigneeId ?? currentTask.assigneeId ?? '');
     const currentProjectId = currentTask.projectId || currentTask.project_id;
@@ -159,7 +161,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     };
 
     // Auto-fill lifecycle dates while still allowing manual edits from the client.
-    if (normalizeStatus(String(currentTask.status || 'TODO')) === 'TODO' && nextStatus === 'IN_PROGRESS' && !body.startDate && !currentTask.startDate && !currentTask.start_date) {
+    const previousStatus = normalizeTaskStatusForProject(normalizeStatus(String(currentTask.status || 'TODO')), projectTaskStatuses);
+    if (previousStatus !== 'IN_PROGRESS' && nextStatus === 'IN_PROGRESS' && !body.startDate && !currentTask.startDate && !currentTask.start_date) {
       updatePayload.startDate = new Date();
     }
 

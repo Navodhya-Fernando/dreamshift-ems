@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface ITask extends Document {
   title: string;
   description?: string;
-  status: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'BLOCKED' | 'IN_REVIEW';
+  status: string;
   projectId: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   assigneeId?: mongoose.Types.ObjectId;
@@ -28,7 +28,6 @@ const TaskSchema: Schema = new Schema(
     description: { type: String, default: '' },
     status: { 
       type: String, 
-      enum: ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'IN_REVIEW'], 
       default: 'TODO' 
     },
     priority: {

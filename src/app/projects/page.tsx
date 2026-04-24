@@ -13,6 +13,7 @@ type WorkspaceProject = {
   name: string;
   description?: string;
   deadline?: string;
+  status?: 'ACTIVE' | 'CLOSED';
   completionPercent: number;
   risk: 'LOW' | 'MEDIUM' | 'HIGH';
 };
@@ -273,11 +274,12 @@ export default function WorkspacesPage() {
       (wsJson.data || []).map(async (ws: { _id: string; name: string }) => {
         const projectsRes = await fetch(`/api/projects?workspaceId=${ws._id}`, { cache: 'no-store' });
         const projectsJson = await projectsRes.json();
-        const projects = (projectsJson.success ? projectsJson.data : []).slice(0, 5).map((project: { _id: string; name: string; description?: string; deadline?: string }) => ({
+        const projects = (projectsJson.success ? projectsJson.data : []).slice(0, 5).map((project: { _id: string; name: string; description?: string; deadline?: string; status?: 'ACTIVE' | 'CLOSED' }) => ({
           id: project._id,
           name: project.name,
           description: project.description,
           deadline: project.deadline,
+          status: String(project.status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'CLOSED' : 'ACTIVE',
           completionPercent: 0,
           risk: 'LOW' as const,
         }));
@@ -422,7 +424,9 @@ export default function WorkspacesPage() {
                   <div className="project-card-footer">
                     <div className="progress-row">
                       <span className="text-xs text-muted">{p.completionPercent}% complete</span>
-                      <span className="badge badge-done">Active</span>
+                      <span className={`badge ${String(p.status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'badge-blocked' : 'badge-done'}`}>
+                        {String(p.status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'Closed' : 'Active'}
+                      </span>
                     </div>
                     <div className="progress-track">
                       <div className="progress-fill" style={{ width: `${p.completionPercent}%`, background: '#5B6BF8' }} />

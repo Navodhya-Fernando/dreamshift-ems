@@ -6,6 +6,7 @@ import { CheckSquare, ChevronRight, Plus, RefreshCw, Search, Sparkles, Trash2 } 
 import DataStatusBanner from '@/components/ui/DataStatusBanner';
 import { useCachedApi } from '@/lib/useCachedApi';
 import { toastError, toastSuccess } from '@/lib/toast';
+import { toDateTimeLocalInput, toIsoOrUndefined } from '@/lib/datetimeLocal';
 import './tasks.css';
 
 const STATUS_CONFIG: Record<string, { label: string; badge: string }> = {
@@ -36,7 +37,11 @@ type AssignedTask = {
   projectId?: { _id?: string; name?: string };
 };
 
-type ProjectOption = { _id: string; name: string };
+type ProjectOption = {
+  _id: string;
+  name: string;
+  taskStatuses?: Array<{ key: string; label: string }>;
+};
 type UserOption = { _id: string; name: string; email: string };
 
 type TaskForm = {
@@ -58,9 +63,25 @@ type TasksPageData = {
   scopeLabel: 'Assigned' | 'Workspace';
 };
 
+const DEFAULT_STATUSES = [
+  { key: 'todo', label: 'To Do' },
+  { key: 'in_progress', label: 'In Progress' },
+  { key: 'in_review', label: 'In Review' },
+  { key: 'blocked', label: 'Blocked' },
+  { key: 'done', label: 'Done' },
+];
+
 function formatDate(d?: string | null) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function toStatusLabel(status?: string) {
+  const normalized = String(status || '').toLowerCase();
+  if (STATUS_CONFIG[normalized]) return STATUS_CONFIG[normalized].label;
+  return normalized
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase()) || 'To Do';
 }
 
 const EMPTY_FORM: TaskForm = {
@@ -133,18 +154,40 @@ export default function TasksPage() {
     });
   }, [filter, search, tasks]);
 
+  const statusFilters = useMemo(() => {
+    const set = new Set<string>();
+    tasks.forEach((task) => set.add(String(task.status || 'todo').toLowerCase()));
+    return ['all', ...Array.from(set)];
+  }, [tasks]);
+
   const aiSummary = useMemo(() => {
     const overdue = filtered.filter((task) => task.dueDate && new Date(task.dueDate).getTime() < Date.now() && task.status !== 'done').length;
     const urgent = filtered.filter((task) => task.priority === 'urgent').length;
     return { overdue, urgent };
   }, [filtered]);
 
+  const availableStatuses = useMemo(() => {
+    const selectedProject = projects.find((project) => project._id === form.projectId);
+    const projectStatuses = (selectedProject as ProjectOption & { taskStatuses?: Array<{ key: string; label: string }> } | undefined)?.taskStatuses;
+    if (!projectStatuses || projectStatuses.length === 0) return DEFAULT_STATUSES;
+    return projectStatuses.map((status) => ({
+      key: String(status.key || '').toLowerCase(),
+      label: String(status.label || status.key || ''),
+    }));
+  }, [projects, form.projectId]);
+
   const openCreateModal = () => {
     setEditingTaskId(null);
+    const initialProjectId = projects[0]?._id || '';
+    const initialProject = projects.find((project) => project._id === initialProjectId) as (ProjectOption & { taskStatuses?: Array<{ key: string; label: string }> }) | undefined;
+    const initialStatuses = initialProject?.taskStatuses?.length
+      ? initialProject.taskStatuses.map((status) => ({ key: String(status.key || '').toLowerCase(), label: String(status.label || status.key || '') }))
+      : DEFAULT_STATUSES;
     setForm({
       ...EMPTY_FORM,
-      projectId: projects[0]?._id || '',
+      projectId: initialProjectId,
       assigneeId: users[0]?._id || '',
+      status: initialStatuses[0]?.key || 'todo',
     });
     setShowModal(true);
   };
@@ -159,8 +202,8 @@ export default function TasksPage() {
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : '',
       priority: task.priority || 'medium',
       status: task.status || 'todo',
-      startDate: task.startDate ? new Date(task.startDate).toISOString().slice(0, 10) : '',
-      endDate: task.endDate ? new Date(task.endDate).toISOString().slice(0, 10) : '',
+      startDate: toDateTimeLocalInput(task.startDate),
+      endDate: toDateTimeLocalInput(task.endDate),
     });
     setShowModal(true);
   };
@@ -205,8 +248,8 @@ export default function TasksPage() {
       const payload = {
         ...form,
         dueDate: form.dueDate || undefined,
-        startDate: form.startDate || undefined,
-        endDate: form.endDate || undefined,
+        startDate: toIsoOrUndefined(form.startDate),
+        endDate: toIsoOrUndefined(form.endDate),
       };
 
       const res = await fetch(editingTaskId ? `/api/tasks/${editingTaskId}` : '/api/tasks', {
@@ -293,13 +336,13 @@ export default function TasksPage() {
                   {Object.entries(PRIORITY_CONFIG).map(([key, item]) => <option key={key} value={key}>{item.label}</option>)}
                 </select>
                 <select className="input" value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
-                  {Object.entries(STATUS_CONFIG).map(([key, item]) => <option key={key} value={key}>{item.label}</option>)}
+                  {availableStatuses.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
                 </select>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <input className="input" type="date" value={form.startDate} onChange={(e) => setForm((prev) => ({ ...prev, startDate: e.target.value }))} />
-                <input className="input" type="date" value={form.endDate} onChange={(e) => setForm((prev) => ({ ...prev, endDate: e.target.value }))} />
+                <input className="input" type="datetime-local" value={form.startDate} onChange={(e) => setForm((prev) => ({ ...prev, startDate: e.target.value }))} />
+                <input className="input" type="datetime-local" value={form.endDate} onChange={(e) => setForm((prev) => ({ ...prev, endDate: e.target.value }))} />
               </div>
 
               <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
@@ -367,9 +410,9 @@ export default function TasksPage() {
           <input className="input search-input" placeholder="Search assigned tasks..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="filter-pills">
-          {['all', 'todo', 'in_progress', 'in_review', 'done', 'blocked'].map((f) => (
+          {statusFilters.map((f) => (
             <button key={f} className={`filter-pill ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-              {f === 'all' ? 'All' : STATUS_CONFIG[f]?.label || f}
+              {f === 'all' ? 'All' : toStatusLabel(f)}
             </button>
           ))}
         </div>
@@ -390,7 +433,7 @@ export default function TasksPage() {
             <p className="text-muted text-sm" style={{ marginTop: 8 }}>No assigned tasks match this filter.</p>
           </div>
         ) : filtered.map((task) => {
-          const status = STATUS_CONFIG[task.status] || STATUS_CONFIG.todo;
+          const status = STATUS_CONFIG[String(task.status || '').toLowerCase()] || STATUS_CONFIG.todo;
           const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
           return (
             <div key={task._id} className="task-row" onClick={() => openEditModal(task)}>
@@ -406,7 +449,7 @@ export default function TasksPage() {
                 </span>
               </span>
               <span className="text-sm text-muted">{formatDate(task.dueDate)}</span>
-              <span className={`badge ${status.badge}`}>{status.label}</span>
+              <span className={`badge ${status.badge || 'badge-todo'}`}>{toStatusLabel(task.status)}</span>
             </div>
           );
         })}

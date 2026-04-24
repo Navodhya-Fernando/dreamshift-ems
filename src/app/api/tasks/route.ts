@@ -8,6 +8,7 @@ import Project from '@/models/Project';
 import User from '@/models/User';
 import { getAccessibleWorkspaceIds } from '@/lib/tenancy';
 import { notifyUser } from '@/lib/notifications';
+import { DEFAULT_PROJECT_TASK_STATUSES, normalizeProjectTaskStatuses, normalizeTaskStatusForProject } from '@/lib/taskStatuses';
 
 function normalizeStatus(status?: string) {
   const upper = String(status || 'TODO').toUpperCase().replace(/\s+/g, '_');
@@ -184,13 +185,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Forbidden project access' }, { status: 403 });
     }
 
-    const normalizedStatus = (body.status || 'TODO').toUpperCase();
+    const projectTaskStatuses = normalizeProjectTaskStatuses(project.taskStatuses || DEFAULT_PROJECT_TASK_STATUSES);
+    const normalizedStatus = normalizeTaskStatusForProject(body.status || 'TODO', projectTaskStatuses);
     const normalizedPriority = (body.priority || 'MEDIUM').toUpperCase();
+    const nextStartDate = body.startDate || (normalizedStatus === 'IN_PROGRESS' ? new Date() : undefined);
+    const nextEndDate = body.endDate || (normalizedStatus === 'DONE' ? new Date() : undefined);
     
     const task = await Task.create({
       ...body,
       status: normalizedStatus,
       priority: normalizedPriority,
+      startDate: nextStartDate,
+      endDate: nextEndDate,
       assigneeId: body.assigneeId || userId,
     });
 

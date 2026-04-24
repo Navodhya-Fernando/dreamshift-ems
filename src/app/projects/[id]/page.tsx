@@ -14,6 +14,10 @@ type ProjectPayload = {
     name: string;
     description?: string;
     deadline?: string;
+    status?: 'ACTIVE' | 'CLOSED';
+    startDate?: string;
+    endDate?: string;
+    taskStatuses?: Array<{ key: string; label: string }>;
     taskTemplate?: string;
   };
   tasks: Array<{
@@ -36,6 +40,11 @@ type ProjectPayload = {
   };
 };
 
+type ProjectTaskStatus = {
+  key: string;
+  label: string;
+};
+
 type UserOption = {
   _id: string;
   name: string;
@@ -47,7 +56,7 @@ type TaskTemplateOption = {
   title: string;
 };
 
-const KANBAN_COLUMNS: Array<{ key: string; label: string }> = [
+const DEFAULT_TASK_STATUSES: ProjectTaskStatus[] = [
   { key: 'TODO', label: 'To Do' },
   { key: 'IN_PROGRESS', label: 'In Progress' },
   { key: 'IN_REVIEW', label: 'In Review' },
@@ -62,21 +71,46 @@ const PRIORITY_META: Record<string, { label: string; color: string }> = {
   URGENT: { label: 'Urgent', color: '#EF4444' },
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  TODO: 'To Do',
-  IN_PROGRESS: 'In Progress',
-  DONE: 'Done',
-  BLOCKED: 'Blocked',
-  IN_REVIEW: 'In Review',
-};
+const STATUS_TONES = ['#60A5FA', '#F59E0B', '#A78BFA', '#EF4444', '#10B981', '#2DD4BF', '#FB7185'];
 
-const STATUS_META: Record<string, { color: string; bg: string }> = {
-  TODO: { color: '#60A5FA', bg: 'rgba(96,165,250,0.11)' },
-  IN_PROGRESS: { color: '#F59E0B', bg: 'rgba(245,158,11,0.11)' },
-  IN_REVIEW: { color: '#A78BFA', bg: 'rgba(167,139,250,0.11)' },
-  BLOCKED: { color: '#EF4444', bg: 'rgba(239,68,68,0.11)' },
-  DONE: { color: '#10B981', bg: 'rgba(16,185,129,0.11)' },
-};
+function statusToneByKey(key: string) {
+  const idx = Math.abs(String(key || '').split('').reduce((sum, char) => sum + char.charCodeAt(0), 0));
+  const color = STATUS_TONES[idx % STATUS_TONES.length];
+  return { color, bg: `${color}1C` };
+}
+
+function toDateTimeInput(value?: string) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const tzOffsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - tzOffsetMs).toISOString().slice(0, 16);
+}
+
+function toIso(value?: string) {
+  if (!value) return undefined;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+  return parsed.toISOString();
+}
+
+function normalizeStatusEntries(value: string): ProjectTaskStatus[] {
+  const entries = value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const key = line.toUpperCase().replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
+      return {
+        key,
+        label: line,
+      };
+    })
+    .filter((entry) => Boolean(entry.key));
+
+  if (entries.length === 0) return DEFAULT_TASK_STATUSES;
+  return entries;
+}
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
@@ -92,6 +126,10 @@ export default function ProjectDetailPage() {
     name: '',
     description: '',
     deadline: '',
+    status: 'ACTIVE',
+    startDate: '',
+    endDate: '',
+    taskStatusesText: '',
     taskTemplate: 'NO_TEMPLATE',
   });
   const [duplicatingProject, setDuplicatingProject] = useState(false);
@@ -120,13 +158,24 @@ export default function ProjectDetailPage() {
     ]);
     const [projectJson, usersJson, templatesJson] = await Promise.all([projectRes.json(), usersRes.json(), templatesRes.json()]);
     if (projectJson.success) {
+      const nextStatuses = ((projectJson.data.project.taskStatuses || DEFAULT_TASK_STATUSES) as ProjectTaskStatus[]);
       setPayload({ ...projectJson.data });
       setProjectForm({
         name: projectJson.data.project.name || '',
         description: projectJson.data.project.description || '',
         deadline: projectJson.data.project.deadline ? new Date(projectJson.data.project.deadline).toISOString().slice(0, 10) : '',
+        status: String(projectJson.data.project.status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'CLOSED' : 'ACTIVE',
+        startDate: toDateTimeInput(projectJson.data.project.startDate),
+        endDate: toDateTimeInput(projectJson.data.project.endDate),
+        taskStatusesText: nextStatuses
+          .map((status) => status.label)
+          .join('\n'),
         taskTemplate: projectJson.data.project.taskTemplate || 'NO_TEMPLATE',
       });
+      setTaskForm((prev) => ({
+        ...prev,
+        status: nextStatuses.some((item) => item.key === prev.status) ? prev.status : (nextStatuses[0]?.key || 'TODO'),
+      }));
     }
     if (usersJson.success) {
       setUsers((usersJson.data || []).map((user: { _id: string; name?: string; email?: string }) => ({
@@ -172,6 +221,11 @@ export default function ProjectDetailPage() {
   if (loading) return <div className="page-wrapper">Loading project...</div>;
   if (!payload) return <div className="page-wrapper">Project not found.</div>;
 
+  const projectTaskStatuses = (payload.project.taskStatuses && payload.project.taskStatuses.length > 0)
+    ? payload.project.taskStatuses
+    : DEFAULT_TASK_STATUSES;
+  const statusLabelByKey = new Map(projectTaskStatuses.map((status) => [status.key, status.label]));
+
   const riskScore = payload.taskStats.total
     ? Math.min(100, Math.round((payload.taskStats.blocked / payload.taskStats.total) * 50 + (100 - progress) * 0.5))
     : 0;
@@ -195,7 +249,12 @@ export default function ProjectDetailPage() {
       const res = await fetch(`/api/projects/${projectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(projectForm),
+        body: JSON.stringify({
+          ...projectForm,
+          startDate: toIso(projectForm.startDate),
+          endDate: toIso(projectForm.endDate),
+          taskStatuses: normalizeStatusEntries(projectForm.taskStatusesText),
+        }),
       });
       const json = await res.json();
       if (json.success) {
@@ -290,7 +349,7 @@ export default function ProjectDetailPage() {
         title: '',
         description: '',
         dueDate: '',
-        status: 'TODO',
+        status: projectTaskStatuses[0]?.key || 'TODO',
         priority: 'MEDIUM',
         assigneeId: '',
       });
@@ -389,6 +448,21 @@ export default function ProjectDetailPage() {
               <input className="input" placeholder="Name" value={projectForm.name} onChange={(e) => setProjectForm((prev) => ({ ...prev, name: e.target.value }))} required />
               <textarea className="input" placeholder="Description" style={{ minHeight: 96 }} value={projectForm.description} onChange={(e) => setProjectForm((prev) => ({ ...prev, description: e.target.value }))} />
               <input className="input" type="date" value={projectForm.deadline} onChange={(e) => setProjectForm((prev) => ({ ...prev, deadline: e.target.value }))} />
+              <select className="input" value={projectForm.status} onChange={(e) => setProjectForm((prev) => ({ ...prev, status: e.target.value }))}>
+                <option value="ACTIVE">Active</option>
+                <option value="CLOSED">Closed</option>
+              </select>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+                <input className="input" type="datetime-local" value={projectForm.startDate} onChange={(e) => setProjectForm((prev) => ({ ...prev, startDate: e.target.value }))} />
+                <input className="input" type="datetime-local" value={projectForm.endDate} onChange={(e) => setProjectForm((prev) => ({ ...prev, endDate: e.target.value }))} />
+              </div>
+              <textarea
+                className="input"
+                style={{ minHeight: 110 }}
+                placeholder="Task statuses (one per line)"
+                value={projectForm.taskStatusesText}
+                onChange={(e) => setProjectForm((prev) => ({ ...prev, taskStatusesText: e.target.value }))}
+              />
               <select className="input" value={projectForm.taskTemplate} onChange={(e) => setProjectForm((prev) => ({ ...prev, taskTemplate: e.target.value }))}>
                 {templateOptions.map((template) => (
                   <option key={template.key} value={template.key}>{template.title}</option>
@@ -417,6 +491,13 @@ export default function ProjectDetailPage() {
             Template: {templateTitleByKey.get(payload.project.taskTemplate || 'NO_TEMPLATE') || payload.project.taskTemplate || 'NO_TEMPLATE'}
             {' · '}
             {payload.project.deadline ? `Deadline ${new Date(payload.project.deadline).toLocaleDateString()}` : 'No deadline'}
+            {' · '}
+            {String(payload.project.status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'Closed' : 'Active'}
+          </div>
+          <div className="text-xs text-muted" style={{ marginTop: 4 }}>
+            {payload.project.startDate ? `Start ${new Date(payload.project.startDate).toLocaleString()}` : 'Start not set'}
+            {' · '}
+            {payload.project.endDate ? `End ${new Date(payload.project.endDate).toLocaleString()}` : 'End not set'}
           </div>
         </div>
 
@@ -470,11 +551,9 @@ export default function ProjectDetailPage() {
                   onChange={(e) => setTaskForm((prev) => ({ ...prev, dueDate: e.target.value }))}
                 />
                 <select className="input" value={taskForm.status} onChange={(e) => setTaskForm((prev) => ({ ...prev, status: e.target.value }))}>
-                  <option value="TODO">To Do</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="IN_REVIEW">In Review</option>
-                  <option value="BLOCKED">Blocked</option>
-                  <option value="DONE">Done</option>
+                  {projectTaskStatuses.map((status) => (
+                    <option key={status.key} value={status.key}>{status.label}</option>
+                  ))}
                 </select>
                 <select className="input" value={taskForm.priority} onChange={(e) => setTaskForm((prev) => ({ ...prev, priority: e.target.value }))}>
                   <option value="LOW">Low</option>
@@ -511,7 +590,7 @@ export default function ProjectDetailPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="badge">{STATUS_LABELS[task.status] || task.status}</span>
+                    <span className="badge">{statusLabelByKey.get(String(task.status || '')) || task.status}</span>
                     <span className="badge badge-low">{task.priority || 'MEDIUM'}</span>
                   </div>
                 </div>
@@ -522,7 +601,7 @@ export default function ProjectDetailPage() {
           <div style={{ marginTop: 16 }}>
             <div className="section-title" style={{ marginBottom: 10 }}>Kanban</div>
             <div className="project-kanban-board">
-              {KANBAN_COLUMNS.map((column) => {
+              {projectTaskStatuses.map((column) => {
                 const columnTasks = payload.tasks.filter((task) => String(task.status || 'TODO').toUpperCase() === column.key);
                 return (
                   <div key={column.key} className="project-kanban-column card">
@@ -545,8 +624,8 @@ export default function ProjectDetailPage() {
                             className={`project-kanban-card ${draggedTaskId === task._id ? 'is-dragging' : ''}`}
                             data-status={String(task.status || 'TODO').toUpperCase()}
                             style={{
-                              borderColor: (STATUS_META[String(task.status || 'TODO').toUpperCase()] || STATUS_META.TODO).color,
-                              background: `linear-gradient(180deg, ${(STATUS_META[String(task.status || 'TODO').toUpperCase()] || STATUS_META.TODO).bg}, rgba(255,255,255,0.02))`,
+                              borderColor: statusToneByKey(String(task.status || 'TODO').toUpperCase()).color,
+                              background: `linear-gradient(180deg, ${statusToneByKey(String(task.status || 'TODO').toUpperCase()).bg}, rgba(255,255,255,0.02))`,
                             }}
                             draggable
                             onDragStart={() => onTaskDragStart(task._id)}
@@ -569,11 +648,11 @@ export default function ProjectDetailPage() {
                                 className="badge"
                                 style={{
                                   width: 'fit-content',
-                                  background: (STATUS_META[String(task.status || 'TODO').toUpperCase()] || STATUS_META.TODO).bg,
-                                  color: (STATUS_META[String(task.status || 'TODO').toUpperCase()] || STATUS_META.TODO).color,
+                                  background: statusToneByKey(String(task.status || 'TODO').toUpperCase()).bg,
+                                  color: statusToneByKey(String(task.status || 'TODO').toUpperCase()).color,
                                 }}
                               >
-                                {STATUS_LABELS[String(task.status || 'TODO').toUpperCase()] || String(task.status || 'TODO')}
+                                {statusLabelByKey.get(String(task.status || 'TODO').toUpperCase()) || String(task.status || 'TODO')}
                               </span>
                               <select
                                 className="input"

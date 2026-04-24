@@ -8,6 +8,7 @@ import DataStatusBanner from '@/components/ui/DataStatusBanner';
 import DiscussionThread from '@/components/ui/DiscussionThread';
 import { useCachedApi } from '@/lib/useCachedApi';
 import { toastError, toastSuccess } from '@/lib/toast';
+import { toDateTimeLocalInput, toIsoOrUndefined } from '@/lib/datetimeLocal';
 
 type Subtask = {
   id: string;
@@ -44,6 +45,14 @@ const TASK_STATUS_META: Record<string, { label: string; color: string; bg: strin
   DONE: { label: 'Done', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
 };
 
+const DEFAULT_TASK_STATUSES = [
+  { key: 'TODO', label: 'To Do' },
+  { key: 'IN_PROGRESS', label: 'In Progress' },
+  { key: 'IN_REVIEW', label: 'In Review' },
+  { key: 'BLOCKED', label: 'Blocked' },
+  { key: 'DONE', label: 'Done' },
+];
+
 export default function TaskDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -61,6 +70,7 @@ export default function TaskDetailPage() {
   const [editingSubtaskDueDate, setEditingSubtaskDueDate] = useState('');
   const [taskStatus, setTaskStatus] = useState('TODO');
   const [taskAssigneeId, setTaskAssigneeId] = useState('');
+  const [projectStatuses, setProjectStatuses] = useState<Array<{ key: string; label: string }>>(DEFAULT_TASK_STATUSES);
   const [taskForm, setTaskForm] = useState({
     title: '',
     description: '',
@@ -121,13 +131,36 @@ export default function TaskDetailPage() {
       title: data.title || '',
       description: data.description || '',
       dueDate: data.dueDate ? new Date(data.dueDate).toISOString().slice(0, 10) : '',
-      startDate: data.startDate ? new Date(data.startDate).toISOString().slice(0, 10) : '',
-      endDate: data.endDate ? new Date(data.endDate).toISOString().slice(0, 10) : '',
+      startDate: toDateTimeLocalInput(data.startDate),
+      endDate: toDateTimeLocalInput(data.endDate),
       priority: String(data.priority || 'MEDIUM').toUpperCase(),
       status: String(data.status || 'TODO').toUpperCase(),
       assigneeId: data.assigneeId?._id || '',
     });
   }, [data]);
+
+  useEffect(() => {
+    const resolvedProjectId = typeof data?.projectId === 'object' ? data?.projectId?._id : data?.projectId;
+    if (!resolvedProjectId) return;
+
+    const loadProjectStatuses = async () => {
+      try {
+        const res = await fetch(`/api/projects/${resolvedProjectId}`, { cache: 'no-store' });
+        const json = await res.json();
+        if (!json.success) return;
+        const statuses = Array.isArray(json.data?.project?.taskStatuses) ? json.data.project.taskStatuses : DEFAULT_TASK_STATUSES;
+        if (!statuses.length) {
+          setProjectStatuses(DEFAULT_TASK_STATUSES);
+          return;
+        }
+        setProjectStatuses(statuses);
+      } catch {
+        setProjectStatuses(DEFAULT_TASK_STATUSES);
+      }
+    };
+
+    void loadProjectStatuses();
+  }, [data?.projectId]);
 
   const subtaskProgress = (() => {
     const total = data?.subtasks?.length || 0;
@@ -150,8 +183,8 @@ export default function TaskDetailPage() {
           title: taskForm.title.trim(),
           description: taskForm.description.trim(),
           dueDate: taskForm.dueDate || undefined,
-          startDate: taskForm.startDate || undefined,
-          endDate: taskForm.endDate || undefined,
+          startDate: toIsoOrUndefined(taskForm.startDate),
+          endDate: toIsoOrUndefined(taskForm.endDate),
           status: taskForm.status,
           priority: taskForm.priority,
           assigneeId: taskForm.assigneeId || undefined,
@@ -224,8 +257,8 @@ export default function TaskDetailPage() {
           title: data.title,
           description: data.description || '',
           dueDate: data.dueDate || undefined,
-          startDate: data.startDate || undefined,
-          endDate: data.endDate || undefined,
+          startDate: toIsoOrUndefined(toDateTimeLocalInput(data.startDate)),
+          endDate: toIsoOrUndefined(toDateTimeLocalInput(data.endDate)),
           priority: String(data.priority || 'MEDIUM').toUpperCase(),
           projectId: projectId || undefined,
           subtasks: (data.subtasks || []).map((subtask) => ({
@@ -261,8 +294,8 @@ export default function TaskDetailPage() {
         status: String(data.status || 'TODO').toUpperCase(),
         priority: String(data.priority || 'MEDIUM').toUpperCase(),
         dueDate: data.dueDate || undefined,
-        startDate: data.startDate || undefined,
-        endDate: data.endDate || undefined,
+        startDate: toIsoOrUndefined(toDateTimeLocalInput(data.startDate)),
+        endDate: toIsoOrUndefined(toDateTimeLocalInput(data.endDate)),
         projectId: resolvedProjectId,
         assigneeId: resolvedAssigneeId,
         subtasks: nextSubtasks,
@@ -448,16 +481,14 @@ export default function TaskDetailPage() {
                   <textarea className="input" style={{ minHeight: 90 }} value={taskForm.description} onChange={(e) => setTaskForm((prev) => ({ ...prev, description: e.target.value }))} />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
                     <input className="input" type="date" value={taskForm.dueDate} onChange={(e) => setTaskForm((prev) => ({ ...prev, dueDate: e.target.value }))} />
-                    <input className="input" type="date" value={taskForm.startDate} onChange={(e) => setTaskForm((prev) => ({ ...prev, startDate: e.target.value }))} />
-                    <input className="input" type="date" value={taskForm.endDate} onChange={(e) => setTaskForm((prev) => ({ ...prev, endDate: e.target.value }))} />
+                    <input className="input" type="datetime-local" value={taskForm.startDate} onChange={(e) => setTaskForm((prev) => ({ ...prev, startDate: e.target.value }))} />
+                    <input className="input" type="datetime-local" value={taskForm.endDate} onChange={(e) => setTaskForm((prev) => ({ ...prev, endDate: e.target.value }))} />
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
                     <select className="input" value={taskForm.status} onChange={(e) => setTaskForm((prev) => ({ ...prev, status: e.target.value }))}>
-                      <option value="TODO">To Do</option>
-                      <option value="IN_PROGRESS">In Progress</option>
-                      <option value="IN_REVIEW">In Review</option>
-                      <option value="BLOCKED">Blocked</option>
-                      <option value="DONE">Done</option>
+                      {projectStatuses.map((status) => (
+                        <option key={status.key} value={status.key}>{status.label}</option>
+                      ))}
                     </select>
                     <select className="input" value={taskForm.priority} onChange={(e) => setTaskForm((prev) => ({ ...prev, priority: e.target.value }))}>
                       <option value="LOW">Low</option>
@@ -541,11 +572,9 @@ export default function TaskDetailPage() {
               <div className="text-xs text-muted">Quick Update</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
                 <select className="input" value={taskStatus} onChange={(e) => setTaskStatus(e.target.value)}>
-                  <option value="TODO">To Do</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="IN_REVIEW">In Review</option>
-                  <option value="BLOCKED">Blocked</option>
-                  <option value="DONE">Done</option>
+                  {projectStatuses.map((status) => (
+                    <option key={status.key} value={status.key}>{status.label}</option>
+                  ))}
                 </select>
                 <select className="input" value={taskAssigneeId} onChange={(e) => setTaskAssigneeId(e.target.value)}>
                   <option value="">Unassigned</option>

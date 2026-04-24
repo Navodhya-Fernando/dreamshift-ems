@@ -6,6 +6,7 @@ import dbConnect from '@/lib/mongoose';
 import Project from '@/models/Project';
 import Workspace from '@/models/Workspace';
 import { getAccessibleWorkspaceIds } from '@/lib/tenancy';
+import { DEFAULT_PROJECT_TASK_STATUSES, normalizeProjectTaskStatuses } from '@/lib/taskStatuses';
 
 export async function GET(req: Request) {
   try {
@@ -49,7 +50,15 @@ export async function GET(req: Request) {
       .sort({ updatedAt: -1, created_at: -1 })
       .toArray();
 
-    return NextResponse.json({ success: true, count: projects.length, data: projects }, { status: 200 });
+    const normalizedProjects = projects.map((project) => ({
+      ...project,
+      status: String(project.status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'CLOSED' : 'ACTIVE',
+      startDate: project.startDate || project.start_date,
+      endDate: project.endDate || project.end_date,
+      taskStatuses: normalizeProjectTaskStatuses(project.taskStatuses || DEFAULT_PROJECT_TASK_STATUSES),
+    }));
+
+    return NextResponse.json({ success: true, count: normalizedProjects.length, data: normalizedProjects }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ success: false, error: message }, { status: 400 });
@@ -65,7 +74,7 @@ export async function POST(req: Request) {
     const userId = (session.user as { id: string }).id;
     const accessibleWorkspaceIds = await getAccessibleWorkspaceIds(userId);
 
-    const { name, description, deadline, taskTemplate, workspaceId } = await req.json();
+    const { name, description, deadline, taskTemplate, workspaceId, status, startDate, endDate, taskStatuses } = await req.json();
     if (!name?.trim()) {
       return NextResponse.json({ success: false, error: 'Project name is required' }, { status: 400 });
     }
@@ -83,10 +92,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Workspace not found' }, { status: 404 });
     }
 
+    const normalizedStatus = String(status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'CLOSED' : 'ACTIVE';
+    const normalizedTaskStatuses = normalizeProjectTaskStatuses(taskStatuses || DEFAULT_PROJECT_TASK_STATUSES);
+
     const project = await Project.create({
       name: name.trim(),
       description: description?.trim() || '',
       deadline: deadline || undefined,
+      status: normalizedStatus,
+      startDate: startDate || (normalizedStatus === 'ACTIVE' ? new Date() : undefined),
+      endDate: endDate || (normalizedStatus === 'CLOSED' ? new Date() : undefined),
+      taskStatuses: normalizedTaskStatuses,
       taskTemplate: taskTemplate || 'NO_TEMPLATE',
       workspaceId,
       ownerId: userId,

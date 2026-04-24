@@ -19,6 +19,16 @@ type TimeTask = {
   status?: string;
 };
 
+type TimeEntry = {
+  _id: string;
+  taskId: string;
+  projectId: string;
+  startTime: string;
+  endTime: string;
+  durationSeconds: number;
+  note?: string;
+};
+
 const INITIAL_TASKS: TimeTask[] = [];
 
 function formatTime(secs: number) {
@@ -35,6 +45,21 @@ function formatDurationLabel(seconds: number) {
   if (hours === 0) return `${minutes}m`;
   if (minutes === 0) return `${hours}h`;
   return `${hours}h ${minutes}m`;
+}
+
+function toDateTimeInput(value?: string) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const tzOffsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - tzOffsetMs).toISOString().slice(0, 16);
+}
+
+function toIsoOrUndefined(value?: string) {
+  if (!value) return undefined;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+  return parsed.toISOString();
 }
 
 function normalizeStatus(status?: string) {
@@ -78,6 +103,34 @@ export default function TimeTrackerPage() {
   const [activityTitle, setActivityTitle] = useState('');
   const [timerRunning, setTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [manualSaving, setManualSaving] = useState(false);
+  const [manualEntry, setManualEntry] = useState({
+    taskId: '',
+    startTime: '',
+    endTime: '',
+    note: '',
+  });
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+  const [entrySaving, setEntrySaving] = useState(false);
+
+  const {
+    data: timeEntries,
+    loading: entriesLoading,
+    refresh: refreshEntries,
+    setData: setTimeEntries,
+  } = useCachedApi<TimeEntry[]>({
+    cacheKey: 'time-entries-v1',
+    initialData: [],
+    fetcher: async () => {
+      const res = await fetch('/api/time-entries', { cache: 'no-store' });
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || 'Failed to load time entries');
+      }
+      return (json.data || []) as TimeEntry[];
+    },
+    ttlMs: 30_000,
+  });
 
   useEffect(() => {
     const hydrateFrame = window.requestAnimationFrame(() => {
@@ -214,32 +267,132 @@ export default function TimeTrackerPage() {
 
     const previous = targetTask.timeSpent || 0;
     const updatedTotal = previous + elapsedSeconds;
-
-    setData((prev) => prev.map((task) => (
-      task._id === activeTask ? { ...task, timeSpent: updatedTotal } : task
-    )));
+    const endTime = new Date();
+    const startTime = new Date(endTime.getTime() - elapsedSeconds * 1000);
 
     try {
-      const res = await fetch(`/api/tasks/${activeTask}`, {
-        method: 'PUT',
+      const res = await fetch('/api/time-entries', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ timeSpent: updatedTotal }),
+        body: JSON.stringify({
+          taskId: activeTask,
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
+          note: activityTitle || undefined,
+        }),
       });
       const json = await res.json();
       if (!json.success) {
-        throw new Error(json.error || 'Failed to save tracked time');
+        throw new Error(json.error || 'Failed to log tracked time');
       }
 
+      setData((prev) => prev.map((task) => (
+        task._id === activeTask ? { ...task, timeSpent: updatedTotal } : task
+      )));
+      setTimeEntries((prev) => [json.data as TimeEntry, ...prev]);
       setElapsedSeconds(0);
       toastSuccess(`Added ${formatTime(elapsedSeconds)} to ${targetTask.title}.`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to save tracked time';
-      setData((prev) => prev.map((task) => (
-        task._id === activeTask ? { ...task, timeSpent: previous } : task
-      )));
+      setData((prev) => prev.map((task) => (task._id === activeTask ? { ...task, timeSpent: previous } : task)));
       toastError(message);
     }
   }
+
+  const submitManualEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualEntry.taskId || !manualEntry.startTime || !manualEntry.endTime) {
+      toastInfo('Select a task and both start/end time.');
+      return;
+    }
+
+    setManualSaving(true);
+    try {
+      const res = await fetch('/api/time-entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          taskId: manualEntry.taskId,
+          startTime: new Date(manualEntry.startTime).toISOString(),
+          endTime: new Date(manualEntry.endTime).toISOString(),
+          note: manualEntry.note || undefined,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || 'Failed to create time entry');
+      }
+
+      const created = json.data as TimeEntry;
+      setTimeEntries((prev) => [created, ...prev]);
+      setData((prev) => prev.map((task) => (
+        task._id === manualEntry.taskId
+          ? { ...task, timeSpent: (task.timeSpent || 0) + Number(created.durationSeconds || 0) }
+          : task
+      )));
+      setManualEntry({ taskId: '', startTime: '', endTime: '', note: '' });
+      toastSuccess('Time entry logged');
+      await refreshEntries();
+    } catch (error: unknown) {
+      toastError(error instanceof Error ? error.message : 'Failed to create time entry');
+    } finally {
+      setManualSaving(false);
+    }
+  };
+
+  const openEditEntry = (entry: TimeEntry) => {
+    setEditingEntry({ ...entry, startTime: toDateTimeInput(entry.startTime), endTime: toDateTimeInput(entry.endTime) });
+  };
+
+  const saveEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEntry) return;
+
+    setEntrySaving(true);
+    try {
+      const res = await fetch(`/api/time-entries/${editingEntry._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          taskId: editingEntry.taskId,
+          startTime: toIsoOrUndefined(editingEntry.startTime),
+          endTime: toIsoOrUndefined(editingEntry.endTime),
+          note: editingEntry.note || undefined,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || 'Failed to update time entry');
+      }
+
+      setTimeEntries((prev) => prev.map((entry) => (entry._id === editingEntry._id ? (json.data as TimeEntry) : entry)));
+      setEditingEntry(null);
+      toastSuccess('Time entry updated');
+      await refreshEntries();
+    } catch (error: unknown) {
+      toastError(error instanceof Error ? error.message : 'Failed to update time entry');
+    } finally {
+      setEntrySaving(false);
+    }
+  };
+
+  const deleteEntry = async (entryId: string) => {
+    if (!window.confirm('Delete this time entry?')) return;
+
+    try {
+      const res = await fetch(`/api/time-entries/${entryId}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || 'Failed to delete time entry');
+      }
+
+      setTimeEntries((prev) => prev.filter((entry) => entry._id !== entryId));
+      toastSuccess('Time entry deleted');
+      await refreshEntries();
+    } catch (error: unknown) {
+      toastError(error instanceof Error ? error.message : 'Failed to delete time entry');
+    }
+  };
 
   const totalAssignedTasks = tasks.length;
   const completionCount = useMemo(() => tasks.filter((task) => normalizeStatus(task.status) === 'done').length, [tasks]);
@@ -249,6 +402,35 @@ export default function TimeTrackerPage() {
 
   return (
     <div className="page-wrapper animate-fade-in time-page">
+      {editingEntry && (
+        <div className="modal-overlay" onClick={() => setEditingEntry(null)}>
+          <form className="ws-settings-modal" onSubmit={saveEntry} onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>Edit Time Entry</div>
+              </div>
+            </div>
+            <div className="modal-body" style={{ display: 'grid', gap: 10 }}>
+              <select
+                className="input"
+                value={editingEntry.taskId}
+                onChange={(event) => setEditingEntry((prev) => prev ? { ...prev, taskId: event.target.value } : prev)}
+              >
+                {assignedTasks.map((task) => <option key={`edit-${task._id}`} value={task._id}>{task.title}</option>)}
+              </select>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+                <input className="input" type="datetime-local" value={editingEntry.startTime} onChange={(event) => setEditingEntry((prev) => prev ? { ...prev, startTime: event.target.value } : prev)} />
+                <input className="input" type="datetime-local" value={editingEntry.endTime} onChange={(event) => setEditingEntry((prev) => prev ? { ...prev, endTime: event.target.value } : prev)} />
+              </div>
+              <input className="input" value={editingEntry.note || ''} onChange={(event) => setEditingEntry((prev) => prev ? { ...prev, note: event.target.value } : prev)} placeholder="Optional note" />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setEditingEntry(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={entrySaving}>{entrySaving ? 'Saving...' : 'Save Entry'}</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
       <div className="time-hero card">
         <div className="time-hero-copy">
           <nav className="breadcrumb" style={{ marginBottom: 10 }}>
@@ -373,6 +555,56 @@ export default function TimeTrackerPage() {
           <div className="time-panel card">
             <div className="time-panel-header">
               <div>
+                <div className="card-title">Manual time entry</div>
+                <div className="card-subtitle">Log start and end times manually for any assigned task</div>
+              </div>
+            </div>
+
+            <form onSubmit={submitManualEntry} style={{ display: 'grid', gap: 10 }}>
+              <select
+                className="time-select"
+                value={manualEntry.taskId}
+                onChange={(e) => setManualEntry((prev) => ({ ...prev, taskId: e.target.value }))}
+                required
+              >
+                <option value="">Select task</option>
+                {assignedTasks.map((task) => (
+                  <option key={`manual-${task._id}`} value={task._id}>{task.title}</option>
+                ))}
+              </select>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+                <input
+                  className="time-input"
+                  type="datetime-local"
+                  value={manualEntry.startTime}
+                  onChange={(e) => setManualEntry((prev) => ({ ...prev, startTime: e.target.value }))}
+                  required
+                />
+                <input
+                  className="time-input"
+                  type="datetime-local"
+                  value={manualEntry.endTime}
+                  onChange={(e) => setManualEntry((prev) => ({ ...prev, endTime: e.target.value }))}
+                  required
+                />
+              </div>
+              <input
+                className="time-input"
+                placeholder="Optional note"
+                value={manualEntry.note}
+                onChange={(e) => setManualEntry((prev) => ({ ...prev, note: e.target.value }))}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button className="btn btn-primary" type="submit" disabled={manualSaving}>
+                  {manualSaving ? 'Saving...' : 'Log Entry'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="time-panel card">
+            <div className="time-panel-header">
+              <div>
                 <div className="card-title">Quick picks</div>
                 <div className="card-subtitle">A faster way to start the next work session</div>
               </div>
@@ -466,6 +698,50 @@ export default function TimeTrackerPage() {
                       </div>
                     );
                   })
+              )}
+            </div>
+          </div>
+
+          <div className="time-panel card">
+            <div className="time-panel-header">
+              <div>
+                <div className="card-title">Recent entries</div>
+                <div className="card-subtitle">Latest manual and timer-generated time sessions</div>
+              </div>
+            </div>
+            <div className="time-table">
+              <div className="time-table-header">
+                <span>Task</span>
+                <span>Start</span>
+                <span>End</span>
+                <span>Duration</span>
+              </div>
+              {entriesLoading ? (
+                <div className="time-empty">Loading entries...</div>
+              ) : timeEntries.length === 0 ? (
+                <div className="time-empty">No entries yet.</div>
+              ) : (
+                timeEntries.slice(0, 12).map((entry) => {
+                  const task = tasks.find((item) => item._id === entry.taskId);
+                  return (
+                    <div key={entry._id} className="time-table-row">
+                      <div className="time-task-cell">
+                        <div className="time-task-title">{task?.title || 'Task'}</div>
+                      </div>
+                      <div className="time-project-cell">{new Date(entry.startTime).toLocaleString()}</div>
+                      <div className="time-project-cell">{new Date(entry.endTime).toLocaleString()}</div>
+                      <div className="time-duration-cell">
+                        <div className="time-duration-meta">
+                          <span className="time-duration-value">{formatTime(Number(entry.durationSeconds || 0))}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 6 }}>
+                          <button type="button" className="btn btn-secondary" onClick={() => openEditEntry(entry)}>Edit</button>
+                          <button type="button" className="btn btn-secondary" style={{ color: '#EF4444' }} onClick={() => deleteEntry(entry._id)}>Delete</button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>

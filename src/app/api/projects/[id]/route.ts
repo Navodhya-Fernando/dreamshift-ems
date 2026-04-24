@@ -8,6 +8,7 @@ import Task from '@/models/Task';
 import User from '@/models/User';
 import Comment from '@/models/Comment';
 import { hasWorkspaceAccess } from '@/lib/tenancy';
+import { DEFAULT_PROJECT_TASK_STATUSES, normalizeProjectTaskStatuses, normalizeTaskStatusForProject } from '@/lib/taskStatuses';
 
 function normalizeStatus(status?: string) {
   const value = String(status || 'TODO').toUpperCase().replace(/\s+/g, '_');
@@ -33,9 +34,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const projectDoc = await Project.collection.findOne({ _id: projectObjectId });
     if (!projectDoc) return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
 
+    const projectTaskStatuses = normalizeProjectTaskStatuses(projectDoc.taskStatuses || DEFAULT_PROJECT_TASK_STATUSES);
     const project = {
       ...projectDoc,
       workspaceId: projectDoc.workspaceId || projectDoc.workspace_id,
+      status: String(projectDoc.status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'CLOSED' : 'ACTIVE',
+      startDate: projectDoc.startDate || projectDoc.start_date,
+      endDate: projectDoc.endDate || projectDoc.end_date,
+      taskStatuses: projectTaskStatuses,
     };
 
     const userId = (session.user as { id: string }).id;
@@ -63,7 +69,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       ...task,
       description: task.description || '',
       dueDate: task.dueDate || task.due_date,
-      status: normalizeStatus(task.status),
+      status: normalizeTaskStatusForProject(normalizeStatus(task.status), projectTaskStatuses),
       priority: String(task.priority || 'MEDIUM').toUpperCase(),
       assigneeId: task.assigneeId
         ? userById.get(String(task.assigneeId))
@@ -104,7 +110,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const projectObjectId = new mongoose.Types.ObjectId(id);
 
-    const existingProject = await Project.collection.findOne({ _id: projectObjectId }, { projection: { workspaceId: 1, workspace_id: 1 } });
+    const existingProject = await Project.collection.findOne(
+      { _id: projectObjectId },
+      { projection: { workspaceId: 1, workspace_id: 1, startDate: 1, start_date: 1, endDate: 1, end_date: 1 } }
+    );
     if (!existingProject) return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
 
     const workspaceId = existingProject.workspaceId || existingProject.workspace_id;
@@ -115,12 +124,21 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ success: false, error: 'Forbidden project access' }, { status: 403 });
     }
 
+    const nextStatus = String(body.status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'CLOSED' : 'ACTIVE';
+    const nextTaskStatuses = normalizeProjectTaskStatuses(body.taskStatuses || DEFAULT_PROJECT_TASK_STATUSES);
+    const nextStartDate = body.startDate ?? existingProject.startDate ?? existingProject.start_date ?? (nextStatus === 'ACTIVE' ? new Date() : undefined);
+    const nextEndDate = body.endDate ?? existingProject.endDate ?? existingProject.end_date ?? (nextStatus === 'CLOSED' ? new Date() : undefined);
+
     const project = await Project.findByIdAndUpdate(
       id,
       {
         name: body.name,
         description: body.description,
         deadline: body.deadline,
+        status: nextStatus,
+        startDate: nextStartDate,
+        endDate: nextStatus === 'CLOSED' ? nextEndDate : body.endDate === null ? null : nextEndDate,
+        taskStatuses: nextTaskStatuses,
         taskTemplate: body.taskTemplate,
       },
       { new: true, runValidators: true }
