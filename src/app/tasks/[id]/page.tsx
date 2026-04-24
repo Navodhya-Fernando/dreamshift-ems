@@ -476,14 +476,31 @@ export default function TaskDetailPage() {
                 <div className="modal-header">
                   <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>Edit Task</div>
                 </div>
-                <div className="modal-body" style={{ display: 'grid', gap: 10 }}>
+                <div className="modal-body" style={{ display: 'grid', gap: 12 }}>
                   <input className="input" value={taskForm.title} onChange={(e) => setTaskForm((prev) => ({ ...prev, title: e.target.value }))} required />
                   <textarea className="input" style={{ minHeight: 90 }} value={taskForm.description} onChange={(e) => setTaskForm((prev) => ({ ...prev, description: e.target.value }))} />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
-                    <input className="input" type="date" value={taskForm.dueDate} onChange={(e) => setTaskForm((prev) => ({ ...prev, dueDate: e.target.value }))} />
-                    <input className="input" type="datetime-local" value={taskForm.startDate} onChange={(e) => setTaskForm((prev) => ({ ...prev, startDate: e.target.value }))} />
-                    <input className="input" type="datetime-local" value={taskForm.endDate} onChange={(e) => setTaskForm((prev) => ({ ...prev, endDate: e.target.value }))} />
+
+                  <div style={{ display: 'grid', gap: 8, padding: 12, borderRadius: 12, border: '1px solid var(--border-subtle)', background: 'rgba(255,255,255,0.02)' }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>Schedule</div>
+                      <div className="text-xs text-muted">Use date and time if you want precise tracking. Leave values empty to clear them.</div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
+                      <label className="text-xs text-muted" style={{ display: 'grid', gap: 6 }}>
+                        Due date
+                        <input className="input" type="date" value={taskForm.dueDate} onChange={(e) => setTaskForm((prev) => ({ ...prev, dueDate: e.target.value }))} />
+                      </label>
+                      <label className="text-xs text-muted" style={{ display: 'grid', gap: 6 }}>
+                        Start date and time
+                        <input className="input" type="datetime-local" value={taskForm.startDate} onChange={(e) => setTaskForm((prev) => ({ ...prev, startDate: e.target.value }))} />
+                      </label>
+                      <label className="text-xs text-muted" style={{ display: 'grid', gap: 6 }}>
+                        End date and time
+                        <input className="input" type="datetime-local" value={taskForm.endDate} onChange={(e) => setTaskForm((prev) => ({ ...prev, endDate: e.target.value }))} />
+                      </label>
+                    </div>
                   </div>
+
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
                     <select className="input" value={taskForm.status} onChange={(e) => setTaskForm((prev) => ({ ...prev, status: e.target.value }))}>
                       {projectStatuses.map((status) => (
@@ -552,6 +569,22 @@ export default function TaskDetailPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
                   <Calendar size={14} />
                   <span>{data.dueDate ? new Date(data.dueDate).toLocaleDateString() : 'No due date'}</span>
+                </div>
+              </div>
+
+              <div className="card" style={{ padding: 12 }}>
+                <div className="text-xs text-muted">Start Date & Time</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                  <Calendar size={14} />
+                  <span>{data.startDate ? new Date(data.startDate).toLocaleString() : 'Not set'}</span>
+                </div>
+              </div>
+
+              <div className="card" style={{ padding: 12 }}>
+                <div className="text-xs text-muted">End Date & Time</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                  <Calendar size={14} />
+                  <span>{data.endDate ? new Date(data.endDate).toLocaleString() : 'Not set'}</span>
                 </div>
               </div>
             </div>

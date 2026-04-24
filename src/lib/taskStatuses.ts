@@ -27,6 +27,22 @@ function toStatusLabel(value: string) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function canonicalStatusKey(value: string) {
+  const normalized = toStatusKey(value);
+  const aliasMap: Record<string, string> = {
+    TODO: 'TODO',
+    TO_DO: 'TODO',
+    INPROGRESS: 'IN_PROGRESS',
+    IN_PROGRESS: 'IN_PROGRESS',
+    IN_REVIEW: 'IN_REVIEW',
+    BLOCKED: 'BLOCKED',
+    DONE: 'DONE',
+    COMPLETED: 'DONE',
+  };
+
+  return aliasMap[normalized] || normalized;
+}
+
 export function normalizeProjectTaskStatuses(input: unknown): ProjectTaskStatus[] {
   const raw = Array.isArray(input) ? input : [];
   const result: ProjectTaskStatus[] = [];
@@ -34,7 +50,7 @@ export function normalizeProjectTaskStatuses(input: unknown): ProjectTaskStatus[
 
   raw.forEach((item) => {
     if (typeof item === 'string') {
-      const key = toStatusKey(item);
+      const key = canonicalStatusKey(item);
       if (!key || seen.has(key)) return;
       seen.add(key);
       result.push({ key, label: toStatusLabel(item) || toStatusLabel(key) });
@@ -43,7 +59,7 @@ export function normalizeProjectTaskStatuses(input: unknown): ProjectTaskStatus[
 
     if (!item || typeof item !== 'object') return;
     const maybe = item as { key?: unknown; label?: unknown };
-    const key = toStatusKey(String(maybe.key || maybe.label || ''));
+    const key = canonicalStatusKey(String(maybe.key || maybe.label || ''));
     if (!key || seen.has(key)) return;
     seen.add(key);
     result.push({
@@ -70,13 +86,13 @@ export function normalizeProjectTaskStatuses(input: unknown): ProjectTaskStatus[
 
 export function normalizeTaskStatusForProject(status: unknown, projectTaskStatuses: ProjectTaskStatus[]) {
   const allowed = normalizeProjectTaskStatuses(projectTaskStatuses).map((item) => item.key);
-  const normalized = toStatusKey(String(status || 'TODO')) || 'TODO';
+  const normalized = canonicalStatusKey(String(status || 'TODO')) || 'TODO';
   if (allowed.includes(normalized)) return normalized;
   return allowed[0] || 'TODO';
 }
 
 export function toTaskStatusLabel(status: string, projectTaskStatuses?: ProjectTaskStatus[]) {
-  const normalized = toStatusKey(status || '');
+  const normalized = canonicalStatusKey(status || '');
   const list = normalizeProjectTaskStatuses(projectTaskStatuses || DEFAULT_PROJECT_TASK_STATUSES);
   const found = list.find((item) => item.key === normalized);
   return found?.label || toStatusLabel(normalized || status || 'TODO');

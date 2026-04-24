@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Clock as ClockIcon, Play, Square, FileText, RefreshCw, TimerReset, TrendingUp, Layers3, ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
+import { Clock as ClockIcon, Play, Square, FileText, RefreshCw, TimerReset, TrendingUp, Layers3, ArrowRight, CheckCircle2, Sparkles, Pencil, Trash2 } from 'lucide-react';
 import DataStatusBanner from '@/components/ui/DataStatusBanner';
 import { useCachedApi } from '@/lib/useCachedApi';
 import { toastError, toastInfo, toastSuccess } from '@/lib/toast';
@@ -23,6 +23,7 @@ type TimeEntry = {
   _id: string;
   taskId: string;
   projectId: string;
+  source?: 'MANUAL' | 'TIMER';
   startTime: string;
   endTime: string;
   durationSeconds: number;
@@ -73,6 +74,12 @@ function getStatusTone(status?: string) {
   if (normalized === 'blocked') return { label: 'Blocked', color: '#EF4444', bg: 'rgba(239,68,68,0.14)' };
   if (normalized === 'in_review') return { label: 'In Review', color: '#A78BFA', bg: 'rgba(167,139,250,0.14)' };
   return { label: 'To Do', color: '#60A5FA', bg: 'rgba(96,165,250,0.14)' };
+}
+
+function getEntrySourceTone(source?: string) {
+  const normalized = String(source || 'TIMER').toUpperCase();
+  if (normalized === 'MANUAL') return { label: 'Manual', color: '#A78BFA', bg: 'rgba(167,139,250,0.14)' };
+  return { label: 'Timer', color: '#2DD4BF', bg: 'rgba(45,212,191,0.14)' };
 }
 
 export default function TimeTrackerPage() {
@@ -217,6 +224,11 @@ export default function TimeTrackerPage() {
   }, [tasks]);
 
   const activeTaskRecord = useMemo(() => assignedTasks.find((task) => task._id === activeTask), [assignedTasks, activeTask]);
+  const taskById = useMemo(() => new Map(tasks.map((task) => [task._id, task])), [tasks]);
+
+  const loggedEntries = useMemo(() => {
+    return [...timeEntries].sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+  }, [timeEntries]);
 
   const overdueTasks = useMemo(() => {
     const now = Date.now();
@@ -242,6 +254,13 @@ export default function TimeTrackerPage() {
   const quickPicks = useMemo(() => {
     return focusTasks.length > 0 ? focusTasks : assignedTasks.slice(0, 4);
   }, [assignedTasks, focusTasks]);
+
+  const taskTotalRows = useMemo(() => {
+    return [...assignedTasks]
+      .filter((task) => (task.timeSpent || 0) > 0)
+      .sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0))
+      .slice(0, 5);
+  }, [assignedTasks]);
 
   const toggleTimer = () => {
     if (!activeTask) {
@@ -276,6 +295,7 @@ export default function TimeTrackerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           taskId: activeTask,
+          source: 'TIMER',
           startTime: startTime.toISOString(),
           endTime: endTime.toISOString(),
           note: activityTitle || undefined,
@@ -313,6 +333,7 @@ export default function TimeTrackerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           taskId: manualEntry.taskId,
+          source: 'MANUAL',
           startTime: new Date(manualEntry.startTime).toISOString(),
           endTime: new Date(manualEntry.endTime).toISOString(),
           note: manualEntry.note || undefined,
@@ -355,6 +376,7 @@ export default function TimeTrackerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           taskId: editingEntry.taskId,
+          source: editingEntry.source || 'TIMER',
           startTime: toIsoOrUndefined(editingEntry.startTime),
           endTime: toIsoOrUndefined(editingEntry.endTime),
           note: editingEntry.note || undefined,
@@ -642,108 +664,81 @@ export default function TimeTrackerPage() {
             <div className="time-panel-header">
               <div>
                 <div className="card-title">My logged time</div>
-                <div className="card-subtitle">Organized by the tasks you have invested the most time in</div>
+                <div className="card-subtitle">Manual and timer sessions recorded together</div>
               </div>
               <span className="time-panel-chip">{totalTrackedSeconds ? formatDurationLabel(totalTrackedSeconds) : 'No time logged yet'}</span>
             </div>
 
-            <div className="time-table">
-              <div className="time-table-header">
-                <span>Task</span>
-                <span>Project</span>
-                <span>Duration</span>
-              </div>
+            {entriesLoading ? (
+              <div className="time-empty">Loading entries...</div>
+            ) : loggedEntries.length === 0 ? (
+              <div className="time-empty">No logged entries yet.</div>
+            ) : (
+              <div style={{ display: 'grid', gap: 10 }}>
+                {loggedEntries.map((entry) => {
+                  const task = taskById.get(entry.taskId);
+                  const projectName = typeof task?.projectId === 'object' ? task.projectId?.name || 'General' : 'General';
+                  const sourceTone = getEntrySourceTone(entry.source);
+                  const projectTone = task ? getStatusTone(task.status) : { label: 'Task', color: '#5B6BF8', bg: 'rgba(91,107,248,0.14)' };
 
-              {loading ? (
-                <div className="time-empty">Loading tasks...</div>
-              ) : assignedTasks.filter((task) => (task.timeSpent || 0) > 0).length === 0 ? (
-                <div className="time-empty">
-                  Start the tracker to see your logged sessions appear here.
-                </div>
-              ) : (
-                assignedTasks
-                  .filter((task) => (task.timeSpent || 0) > 0)
-                  .map((task, index) => {
-                    const projectName = typeof task.projectId === 'object' ? task.projectId?.name || 'General' : 'General';
-                    const tone = index % 2 === 0
-                      ? { background: 'rgba(91,107,248,0.14)', color: '#5B6BF8' }
-                      : { background: 'rgba(42,157,143,0.14)', color: '#2A9D8F' };
-                    const progress = totalTrackedSeconds ? Math.round(((task.timeSpent || 0) / totalTrackedSeconds) * 100) : 0;
-
-                    return (
-                      <div key={task._id} className="time-table-row">
-                        <div className="time-task-cell">
+                  return (
+                    <div key={entry._id} className="card" style={{ padding: 14, border: '1px solid var(--border-subtle)', background: 'rgba(255,255,255,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
                           <div className="time-task-icon">
                             <FileText size={15} />
                           </div>
-                          <div>
-                            <div className="time-task-title">{task.title}</div>
-                            <div className="time-task-subtitle">{getStatusTone(task.status).label}</div>
+                          <div style={{ minWidth: 0 }}>
+                            <div className="time-task-title" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                              <span>{task?.title || 'Task'}</span>
+                              <span className="badge" style={{ background: sourceTone.bg, color: sourceTone.color }}>{sourceTone.label}</span>
+                            </div>
+                            <div className="time-task-subtitle" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                              <span>{projectName}</span>
+                              <span>·</span>
+                              <span>{getStatusTone(task?.status).label}</span>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="time-project-cell">
-                          <span className="time-project-badge" style={tone}>{projectName}</span>
-                        </div>
-
-                        <div className="time-duration-cell">
-                          <div className="time-duration-meta">
-                            <span className="time-duration-value">{formatTime(task.timeSpent || 0)}</span>
-                            <span className="time-duration-percent">{progress}%</span>
-                          </div>
-                          <div className="time-duration-track">
-                            <div className="time-duration-fill" style={{ width: `${progress}%`, background: tone.color }} />
-                          </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <button type="button" className="btn btn-secondary" aria-label="Edit time entry" title="Edit time entry" onClick={() => openEditEntry(entry)}>
+                            <Pencil size={13} />
+                          </button>
+                          <button type="button" className="btn btn-secondary" style={{ color: '#EF4444' }} aria-label="Delete time entry" title="Delete time entry" onClick={() => deleteEntry(entry._id)}>
+                            <Trash2 size={13} />
+                          </button>
                         </div>
                       </div>
-                    );
-                  })
-              )}
-            </div>
-          </div>
 
-          <div className="time-panel card">
-            <div className="time-panel-header">
-              <div>
-                <div className="card-title">Recent entries</div>
-                <div className="card-subtitle">Latest manual and timer-generated time sessions</div>
-              </div>
-            </div>
-            <div className="time-table">
-              <div className="time-table-header">
-                <span>Task</span>
-                <span>Start</span>
-                <span>End</span>
-                <span>Duration</span>
-              </div>
-              {entriesLoading ? (
-                <div className="time-empty">Loading entries...</div>
-              ) : timeEntries.length === 0 ? (
-                <div className="time-empty">No entries yet.</div>
-              ) : (
-                timeEntries.slice(0, 12).map((entry) => {
-                  const task = tasks.find((item) => item._id === entry.taskId);
-                  return (
-                    <div key={entry._id} className="time-table-row">
-                      <div className="time-task-cell">
-                        <div className="time-task-title">{task?.title || 'Task'}</div>
-                      </div>
-                      <div className="time-project-cell">{new Date(entry.startTime).toLocaleString()}</div>
-                      <div className="time-project-cell">{new Date(entry.endTime).toLocaleString()}</div>
-                      <div className="time-duration-cell">
-                        <div className="time-duration-meta">
-                          <span className="time-duration-value">{formatTime(Number(entry.durationSeconds || 0))}</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8, marginTop: 12 }}>
+                        <div>
+                          <div className="text-xs text-muted">Start</div>
+                          <div style={{ marginTop: 4 }}>{new Date(entry.startTime).toLocaleString()}</div>
                         </div>
-                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 6 }}>
-                          <button type="button" className="btn btn-secondary" onClick={() => openEditEntry(entry)}>Edit</button>
-                          <button type="button" className="btn btn-secondary" style={{ color: '#EF4444' }} onClick={() => deleteEntry(entry._id)}>Delete</button>
+                        <div>
+                          <div className="text-xs text-muted">End</div>
+                          <div style={{ marginTop: 4 }}>{new Date(entry.endTime).toLocaleString()}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted">Duration</div>
+                          <div style={{ marginTop: 4, fontWeight: 700 }}>{formatTime(Number(entry.durationSeconds || 0))}</div>
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: 10 }}>
+                        <div className="time-duration-track">
+                          <div
+                            className="time-duration-fill"
+                            style={{ width: totalTrackedSeconds ? `${Math.round((Number(entry.durationSeconds || 0) / totalTrackedSeconds) * 100)}%` : '0%', background: projectTone.color }}
+                          />
                         </div>
                       </div>
                     </div>
                   );
-                })
-              )}
-            </div>
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -807,6 +802,47 @@ export default function TimeTrackerPage() {
                 <ArrowRight size={14} /> Manage tasks
               </Link>
             </div>
+          </div>
+
+          <div className="time-panel card">
+            <div className="time-panel-header">
+              <div>
+                <div className="card-title">Task totals</div>
+                <div className="card-subtitle">Top tasks by total tracked time</div>
+              </div>
+              <span className="time-panel-chip">{taskTotalRows.length} rows</span>
+            </div>
+
+            {taskTotalRows.length === 0 ? (
+              <div className="time-empty">No task totals yet.</div>
+            ) : (
+              <div style={{ display: 'grid', gap: 8 }}>
+                {taskTotalRows.map((task) => {
+                  const projectName = typeof task.projectId === 'object' ? task.projectId?.name || 'General' : 'General';
+                  const progress = totalTrackedSeconds ? Math.round(((task.timeSpent || 0) / totalTrackedSeconds) * 100) : 0;
+
+                  return (
+                    <div key={`task-total-${task._id}`} className="card" style={{ padding: 12, border: '1px solid var(--border-subtle)', background: 'rgba(255,255,255,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div className="time-task-title">{task.title}</div>
+                          <div className="time-task-subtitle">{projectName}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontWeight: 700 }}>{formatTime(task.timeSpent || 0)}</div>
+                          <div className="text-xs text-muted">{progress}%</div>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: 8 }}>
+                        <div className="time-duration-track">
+                          <div className="time-duration-fill" style={{ width: `${progress}%`, background: '#5B6BF8' }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </aside>
       </section>

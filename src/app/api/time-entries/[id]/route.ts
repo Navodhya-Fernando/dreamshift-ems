@@ -108,6 +108,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         $set: {
           taskId: nextTaskId,
           projectId: nextTaskAccess.projectId,
+          source: String(body.source || existing.source || 'TIMER').toUpperCase() === 'MANUAL' ? 'MANUAL' : 'TIMER',
           startTime,
           endTime,
           durationSeconds: nextDuration,
@@ -117,7 +118,22 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       { returnDocument: 'after' }
     );
 
-    return NextResponse.json({ success: true, data: updated?.value || null }, { status: 200 });
+    const value = updated?.value;
+    const data = value
+      ? {
+          ...value,
+          taskId: String(value.taskId || ''),
+          projectId: String(value.projectId || ''),
+          userId: String(value.userId || ''),
+          source: String(value.source || 'TIMER').toUpperCase() === 'MANUAL' ? 'MANUAL' : 'TIMER',
+          startTime: value.startTime,
+          endTime: value.endTime,
+          durationSeconds: Number(value.durationSeconds || 0),
+          note: String(value.note || ''),
+        }
+      : null;
+
+    return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ success: false, error: message }, { status: 400 });
