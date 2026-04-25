@@ -40,9 +40,12 @@ type AssignedTask = {
 type ProjectOption = {
   _id: string;
   name: string;
+  workspaceId?: string;
+  workspace_id?: string;
   taskStatuses?: Array<{ key: string; label: string }>;
 };
 type UserOption = { _id: string; name: string; email: string };
+type WorkspaceOption = { _id: string; name: string };
 
 type TaskForm = {
   title: string;
@@ -60,6 +63,7 @@ type TasksPageData = {
   tasks: AssignedTask[];
   projects: ProjectOption[];
   users: UserOption[];
+  workspaces: WorkspaceOption[];
   scopeLabel: 'Assigned' | 'Workspace';
 };
 
@@ -103,6 +107,7 @@ export default function TasksPage() {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [modalWorkspaceId, setModalWorkspaceId] = useState('');
   const [form, setForm] = useState<TaskForm>(EMPTY_FORM);
 
   const fetchData = async (): Promise<TasksPageData> => {
@@ -110,18 +115,20 @@ export default function TasksPage() {
       fetch('/api/tasks?scope=assigned', { cache: 'no-store' }),
       fetch('/api/projects', { cache: 'no-store' }),
       fetch('/api/users', { cache: 'no-store' }),
+      fetch('/api/workspaces', { cache: 'no-store' }),
     ]);
 
-    const [tasksJson, projectsJson, usersJson] = await Promise.all([tasksRes.json(), projectsRes.json(), usersRes.json()]);
+    const [tasksJson, projectsJson, usersJson, workspacesJson] = await Promise.all([tasksRes.json(), projectsRes.json(), usersRes.json(), workspacesRes.json()]);
 
-    if (!projectsJson.success || !usersJson.success || !tasksJson.success) {
-      throw new Error(tasksJson.error || projectsJson.error || usersJson.error || 'Failed to load task resources');
+    if (!projectsJson.success || !usersJson.success || !tasksJson.success || !workspacesJson.success) {
+      throw new Error(tasksJson.error || projectsJson.error || usersJson.error || workspacesJson.error || 'Failed to load task resources');
     }
 
     return {
       tasks: tasksJson.data as AssignedTask[],
       projects: projectsJson.data as ProjectOption[],
       users: usersJson.data as UserOption[],
+      workspaces: workspacesJson.data as WorkspaceOption[],
       scopeLabel: 'Assigned',
     };
   };
@@ -136,7 +143,7 @@ export default function TasksPage() {
     setData,
   } = useCachedApi<TasksPageData>({
     cacheKey: 'tasks-page-data-v1',
-    initialData: { tasks: [], projects: [], users: [], scopeLabel: 'Assigned' },
+    initialData: { tasks: [], projects: [], users: [], workspaces: [], scopeLabel: 'Assigned' },
     fetcher: fetchData,
     ttlMs: 90000,
   });
@@ -144,7 +151,16 @@ export default function TasksPage() {
   const tasks = data.tasks;
   const projects = data.projects;
   const users = data.users;
+  const workspaces = data.workspaces;
   const scopeLabel = data.scopeLabel;
+
+  const projectsForModalWorkspace = useMemo(() => {
+    if (!modalWorkspaceId) return projects;
+    return projects.filter((project) => {
+      const projectWorkspaceId = String(project.workspaceId || project.workspace_id || '');
+      return projectWorkspaceId === modalWorkspaceId;
+    });
+  }, [modalWorkspaceId, projects]);
 
   const filtered = useMemo(() => {
     return tasks.filter((task) => {
@@ -208,9 +224,16 @@ export default function TasksPage() {
     }));
   }, [projects, form.projectId]);
 
+  React.useEffect(() => {
+    if (modalWorkspaceId || workspaces.length === 0) return;
+    setModalWorkspaceId(String(workspaces[0]._id));
+  }, [modalWorkspaceId, workspaces]);
+
   const openCreateModal = () => {
     setEditingTaskId(null);
-    const initialProjectId = projects[0]?._id || '';
+    const initialWorkspaceId = modalWorkspaceId || String(workspaces[0]?._id || '');
+    const initialProjects = projects.filter((project) => String(project.workspaceId || project.workspace_id || '') === initialWorkspaceId);
+    const initialProjectId = initialProjects[0]?._id || projects[0]?._id || '';
     const initialProject = projects.find((project) => project._id === initialProjectId) as (ProjectOption & { taskStatuses?: Array<{ key: string; label: string }> }) | undefined;
     const initialStatuses = initialProject?.taskStatuses?.length
       ? initialProject.taskStatuses.map((status) => ({ key: String(status.key || '').toLowerCase(), label: String(status.label || status.key || '') }))
@@ -221,11 +244,15 @@ export default function TasksPage() {
       assigneeId: users[0]?._id || '',
       status: initialStatuses[0]?.key || 'todo',
     });
+    if (initialWorkspaceId) setModalWorkspaceId(initialWorkspaceId);
     setShowModal(true);
   };
 
   const openEditModal = (task: AssignedTask) => {
     setEditingTaskId(task._id);
+    const editingProject = projects.find((project) => project._id === (task.projectId?._id || ''));
+    const projectWorkspaceId = String(editingProject?.workspaceId || editingProject?.workspace_id || '');
+    if (projectWorkspaceId) setModalWorkspaceId(projectWorkspaceId);
     setForm({
       title: task.title || '',
       description: task.description || '',
@@ -352,10 +379,28 @@ export default function TasksPage() {
               <textarea className="input" placeholder="Description" value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} style={{ minHeight: 90 }} />
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <select
+                  className="input"
+                  value={modalWorkspaceId}
+                  onChange={(e) => {
+                    const nextWorkspaceId = e.target.value;
+                    setModalWorkspaceId(nextWorkspaceId);
+                    const nextProjects = projects.filter((project) => String(project.workspaceId || project.workspace_id || '') === nextWorkspaceId);
+                    const validProject = nextProjects.some((project) => project._id === form.projectId);
+                    setForm((prev) => ({ ...prev, projectId: validProject ? prev.projectId : (nextProjects[0]?._id || '') }));
+                  }}
+                  required
+                >
+                  <option value="">Select Workspace</option>
+                  {workspaces.map((workspace) => <option key={workspace._id} value={workspace._id}>{workspace.name}</option>)}
+                </select>
                 <select className="input" value={form.projectId} onChange={(e) => setForm((prev) => ({ ...prev, projectId: e.target.value }))} required>
                   <option value="">Select Project</option>
-                  {projects.map((project) => <option key={project._id} value={project._id}>{project.name}</option>)}
+                  {projectsForModalWorkspace.map((project) => <option key={project._id} value={project._id}>{project.name}</option>)}
                 </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
                 <select className="input" value={form.assigneeId} onChange={(e) => setForm((prev) => ({ ...prev, assigneeId: e.target.value }))}>
                   <option value="">Select Assignee</option>
                   {users.map((user) => <option key={user._id} value={user._id}>{user.name} ({user.email})</option>)}
@@ -449,7 +494,12 @@ export default function TasksPage() {
               const card = (
                 <>
                   <div className="my-projects-name">{project.name}</div>
-                  <div className="my-projects-meta">{project.total} total • {project.open} open{project.overdue > 0 ? ` • ${project.overdue} overdue` : ''}</div>
+                  <div className="my-projects-stats">
+                    <span className="my-projects-chip">{project.total} total</span>
+                    <span className="my-projects-chip">{project.open} open</span>
+                    {project.overdue > 0 ? <span className="my-projects-chip is-overdue">{project.overdue} overdue</span> : null}
+                  </div>
+                  <div className="my-projects-meta">{project.open === 0 ? 'All clear in this project' : 'Has active assigned work'}</div>
                 </>
               );
 
