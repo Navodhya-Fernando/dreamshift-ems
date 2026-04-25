@@ -39,6 +39,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 
 export default function CalendarPage() {
   const [copied, setCopied] = useState(false);
+  const [syncUrl, setSyncUrl] = useState('');
   const {
     data: payload,
     loading,
@@ -59,10 +60,32 @@ export default function CalendarPage() {
   });
   const [selectedEvent, setSelectedEvent] = useState<CalendarEventItem | null>(null);
 
-  const icsUrl = useMemo(() => {
+  const fallbackIcsUrl = useMemo(() => {
     if (typeof window === 'undefined') return '/api/calendar/ics';
     return `${window.location.origin}/api/calendar/ics`;
   }, []);
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/calendar/sync-token', { cache: 'no-store' });
+        const json = await res.json();
+        if (!mounted) return;
+        if (json.success && json.data?.syncUrl) {
+          setSyncUrl(String(json.data.syncUrl));
+        }
+      } catch {
+        if (mounted) setSyncUrl('');
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const icsUrl = syncUrl || fallbackIcsUrl;
 
   const copySyncUrl = async () => {
     try {
@@ -138,7 +161,7 @@ export default function CalendarPage() {
         <h3 className="section-title" style={{ marginBottom: 10 }}>Sync Options</h3>
         <div className="calendar-side-card" style={{ marginBottom: 12 }}>
           <div className="calendar-sync-actions">
-            <a className="btn btn-secondary" href="/api/calendar/ics" download>
+            <a className="btn btn-secondary" href={fallbackIcsUrl} download>
               <CalendarDays size={13} /> Download ICS
             </a>
             <button className="btn btn-secondary" type="button" onClick={copySyncUrl}>

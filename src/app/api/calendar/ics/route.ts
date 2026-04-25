@@ -50,16 +50,40 @@ function buildProjectFilter(workspaceIds: string[], workspaceObjectIds: mongoose
   };
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
     await dbConnect();
-    const userId = (session.user as { id: string }).id;
-    const userEmail = String((session.user as { email?: string }).email || '');
+
+    const { searchParams } = new URL(req.url);
+    const token = String(searchParams.get('token') || '').trim();
+
+    let userId = '';
+    let userEmail = '';
+    let userName = '';
+
+    if (token) {
+      const tokenUser = await User.findOne(
+        { calendarSyncToken: token },
+        { _id: 1, email: 1, name: 1 }
+      ).lean();
+
+      if (!tokenUser?._id) {
+        return NextResponse.json({ success: false, error: 'Invalid calendar token' }, { status: 401 });
+      }
+
+      userId = String(tokenUser._id);
+      userEmail = String(tokenUser.email || '');
+      userName = String(tokenUser.name || '');
+    } else {
+      const session = await getServerSession(authOptions);
+      if (!session?.user) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      }
+
+      userId = (session.user as { id: string }).id;
+      userEmail = String((session.user as { email?: string }).email || '');
+      userName = String((session.user as { name?: string }).name || '');
+    }
 
     const workspaceIds = await getAccessibleWorkspaceIds(userId);
     const workspaceObjectIds = workspaceIds
@@ -85,9 +109,8 @@ export async function GET() {
       assigneeMatchers.push({ assignee: userEmail });
       assigneeMatchers.push({ assignee: userEmail.toLowerCase() });
     }
-    if (currentUser?.name) {
-      assigneeMatchers.push({ assignee: currentUser.name });
-    }
+    if (currentUser?.name) assigneeMatchers.push({ assignee: currentUser.name });
+    if (userName) assigneeMatchers.push({ assignee: userName });
 
     const tasks = await Task.collection.find({
       $and: [

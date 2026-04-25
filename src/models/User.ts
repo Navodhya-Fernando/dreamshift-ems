@@ -40,6 +40,7 @@ export interface IUser extends Document {
   presenceStatus?: 'ONLINE' | 'AWAY' | 'OFFLINE';
   lastSeenAt?: Date;
   activeAt?: Date;
+  calendarSyncToken?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -128,6 +129,7 @@ const UserSchema: Schema = new Schema(
     },
     lastSeenAt: { type: Date },
     activeAt: { type: Date },
+    calendarSyncToken: { type: String, index: true, sparse: true },
   },
   { timestamps: true }
 );
