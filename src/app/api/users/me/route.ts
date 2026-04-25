@@ -262,11 +262,15 @@ export async function PATCH(req: Request) {
 
     if (body.notificationPreferences && typeof body.notificationPreferences === 'object') {
       const input = body.notificationPreferences as Record<string, unknown>;
+      const dailySummaryTime = String(input.dailySummaryTime || '07:45').trim();
+      const dailySummaryTimezone = String(input.dailySummaryTimezone || 'Asia/Kolkata').trim() || 'Asia/Kolkata';
       updates.notificationPreferences = {
         emailNotifications: Boolean(input.emailNotifications),
         taskReminders: Boolean(input.taskReminders),
         deadlineAlerts: Boolean(input.deadlineAlerts),
         weeklyDigest: Boolean(input.weeklyDigest),
+        dailySummaryTime: /^\d{2}:\d{2}$/.test(dailySummaryTime) ? dailySummaryTime : '07:45',
+        dailySummaryTimezone,
         messageNotifications: Boolean(input.messageNotifications),
       };
     }
@@ -332,6 +336,7 @@ export async function PATCH(req: Request) {
       linkedinProfilePicUrl: 1,
       notificationPreferences: 1,
       appearancePreferences: 1,
+      dailySummaryLastScheduledFor: 1,
     }).lean();
 
     return NextResponse.json({ success: true, data: { user: refreshed } }, { status: 200 });

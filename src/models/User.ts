@@ -28,6 +28,8 @@ export interface IUser extends Document {
     taskReminders: boolean;
     deadlineAlerts: boolean;
     weeklyDigest: boolean;
+    dailySummaryTime: string;
+    dailySummaryTimezone: string;
     messageNotifications: boolean;
   };
   appearancePreferences?: {
@@ -84,6 +86,8 @@ const UserSchema: Schema = new Schema(
         taskReminders: { type: Boolean, default: true },
         deadlineAlerts: { type: Boolean, default: true },
         weeklyDigest: { type: Boolean, default: false },
+        dailySummaryTime: { type: String, default: '07:45' },
+        dailySummaryTimezone: { type: String, default: 'Asia/Kolkata' },
         messageNotifications: { type: Boolean, default: true },
       },
       default: {
@@ -91,9 +95,12 @@ const UserSchema: Schema = new Schema(
         taskReminders: true,
         deadlineAlerts: true,
         weeklyDigest: false,
+        dailySummaryTime: '07:45',
+        dailySummaryTimezone: 'Asia/Kolkata',
         messageNotifications: true,
       },
     },
+    dailySummaryLastScheduledFor: { type: String },
     appearancePreferences: {
       type: {
         theme: {

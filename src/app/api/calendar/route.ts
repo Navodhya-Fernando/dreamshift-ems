@@ -8,6 +8,12 @@ import Project from '@/models/Project';
 import User from '@/models/User';
 import { getAccessibleWorkspaceIds } from '@/lib/tenancy';
 
+function getAnchorDate(task: Record<string, unknown>) {
+  const raw = task.dueDate || task.due_date || task.createdAt || task.created_at || task.updatedAt || task.updated_at;
+  const date = raw ? new Date(String(raw)) : new Date();
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+}
+
 function buildProjectFilter(workspaceIds: string[], workspaceObjectIds: mongoose.Types.ObjectId[]) {
   return {
     $or: [
@@ -58,7 +64,6 @@ export async function GET() {
     const tasks = await Task.collection
       .find({
         $and: [
-          { $or: [{ dueDate: { $exists: true, $ne: null } }, { due_date: { $exists: true, $ne: null } }] },
           {
             $or: [
               { projectId: { $in: accessibleProjectIds } },
@@ -81,7 +86,7 @@ export async function GET() {
     const events = tasks.map((task) => ({
       id: String(task._id),
       title: task.title,
-      date: new Date((task.dueDate || task.due_date) as Date).toISOString().slice(0, 10),
+      date: getAnchorDate(task).toISOString().slice(0, 10),
       dueDate: task.dueDate || task.due_date,
       status: String(task.status || 'TODO').toLowerCase(),
       priority: String(task.priority || 'MEDIUM').toLowerCase(),

@@ -22,6 +22,8 @@ type SettingsPayload = {
       taskReminders?: boolean;
       deadlineAlerts?: boolean;
       weeklyDigest?: boolean;
+      dailySummaryTime?: string;
+      dailySummaryTimezone?: string;
       messageNotifications?: boolean;
     };
     appearancePreferences?: {
@@ -55,6 +57,8 @@ export default function SettingsPage() {
     taskReminders: true,
     deadlineAlerts: true,
     weeklyDigest: false,
+    dailySummaryTime: '07:45',
+    dailySummaryTimezone: 'Asia/Kolkata',
     messageNotifications: true,
   });
   const [appearanceForm, setAppearanceForm] = useState({
@@ -81,6 +85,8 @@ export default function SettingsPage() {
       taskReminders: Boolean(data.user.notificationPreferences?.taskReminders ?? true),
       deadlineAlerts: Boolean(data.user.notificationPreferences?.deadlineAlerts ?? true),
       weeklyDigest: Boolean(data.user.notificationPreferences?.weeklyDigest ?? false),
+      dailySummaryTime: data.user.notificationPreferences?.dailySummaryTime || '07:45',
+      dailySummaryTimezone: data.user.notificationPreferences?.dailySummaryTimezone || 'Asia/Kolkata',
       messageNotifications: Boolean(data.user.notificationPreferences?.messageNotifications ?? true),
     });
     setAppearanceForm({
@@ -182,6 +188,18 @@ export default function SettingsPage() {
             <button className="btn btn-primary" disabled={saving !== 'none'} onClick={() => patchSettings({ notificationPreferences: notificationsForm }, 'notifications')}>
               <Save size={13} /> {saving === 'notifications' ? 'Saving...' : 'Save Notifications'}
             </button>
+          </div>
+          <label className="settings-field" style={{ marginTop: 10 }}>
+            <span>Daily task summary time</span>
+            <input
+              className="input"
+              type="time"
+              value={notificationsForm.dailySummaryTime}
+              onChange={(e) => setNotificationsForm((prev) => ({ ...prev, dailySummaryTime: e.target.value }))}
+            />
+          </label>
+          <div className="text-xs text-muted" style={{ marginTop: 8 }}>
+            Sent in {notificationsForm.dailySummaryTimezone || 'Asia/Kolkata'} every morning when you have assigned tasks.
           </div>
         </section>
 

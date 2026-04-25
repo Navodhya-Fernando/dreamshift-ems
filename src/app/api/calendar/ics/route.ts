@@ -8,6 +8,12 @@ import Project from '@/models/Project';
 import User from '@/models/User';
 import { getAccessibleWorkspaceIds } from '@/lib/tenancy';
 
+function getAnchorDate(task: Record<string, unknown>) {
+  const raw = task.dueDate || task.due_date || task.createdAt || task.created_at || task.updatedAt || task.updated_at;
+  const date = raw ? new Date(String(raw)) : new Date();
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+}
+
 function toUtcStamp(date: Date) {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -85,7 +91,6 @@ export async function GET() {
 
     const tasks = await Task.collection.find({
       $and: [
-        { $or: [{ dueDate: { $exists: true, $ne: null } }, { due_date: { $exists: true, $ne: null } }] },
         {
           $or: [
             { projectId: { $in: projectIds } },
@@ -109,8 +114,7 @@ export async function GET() {
     ];
 
     tasks.forEach((task) => {
-      const due = new Date((task.dueDate || task.due_date) as Date);
-      if (Number.isNaN(due.getTime())) return;
+      const due = getAnchorDate(task);
 
       const summary = escapeIcsValue(String(task.title || 'Task'));
       const projectName = projectNameById.get(String(task.projectId || task.project_id)) || 'General';
@@ -119,6 +123,7 @@ export async function GET() {
           `Project: ${projectName}`,
           `Status: ${String(task.status || 'TODO')}`,
           `Priority: ${String(task.priority || 'MEDIUM')}`,
+          task.dueDate || task.due_date ? '' : 'Deadline: No deadline set',
           task.description ? `Description: ${String(task.description)}` : '',
         ].filter(Boolean).join('\n')
       );

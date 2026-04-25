@@ -5,6 +5,8 @@ import Task from '@/models/Task';
 import Project from '@/models/Project';
 import User from '@/models/User';
 import { notifyUserOnce } from '@/lib/notifications';
+import { sendBrevoEmail } from '@/lib/brevo';
+import { buildDailyTaskSummaryEmail, getDailySummaryLocalDateKey, resolveDailySummarySendAt } from '@/lib/taskSummary';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +56,32 @@ function getProjectOwnerId(project: Record<string, unknown>) {
   const owner = String(project.ownerId || project.owner_id || '').trim();
   if (!owner || !mongoose.isValidObjectId(owner)) return '';
   return owner;
+}
+
+function buildAssigneeMatchers(userId: string, email?: string, name?: string) {
+  const matchers: Array<Record<string, unknown>> = [
+    { assigneeId: userId },
+    { assigneeId: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : userId },
+  ];
+
+  if (email) {
+    matchers.push({ assignee: email });
+    matchers.push({ assignee: email.toLowerCase() });
+  }
+
+  if (name) {
+    matchers.push({ assignee: name });
+  }
+
+  return matchers;
+}
+
+function normalizeDigestTaskStatus(status: unknown) {
+  const normalized = String(status || 'TODO').trim().toUpperCase().replace(/\s+/g, '_');
+  if (normalized === 'COMPLETED') return 'DONE';
+  if (normalized === 'TO_DO') return 'TODO';
+  if (normalized === 'INPROGRESS') return 'IN_PROGRESS';
+  return normalized;
 }
 
 export async function GET(req: Request) {
@@ -123,7 +151,6 @@ export async function GET(req: Request) {
       });
     }
 
-    let dueSoonAlerts = 0;
     let overdueAlerts = 0;
     let skipped = 0;
 
@@ -170,24 +197,6 @@ export async function GET(req: Request) {
         if (sent) overdueAlerts += 1;
         continue;
       }
-
-      const dueSoonKey = `task.deadline.soon:${taskId}:${dueDate.toISOString()}`;
-      const sent = await notifyUserOnce({
-        userId: assigneeId,
-        type: 'deadline',
-        title: 'Task due in less than 24 hours',
-        message: `"${taskTitle}" is due within 24 hours.`,
-        link,
-        metadata: {
-          taskId,
-          event: 'task.deadline.soon',
-          dueDate: dueDate.toISOString(),
-        },
-        dedupeKey: dueSoonKey,
-        dedupeWindowHours: 72,
-        emailSubject: `Deadline reminder: ${taskTitle}`,
-      });
-      if (sent) dueSoonAlerts += 1;
     }
 
     const projects = await Project.collection
@@ -288,6 +297,133 @@ export async function GET(req: Request) {
       if (sent) projectDueSoonAlerts += 1;
     }
 
+    const summaryUsers = await User.find(
+      { email: { $exists: true, $ne: '' } },
+      {
+        _id: 1,
+        name: 1,
+        email: 1,
+        notificationPreferences: 1,
+        dailySummaryLastScheduledFor: 1,
+      }
+    ).lean();
+
+    let dailySummaryScheduled = 0;
+    let dailySummarySkipped = 0;
+
+    for (const user of summaryUsers) {
+      const preferences = user.notificationPreferences || {};
+      if (preferences.emailNotifications === false) {
+        dailySummarySkipped += 1;
+        continue;
+      }
+
+      const preferredTime = String(preferences.dailySummaryTime || '07:45');
+      const timeZone = String(preferences.dailySummaryTimezone || 'Asia/Kolkata') || 'Asia/Kolkata';
+      const scheduledAt = resolveDailySummarySendAt(timeZone, preferredTime, now);
+      const targetDayKey = getDailySummaryLocalDateKey(scheduledAt, timeZone);
+
+      if (String(user.dailySummaryLastScheduledFor || '') === targetDayKey) {
+        dailySummarySkipped += 1;
+        continue;
+      }
+
+      const assigneeMatchers = buildAssigneeMatchers(String(user._id), String(user.email || ''), String(user.name || ''));
+      const assignedTasks = await Task.collection
+        .find(
+          {
+            $and: [{ $or: assigneeMatchers }],
+          },
+          {
+            projection: {
+              _id: 1,
+              title: 1,
+              description: 1,
+              dueDate: 1,
+              due_date: 1,
+              status: 1,
+              priority: 1,
+              projectId: 1,
+              project_id: 1,
+              createdAt: 1,
+              created_at: 1,
+              updatedAt: 1,
+              updated_at: 1,
+            },
+          }
+        )
+        .sort({ dueDate: 1, due_date: 1, createdAt: 1, created_at: 1 })
+        .toArray();
+
+      const openTasks = assignedTasks
+        .filter((task) => normalizeDigestTaskStatus(task.status) !== 'DONE')
+        .map((task) => ({
+          title: String(task.title || 'Untitled task'),
+          dueDate: task.dueDate || task.due_date || null,
+          status: String(task.status || 'TODO'),
+          priority: String(task.priority || 'MEDIUM'),
+          projectName: String(task.projectId || task.project_id || ''),
+        }));
+
+      if (openTasks.length === 0) {
+        dailySummarySkipped += 1;
+        continue;
+      }
+
+      const projectIds = openTasks.map((task) => String(task.projectName || '')).filter(Boolean);
+      const projectObjectIds = projectIds.filter((id) => mongoose.isValidObjectId(id)).map((id) => new mongoose.Types.ObjectId(id));
+      const projectsForUser = projectIds.length > 0
+        ? await Project.collection
+            .find(
+              {
+                $or: [
+                  { _id: { $in: projectObjectIds } },
+                  { _id: { $in: projectIds } },
+                ],
+              },
+              { projection: { _id: 1, name: 1 } }
+            )
+            .toArray()
+        : [];
+
+      const projectNameById = new Map(projectsForUser.map((project) => [String(project._id), String(project.name || 'Project')]));
+      const dashboardUrl = `${String(process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, '') || 'http://localhost:3000'}/tasks`;
+      const summaryEmail = buildDailyTaskSummaryEmail({
+        userName: String(user.name || 'there'),
+        tasks: openTasks.map((task) => ({
+          ...task,
+          projectName: projectNameById.get(task.projectName) || 'Project',
+        })),
+        openTaskCount: openTasks.length,
+        dashboardUrl,
+      });
+
+      const scheduled = await sendBrevoEmail({
+        toEmail: String(user.email || ''),
+        toName: String(user.name || ''),
+        subject: summaryEmail.subject,
+        htmlContent: summaryEmail.htmlContent,
+        textContent: summaryEmail.textContent,
+        scheduledAt: scheduledAt.toISOString(),
+      });
+
+      if (!scheduled) {
+        dailySummarySkipped += 1;
+        continue;
+      }
+
+      await User.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            dailySummaryLastScheduledFor: targetDayKey,
+          },
+        }
+      );
+
+      dailySummaryScheduled += 1;
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -302,6 +438,8 @@ export async function GET(req: Request) {
           projectDueSoonAlerts,
           projectOverdueAlerts,
           skippedProjects,
+          dailySummaryScheduled,
+          dailySummarySkipped,
         },
       },
       { status: 200 }

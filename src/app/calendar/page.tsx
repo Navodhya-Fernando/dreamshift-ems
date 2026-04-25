@@ -92,7 +92,7 @@ export default function CalendarPage() {
         <div className="calendar-header-premium">
           <div>
             <h1 className="calendar-title">Delivery Calendar</h1>
-            <p className="text-muted text-sm">Only your assigned tasks are shown here, with live due dates from MongoDB.</p>
+            <p className="text-muted text-sm">Your assigned tasks are shown here, including items without deadlines, with live updates from MongoDB.</p>
           </div>
           <div className="calendar-kpi-row">
             <button className="btn btn-secondary" onClick={refresh} disabled={isRefreshing}>

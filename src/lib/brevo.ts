@@ -4,6 +4,7 @@ type BrevoMailInput = {
   subject: string;
   htmlContent: string;
   textContent?: string;
+  scheduledAt?: string;
 };
 
 function getBrevoConfig() {
@@ -39,6 +40,7 @@ export async function sendBrevoEmail(input: BrevoMailInput): Promise<boolean> {
         subject: input.subject,
         htmlContent: input.htmlContent,
         textContent: input.textContent || input.subject,
+        ...(input.scheduledAt ? { scheduledAt: input.scheduledAt } : {}),
       }),
       cache: 'no-store',
     });
