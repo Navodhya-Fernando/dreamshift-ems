@@ -372,14 +372,11 @@ export async function GET(req: Request) {
 
       const projectIds = openTasks.map((task) => String(task.projectName || '')).filter(Boolean);
       const projectObjectIds = projectIds.filter((id) => mongoose.isValidObjectId(id)).map((id) => new mongoose.Types.ObjectId(id));
-      const projectsForUser = projectIds.length > 0
+      const projectsForUser = projectObjectIds.length > 0
         ? await Project.collection
             .find(
               {
-                $or: [
-                  { _id: { $in: projectObjectIds } },
-                  { _id: { $in: projectIds } },
-                ],
+                _id: { $in: projectObjectIds },
               },
               { projection: { _id: 1, name: 1 } }
             )
@@ -432,7 +429,6 @@ export async function GET(req: Request) {
             tasks: tasks.length,
             projects: projects.length,
           },
-          dueSoonAlerts,
           overdueAlerts,
           skipped,
           projectDueSoonAlerts,
