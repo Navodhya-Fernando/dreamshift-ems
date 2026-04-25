@@ -70,6 +70,20 @@ a { color: inherit; text-decoration: none; }
 button { cursor: pointer; border: none; background: none; font-family: inherit; font-size: inherit; }
 input, textarea, select { font-family: inherit; font-size: inherit; }
 
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'] {
+  color-scheme: dark;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='datetime-local']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.35);
+  opacity: 0.92;
+  cursor: pointer;
+}
+
 /* ─── Scrollbar ──────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

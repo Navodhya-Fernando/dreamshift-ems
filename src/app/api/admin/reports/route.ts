@@ -38,9 +38,11 @@ function buildTaskProjectFilter(projectIds: Array<string | { toString(): string 
 }
 
 function buildAssigneeFilter(user: { _id: unknown; email?: string | null; name?: string | null }) {
+  const userId = String(user._id || '');
   const matchers: Array<Record<string, unknown>> = [
+    { assigneeId: userId },
     { assigneeId: user._id },
-    { assigneeId: mongoose.isValidObjectId(String(user._id)) ? new mongoose.Types.ObjectId(String(user._id)) : user._id },
+    { assigneeId: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : user._id },
   ];
 
   if (user.email) {
@@ -261,9 +263,10 @@ export async function GET(req: Request) {
           return Boolean(due && normalizeTaskStatus(task.status) !== 'DONE' && due.getTime() < Date.now());
         }).length;
         const membershipRefs = membershipsByUser.get(String(user._id)) || [];
+        const tasksForWorkspaceStats = windowDays > 0 ? currentTasks : assignedTasks;
         const projectIdsFromTasks = Array.from(
           new Set(
-            assignedTasks
+            tasksForWorkspaceStats
               .map((task) => String(task.projectId || task.project_id || ''))
               .filter(Boolean)
           )
@@ -276,16 +279,10 @@ export async function GET(req: Request) {
         const taskWorkspaceNames = taskProjects
           .map((project) => workspaceById.get(String(project.workspaceId || project.workspace_id || ''))?.name)
           .filter((name): name is string => Boolean(name));
-        const workspaceNames = Array.from(
-          new Set(
-            [
-              ...membershipRefs
-                .map((membership) => workspaceById.get(membership.workspaceId)?.name)
-                .filter((workspaceName): workspaceName is string => Boolean(workspaceName)),
-              ...taskWorkspaceNames,
-            ]
-          )
-        );
+        const membershipWorkspaceNames = membershipRefs
+          .map((membership) => workspaceById.get(membership.workspaceId)?.name)
+          .filter((workspaceName): workspaceName is string => Boolean(workspaceName));
+        const workspaceNames = Array.from(new Set(windowDays > 0 ? taskWorkspaceNames : [...membershipWorkspaceNames, ...taskWorkspaceNames]));
         const contractRemainingDays = user.contractExpiry
           ? Math.max(0, Math.ceil((new Date(user.contractExpiry as string | Date).getTime() - Date.now()) / 86400000))
           : null;
@@ -310,6 +307,7 @@ export async function GET(req: Request) {
           100 - previousOverdueTasks * 12 + Math.round((previousCompleted / Math.max(1, previousTasks.length)) * 40) + (status === 'LEFT' ? -20 : 0) + (user.presenceStatus === 'ONLINE' ? 5 : 0)
         );
         const totalTimeSeconds = currentTasks.reduce((sum, task) => sum + Number(task.timeSpent || 0), 0);
+        const totalTrackedHours = Number((totalTimeSeconds / 3600).toFixed(1));
         const averageTimeSpentHours = currentTasks.length
           ? Number((totalTimeSeconds / currentTasks.length / 3600).toFixed(2))
           : 0;
@@ -349,6 +347,7 @@ export async function GET(req: Request) {
           completionRate,
           completionDelta,
           completionTrend7,
+          totalTrackedHours,
           averageTimeSpentHours,
           efficiencyScore,
           productivityScore,

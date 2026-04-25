@@ -226,3 +226,60 @@
   font-weight: 600;
   font-size: 0.6rem;
 }
+
+.my-projects-block {
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.my-projects-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.my-projects-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.my-projects-empty {
+  padding: 8px 4px;
+}
+
+.my-projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.my-projects-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01));
+  transition: border-color var(--t), transform var(--t), background var(--t);
+}
+
+.my-projects-card:hover {
+  border-color: var(--border-md);
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+}
+
+.my-projects-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.my-projects-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+}

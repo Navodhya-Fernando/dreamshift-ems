@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CheckSquare, ChevronRight, Plus, RefreshCw, Search, Sparkles, Trash2 } from 'lucide-react';
+import { CheckSquare, ChevronRight, FolderOpen, Plus, RefreshCw, Search, Sparkles, Trash2 } from 'lucide-react';
 import DataStatusBanner from '@/components/ui/DataStatusBanner';
 import { useCachedApi } from '@/lib/useCachedApi';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -165,6 +165,38 @@ export default function TasksPage() {
     const urgent = filtered.filter((task) => task.priority === 'urgent').length;
     return { overdue, urgent };
   }, [filtered]);
+
+  const myProjects = useMemo(() => {
+    const grouped = new Map<string, { id?: string; name: string; total: number; open: number; overdue: number }>();
+
+    tasks.forEach((task) => {
+      const projectId = String(task.projectId?._id || '');
+      const projectName = String(task.projectId?.name || 'General');
+      const key = projectId || projectName.toLowerCase();
+
+      if (!grouped.has(key)) {
+        grouped.set(key, { id: projectId || undefined, name: projectName, total: 0, open: 0, overdue: 0 });
+      }
+
+      const current = grouped.get(key);
+      if (!current) return;
+
+      current.total += 1;
+      const isDone = String(task.status || '').toLowerCase() === 'done';
+      if (!isDone) {
+        current.open += 1;
+        if (task.dueDate && new Date(task.dueDate).getTime() < Date.now()) {
+          current.overdue += 1;
+        }
+      }
+    });
+
+    return Array.from(grouped.values()).sort((left, right) => {
+      if (right.open !== left.open) return right.open - left.open;
+      if (right.overdue !== left.overdue) return right.overdue - left.overdue;
+      return left.name.localeCompare(right.name);
+    });
+  }, [tasks]);
 
   const availableStatuses = useMemo(() => {
     const selectedProject = projects.find((project) => project._id === form.projectId);
@@ -402,6 +434,35 @@ export default function TasksPage() {
           </div>
         </div>
         <span className="badge" style={{ marginLeft: 'auto' }}><Sparkles size={10} /> AI</span>
+      </div>
+
+      <div className="my-projects-block card">
+        <div className="my-projects-header">
+          <div className="my-projects-title"><FolderOpen size={14} /> My Projects</div>
+          <span className="text-xs text-muted">Projects with tasks assigned to you</span>
+        </div>
+        {myProjects.length === 0 ? (
+          <div className="my-projects-empty text-sm text-muted">No assigned projects yet.</div>
+        ) : (
+          <div className="my-projects-grid">
+            {myProjects.map((project) => {
+              const card = (
+                <>
+                  <div className="my-projects-name">{project.name}</div>
+                  <div className="my-projects-meta">{project.total} total • {project.open} open{project.overdue > 0 ? ` • ${project.overdue} overdue` : ''}</div>
+                </>
+              );
+
+              return project.id ? (
+                <Link key={`${project.id}-${project.name}`} href={`/projects/${project.id}`} className="my-projects-card">
+                  {card}
+                </Link>
+              ) : (
+                <div key={project.name} className="my-projects-card">{card}</div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="tasks-filters">

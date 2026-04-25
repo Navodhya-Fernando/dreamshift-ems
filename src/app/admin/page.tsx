@@ -56,6 +56,7 @@ type EmployeeReport = {
   completionRate: number;
   completionDelta: number;
   completionTrend7: number[];
+  totalTrackedHours: number;
   averageTimeSpentHours: number;
   efficiencyScore: number;
   productivityScore: number;
@@ -1147,7 +1148,7 @@ export default function AdminConsolePage() {
                   <div><span>Assigned</span><strong>{selectedUserReport?.totalAssigned ?? 0}</strong></div>
                   <div><span>Completion</span><strong>{selectedUserReport?.completionRate ?? 0}%</strong></div>
                   <div><span>Overdue</span><strong>{selectedUserReport?.overdueTasks ?? 0}</strong></div>
-                  <div><span>Workspaces</span><strong>{selectedUserReport?.workspaceCount ?? selectedUser.workspaceCount ?? 0}</strong></div>
+                  <div><span>Hours worked</span><strong>{selectedUserReport?.totalTrackedHours ?? 0}h</strong></div>
                 </div>
                 <div className="admin-spotlight-section-title">Coverage map</div>
                 <div className="admin-workspace-tags">
