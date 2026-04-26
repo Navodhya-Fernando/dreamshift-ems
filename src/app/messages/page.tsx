@@ -59,6 +59,13 @@ type TaskItem = {
 type ProjectItem = {
   _id: string;
   name?: string;
+  workspaceId?: string;
+  workspace_id?: string;
+};
+
+type WorkspaceItem = {
+  _id: string;
+  name: string;
 };
 
 type MessageItem = {
@@ -122,6 +129,7 @@ const INITIAL_CONVERSATIONS: ConversationItem[] = [];
 const INITIAL_SUMMARIES: SummaryItem[] = [];
 const INITIAL_TASKS: TaskItem[] = [];
 const INITIAL_PROJECTS: ProjectItem[] = [];
+const INITIAL_WORKSPACES: WorkspaceItem[] = [];
 const EMOJIS = ['👍', '❤️', '😂', '🎉', '🙏'];
 
 function initials(name: string) {
@@ -282,6 +290,7 @@ export default function MessagesPage() {
 
   const [search, setSearch] = useState('');
   const [input, setInput] = useState('');
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedConversationId, setSelectedConversationId] = useState('');
   const [thread, setThread] = useState<MessageItem[]>([]);
@@ -341,8 +350,21 @@ export default function MessagesPage() {
     ttlMs: 20_000,
   });
 
+  const workspacesApi = useCachedApi<WorkspaceItem[]>({
+    cacheKey: 'messages-workspaces-v1',
+    initialData: INITIAL_WORKSPACES,
+    enabled: Boolean(currentUserId),
+    fetcher: async () => {
+      const res = await fetch('/api/workspaces', { cache: 'no-store' });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Failed to load workspaces');
+      return (json.data || []) as WorkspaceItem[];
+    },
+    ttlMs: 60_000,
+  });
+
   const tasksApi = useCachedApi<TaskItem[]>({
-    cacheKey: 'messages-tasks-v1',
+    cacheKey: 'messages-tasks-v2',
     initialData: INITIAL_TASKS,
     enabled: Boolean(currentUserId),
     fetcher: async () => {
@@ -355,11 +377,14 @@ export default function MessagesPage() {
   });
 
   const projectsApi = useCachedApi<ProjectItem[]>({
-    cacheKey: 'messages-projects-v1',
+    cacheKey: `messages-projects-v2-${selectedWorkspaceId || 'all'}`,
     initialData: INITIAL_PROJECTS,
     enabled: Boolean(currentUserId),
     fetcher: async () => {
-      const res = await fetch('/api/projects', { cache: 'no-store' });
+      const endpoint = selectedWorkspaceId
+        ? `/api/projects?workspaceId=${encodeURIComponent(selectedWorkspaceId)}`
+        : '/api/projects';
+      const res = await fetch(endpoint, { cache: 'no-store' });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Failed to load projects');
       return (json.data || []) as ProjectItem[];
@@ -370,8 +395,24 @@ export default function MessagesPage() {
   const users = usersApi.data;
   const summaries = summariesApi.data;
   const conversations = conversationsApi.data;
+  const workspaces = workspacesApi.data;
   const tasks = tasksApi.data;
   const projects = projectsApi.data;
+
+  useEffect(() => {
+    if (selectedWorkspaceId || workspaces.length === 0) return;
+    setSelectedWorkspaceId(String(workspaces[0]._id || ''));
+  }, [selectedWorkspaceId, workspaces]);
+
+  const scopedProjectIds = useMemo(() => new Set(projects.map((project) => String(project._id))), [projects]);
+  const scopedTasks = useMemo(
+    () => tasks.filter((task) => {
+      const projectId = String(task.projectId?._id || '');
+      if (!selectedWorkspaceId) return true;
+      return scopedProjectIds.has(projectId);
+    }),
+    [scopedProjectIds, selectedWorkspaceId, tasks]
+  );
 
   const usersById = useMemo(() => new Map(users.map((user) => [String(user._id), user])), [users]);
   const directSummariesById = useMemo(() => new Map(summaries.filter((item) => item.type === 'direct').map((item) => [item.userId, item])), [summaries]);
@@ -381,14 +422,14 @@ export default function MessagesPage() {
 
   const taskMentionMap = useMemo(() => {
     const map = new Map<string, string>();
-    tasks.forEach((task) => {
+    scopedTasks.forEach((task) => {
       const title = String(task.title || '').trim();
       const id = String(task._id || '').trim();
       if (!title || !id) return;
       map.set(title.toLowerCase(), id);
     });
     return map;
-  }, [tasks]);
+  }, [scopedTasks]);
 
   const projectMentionMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -467,7 +508,7 @@ export default function MessagesPage() {
     taskLabels.forEach((lowerLabel) => {
       const taskId = taskMentionMap.get(lowerLabel);
       if (!taskId) return;
-      const originalLabel = tasks.find((task) => String(task.title || '').trim().toLowerCase() === lowerLabel)?.title || lowerLabel;
+      const originalLabel = scopedTasks.find((task) => String(task.title || '').trim().toLowerCase() === lowerLabel)?.title || lowerLabel;
       const pattern = new RegExp(`(^|\\s)#${escapeRegExp(String(originalLabel))}(?=$|\\s|[.,!?])`, 'gi');
       output = output.replace(pattern, (_match, prefix: string) => `${prefix}[${String(originalLabel)}](/tasks/${taskId})`);
     });
@@ -482,7 +523,7 @@ export default function MessagesPage() {
     });
 
     return output;
-  }, [projectMentionMap, projects, taskMentionMap, tasks]);
+  }, [projectMentionMap, projects, scopedTasks, taskMentionMap]);
 
   const activeUser = selectedUserId ? usersById.get(selectedUserId) || null : null;
   const activeConversation = selectedConversationId ? conversationById.get(selectedConversationId) || null : null;
@@ -702,7 +743,7 @@ export default function MessagesPage() {
     const lastToken = trimmed.split(/\s+/).pop() || '';
     if (lastToken.startsWith('#')) {
       const query = lastToken.slice(1).toLowerCase();
-      const results: CommandEntry[] = tasks
+      const results: CommandEntry[] = scopedTasks
         .filter((task) => String(task.title || '').toLowerCase().includes(query) || String(task.projectId?.name || '').toLowerCase().includes(query))
         .slice(0, 6)
         .map((task) => ({
@@ -729,7 +770,7 @@ export default function MessagesPage() {
       return { trigger: '/', results };
     }
     return null;
-  }, [input, projects, tasks]);
+  }, [input, projects, scopedTasks]);
 
   const replyLookup = useMemo(() => new Map(thread.map((message) => [message._id, message])), [thread]);
 
@@ -892,6 +933,17 @@ export default function MessagesPage() {
           <button className="chip-button" type="button" onClick={startGroupChat}>
             <Users size={14} /> New group
           </button>
+          <select
+            className="input"
+            value={selectedWorkspaceId}
+            onChange={(event) => setSelectedWorkspaceId(event.target.value)}
+            aria-label="Filter message references by workspace"
+            style={{ minWidth: 180 }}
+          >
+            {workspaces.map((workspace) => (
+              <option key={workspace._id} value={workspace._id}>{workspace.name}</option>
+            ))}
+          </select>
         </div>
 
         <div className="messages-section">

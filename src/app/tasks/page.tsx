@@ -111,7 +111,7 @@ export default function TasksPage() {
   const [form, setForm] = useState<TaskForm>(EMPTY_FORM);
 
   const fetchData = async (): Promise<TasksPageData> => {
-    const [tasksRes, projectsRes, usersRes] = await Promise.all([
+    const [tasksRes, projectsRes, usersRes, workspacesRes] = await Promise.all([
       fetch('/api/tasks?scope=assigned', { cache: 'no-store' }),
       fetch('/api/projects', { cache: 'no-store' }),
       fetch('/api/users', { cache: 'no-store' }),
