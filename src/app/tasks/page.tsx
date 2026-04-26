@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { CheckSquare, ChevronRight, FolderOpen, Plus, RefreshCw, Search, Sparkles, Trash2 } from 'lucide-react';
 import DataStatusBanner from '@/components/ui/DataStatusBanner';
@@ -8,6 +8,7 @@ import { useCachedApi } from '@/lib/useCachedApi';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { toDateTimeLocalInput, toIsoOrUndefined } from '@/lib/datetimeLocal';
 import './tasks.css';
+import './page.css';
 
 const STATUS_CONFIG: Record<string, { label: string; badge: string }> = {
   todo: { label: 'To Do', badge: 'badge-todo' },
@@ -45,7 +46,7 @@ type ProjectOption = {
   workspace_id?: string;
   taskStatuses?: Array<{ key: string; label: string }>;
 };
-type UserOption = { _id: string; name: string; email: string };
+type UserOption = { _id: string; name: string; email: string; image?: string; linkedinProfilePicUrl?: string };
 type WorkspaceOption = { _id: string; name: string };
 
 type TaskForm = {
@@ -89,6 +90,27 @@ function toStatusLabel(status?: string) {
     .replace(/\b\w/g, (char) => char.toUpperCase()) || 'To Do';
 }
 
+function avatarInitials(value: string) {
+  return value
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function avatarTone(value: string) {
+  const hash = Array.from(value).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const palette = ['#2563EB', '#0F766E', '#7C3AED', '#DC2626', '#EA580C'];
+  return palette[hash % palette.length];
+}
+
+function resolveAvatarUrl(value?: { image?: string; linkedinProfilePicUrl?: string } | null) {
+  if (!value) return '';
+  return String(value.linkedinProfilePicUrl || value.image || '').trim();
+}
+
 const EMPTY_FORM: TaskForm = {
   title: '',
   description: '',
@@ -109,6 +131,8 @@ export default function TasksPage() {
   const [saving, setSaving] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [modalWorkspaceId, setModalWorkspaceId] = useState('');
+  const [showAssigneeMenu, setShowAssigneeMenu] = useState(false);
+  const [assigneeQuery, setAssigneeQuery] = useState('');
   const [form, setForm] = useState<TaskForm>(EMPTY_FORM);
 
   const fetchData = async (): Promise<TasksPageData> => {
@@ -154,6 +178,13 @@ export default function TasksPage() {
   const users = data.users;
   const workspaces = data.workspaces;
   const scopeLabel = data.scopeLabel;
+
+  useEffect(() => {
+    if (!showModal) {
+      setShowAssigneeMenu(false);
+      setAssigneeQuery('');
+    }
+  }, [showModal]);
 
   const projectsForModalWorkspace = useMemo(() => {
     if (!modalWorkspaceId) return projects;
@@ -225,6 +256,18 @@ export default function TasksPage() {
     }));
   }, [projects, form.projectId]);
 
+  const selectedAssignees = useMemo(() => {
+    return users.filter((user) => form.assigneeIds.includes(user._id));
+  }, [form.assigneeIds, users]);
+
+  const filteredAssignees = useMemo(() => {
+    const query = assigneeQuery.trim().toLowerCase();
+    return users.filter((user) => {
+      const matchesQuery = !query || user.name.toLowerCase().includes(query) || user.email.toLowerCase().includes(query);
+      return matchesQuery;
+    });
+  }, [assigneeQuery, users]);
+
   React.useEffect(() => {
     if (modalWorkspaceId || workspaces.length === 0) return;
     setModalWorkspaceId(String(workspaces[0]._id));
@@ -232,6 +275,8 @@ export default function TasksPage() {
 
   const openCreateModal = () => {
     setEditingTaskId(null);
+    setShowAssigneeMenu(false);
+    setAssigneeQuery('');
     const initialWorkspaceId = modalWorkspaceId || String(workspaces[0]?._id || '');
     const initialProjects = projects.filter((project) => String(project.workspaceId || project.workspace_id || '') === initialWorkspaceId);
     const initialProjectId = initialProjects[0]?._id || projects[0]?._id || '';
@@ -242,7 +287,7 @@ export default function TasksPage() {
     setForm({
       ...EMPTY_FORM,
       projectId: initialProjectId,
-      assigneeIds: users[0]?._id ? [users[0]._id] : [],
+      assigneeIds: [],
       status: initialStatuses[0]?.key || 'todo',
     });
     if (initialWorkspaceId) setModalWorkspaceId(initialWorkspaceId);
@@ -251,6 +296,8 @@ export default function TasksPage() {
 
   const openEditModal = (task: AssignedTask) => {
     setEditingTaskId(task._id);
+    setShowAssigneeMenu(false);
+    setAssigneeQuery('');
     const editingProject = projects.find((project) => project._id === (task.projectId?._id || ''));
     const projectWorkspaceId = String(editingProject?.workspaceId || editingProject?.workspace_id || '');
     if (projectWorkspaceId) setModalWorkspaceId(projectWorkspaceId);
@@ -268,6 +315,22 @@ export default function TasksPage() {
       endDate: toDateTimeLocalInput(task.endDate),
     });
     setShowModal(true);
+  };
+
+  const toggleAssignee = (assigneeId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      assigneeIds: prev.assigneeIds.includes(assigneeId)
+        ? prev.assigneeIds.filter((currentId) => currentId !== assigneeId)
+        : [...prev.assigneeIds, assigneeId],
+    }));
+  };
+
+  const removeAssignee = (assigneeId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      assigneeIds: prev.assigneeIds.filter((currentId) => currentId !== assigneeId),
+    }));
   };
 
   const submitTask = async (e: React.FormEvent) => {
@@ -404,20 +467,87 @@ export default function TasksPage() {
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
-                <select
-                  className="input"
-                  value={form.assigneeIds}
-                  onChange={(e) => {
-                    const values = Array.from(e.currentTarget.selectedOptions).map((option) => option.value);
-                    setForm((prev) => ({ ...prev, assigneeIds: values }));
-                  }}
-                  multiple
-                  size={Math.min(6, Math.max(3, users.length))}
-                >
-                  {users.map((user) => <option key={user._id} value={user._id}>{user.name} ({user.email})</option>)}
-                </select>
-                <div className="text-xs text-muted">Hold Ctrl/Cmd to select multiple assignees.</div>
+              <div className="assignee-picker-wrap">
+                <div className="assignee-picker-header">
+                  <div>
+                    <div className="assignee-picker-label">Assignees</div>
+                    <div className="text-xs text-muted">Select one or more people for this task.</div>
+                  </div>
+                  <button
+                    className="btn btn-secondary assignee-picker-button"
+                    type="button"
+                    onClick={() => setShowAssigneeMenu((current) => !current)}
+                  >
+                    <Plus size={12} />
+                    Add Assignee
+                  </button>
+                </div>
+
+                {selectedAssignees.length > 0 ? (
+                  <div className="assignee-chip-row">
+                    {selectedAssignees.map((user) => {
+                      const avatarUrl = resolveAvatarUrl(user);
+                      const initials = avatarInitials(user.name || user.email || 'A');
+                      return (
+                        <span key={user._id} className="assignee-chip">
+                          <span className="assignee-chip-avatar" style={!avatarUrl ? { background: avatarTone(user.name || user.email || user._id) } : undefined}>
+                            {avatarUrl ? <img src={avatarUrl} alt={user.name} /> : initials}
+                          </span>
+                          <span className="assignee-chip-name">{user.name}</span>
+                          <button type="button" className="assignee-chip-remove" onClick={() => removeAssignee(user._id)} aria-label={`Remove ${user.name}`}>
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="assignee-picker-empty">No assignees selected yet.</div>
+                )}
+
+                {showAssigneeMenu && (
+                  <div className="assignee-dropdown" onClick={(event) => event.stopPropagation()}>
+                    <div className="assignee-dropdown-topbar">
+                      <input
+                        className="input assignee-dropdown-search"
+                        placeholder="Search people..."
+                        value={assigneeQuery}
+                        onChange={(event) => setAssigneeQuery(event.target.value)}
+                      />
+                      <button className="btn btn-secondary assignee-dropdown-done" type="button" onClick={() => setShowAssigneeMenu(false)}>
+                        Done
+                      </button>
+                    </div>
+                    <div className="assignee-dropdown-list">
+                      {filteredAssignees.length === 0 ? (
+                        <div className="assignee-dropdown-empty">No people match this search.</div>
+                      ) : (
+                        filteredAssignees.map((user) => {
+                          const selected = form.assigneeIds.includes(user._id);
+                          const avatarUrl = resolveAvatarUrl(user);
+                          const initials = avatarInitials(user.name || user.email || 'A');
+                          return (
+                            <button
+                              key={user._id}
+                              type="button"
+                              className={`assignee-option ${selected ? 'is-selected' : ''}`}
+                              onClick={() => toggleAssignee(user._id)}
+                            >
+                              <span className="assignee-option-avatar" style={!avatarUrl ? { background: avatarTone(user.name || user.email || user._id) } : undefined}>
+                                {avatarUrl ? <img src={avatarUrl} alt={user.name} /> : initials}
+                              </span>
+                              <span className="assignee-option-meta">
+                                <span className="assignee-option-name">{user.name}</span>
+                                <span className="assignee-option-email">{user.email}</span>
+                              </span>
+                              <span className={`assignee-option-check ${selected ? 'is-visible' : ''}`}>✓</span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>

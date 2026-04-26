@@ -27,8 +27,8 @@ type TaskDetail = {
   startDate?: string;
   endDate?: string;
   projectId?: string | { _id?: string; name?: string };
-  assigneeId?: { _id?: string; name?: string; email?: string };
-  assigneeIds?: Array<{ _id?: string; name?: string; email?: string }>;
+  assigneeId?: { _id?: string; name?: string; email?: string; image?: string; linkedinProfilePicUrl?: string };
+  assigneeIds?: Array<{ _id?: string; name?: string; email?: string; image?: string; linkedinProfilePicUrl?: string }>;
   subtasks?: Subtask[];
 };
 
@@ -36,6 +36,8 @@ type UserOption = {
   _id: string;
   name: string;
   email: string;
+  image?: string;
+  linkedinProfilePicUrl?: string;
 };
 
 const TASK_STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
@@ -70,6 +72,11 @@ function avatarTone(value: string) {
   return palette[hash % palette.length];
 }
 
+function resolveAvatarUrl(value?: { image?: string; linkedinProfilePicUrl?: string } | null) {
+  if (!value) return '';
+  return String(value.linkedinProfilePicUrl || value.image || '').trim();
+}
+
 export default function TaskDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -87,6 +94,10 @@ export default function TaskDetailPage() {
   const [editingSubtaskDueDate, setEditingSubtaskDueDate] = useState('');
   const [taskStatus, setTaskStatus] = useState('TODO');
   const [taskAssigneeIds, setTaskAssigneeIds] = useState<string[]>([]);
+  const [showQuickAssigneePicker, setShowQuickAssigneePicker] = useState(false);
+  const [quickAssigneeCandidate, setQuickAssigneeCandidate] = useState('');
+  const [showEditAssigneePicker, setShowEditAssigneePicker] = useState(false);
+  const [editAssigneeCandidate, setEditAssigneeCandidate] = useState('');
   const [projectStatuses, setProjectStatuses] = useState<Array<{ key: string; label: string }>>(DEFAULT_TASK_STATUSES);
   const [taskForm, setTaskForm] = useState({
     title: '',
@@ -139,6 +150,52 @@ export default function TaskDetailPage() {
 
   const projectName = typeof data?.projectId === 'object' ? data?.projectId?.name : 'Project';
   const projectId = typeof data?.projectId === 'object' ? data?.projectId?._id : data?.projectId;
+  const userById = React.useMemo(() => {
+    return new Map(users.map((user) => [String(user._id), user]));
+  }, [users]);
+
+  const currentAssignees = React.useMemo(() => {
+    if (!data) return [] as Array<{ _id?: string; name?: string; email?: string; image?: string; linkedinProfilePicUrl?: string }>;
+    const base = (data.assigneeIds || []).length > 0
+      ? (data.assigneeIds || [])
+      : (data.assigneeId ? [data.assigneeId] : []);
+
+    return base.map((assignee) => {
+      const id = String(assignee._id || '');
+      const fromUsers = id ? userById.get(id) : undefined;
+      return {
+        _id: id || undefined,
+        name: assignee.name || fromUsers?.name,
+        email: assignee.email || fromUsers?.email,
+        image: assignee.image || fromUsers?.image,
+        linkedinProfilePicUrl: assignee.linkedinProfilePicUrl || fromUsers?.linkedinProfilePicUrl,
+      };
+    });
+  }, [data, userById]);
+
+  const addAssignee = (target: 'quick' | 'edit') => {
+    const candidate = target === 'quick' ? quickAssigneeCandidate : editAssigneeCandidate;
+    if (!candidate) return;
+
+    if (target === 'quick') {
+      setTaskAssigneeIds((prev) => (prev.includes(candidate) ? prev : [...prev, candidate]));
+      setQuickAssigneeCandidate('');
+    } else {
+      setTaskForm((prev) => ({
+        ...prev,
+        assigneeIds: prev.assigneeIds.includes(candidate) ? prev.assigneeIds : [...prev.assigneeIds, candidate],
+      }));
+      setEditAssigneeCandidate('');
+    }
+  };
+
+  const removeAssignee = (target: 'quick' | 'edit', userIdToRemove: string) => {
+    if (target === 'quick') {
+      setTaskAssigneeIds((prev) => prev.filter((id) => id !== userIdToRemove));
+    } else {
+      setTaskForm((prev) => ({ ...prev, assigneeIds: prev.assigneeIds.filter((id) => id !== userIdToRemove) }));
+    }
+  };
 
   useEffect(() => {
     if (!data) return;
@@ -531,20 +588,49 @@ export default function TaskDetailPage() {
                       <option value="HIGH">High</option>
                       <option value="URGENT">Urgent</option>
                     </select>
-                    <select
-                      className="input"
-                      value={taskForm.assigneeIds}
-                      onChange={(e) => {
-                        const values = Array.from(e.currentTarget.selectedOptions).map((option) => option.value);
-                        setTaskForm((prev) => ({ ...prev, assigneeIds: values }));
-                      }}
-                      multiple
-                      size={Math.min(6, Math.max(3, users.length))}
-                    >
-                      {users.map((user) => (
-                        <option key={user._id} value={user._id}>{user.name} ({user.email})</option>
-                      ))}
-                    </select>
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {taskForm.assigneeIds.length === 0 ? (
+                          <span className="text-xs text-muted">No assignees selected.</span>
+                        ) : (
+                          taskForm.assigneeIds.map((assigneeId) => {
+                            const assignee = userById.get(assigneeId);
+                            if (!assignee) return null;
+                            return (
+                              <span key={`edit-assignee-${assigneeId}`} className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                {assignee.name}
+                                <button
+                                  type="button"
+                                  onClick={() => removeAssignee('edit', assigneeId)}
+                                  style={{ color: 'inherit', lineHeight: 1 }}
+                                  aria-label={`Remove ${assignee.name}`}
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            );
+                          })
+                        )}
+                      </div>
+                      {!showEditAssigneePicker ? (
+                        <button className="btn btn-secondary" type="button" onClick={() => setShowEditAssigneePicker(true)}>
+                          <Plus size={13} /> Add Assignee
+                        </button>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8 }}>
+                          <select className="input" value={editAssigneeCandidate} onChange={(e) => setEditAssigneeCandidate(e.target.value)}>
+                            <option value="">Select assignee</option>
+                            {users
+                              .filter((user) => !taskForm.assigneeIds.includes(user._id))
+                              .map((user) => (
+                                <option key={`edit-user-option-${user._id}`} value={user._id}>{user.name} ({user.email})</option>
+                              ))}
+                          </select>
+                          <button className="btn btn-primary" type="button" onClick={() => addAssignee('edit')} disabled={!editAssigneeCandidate}>Add</button>
+                          <button className="btn btn-secondary" type="button" onClick={() => { setShowEditAssigneePicker(false); setEditAssigneeCandidate(''); }}>Cancel</button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                     <button className="btn btn-secondary" type="button" onClick={() => setShowEditTask(false)}>Cancel</button>
@@ -587,9 +673,7 @@ export default function TaskDetailPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
                   <User size={14} />
                   {(() => {
-                    const assignees = (data.assigneeIds || []).length > 0
-                      ? (data.assigneeIds || [])
-                      : (data.assigneeId ? [data.assigneeId] : []);
+                    const assignees = currentAssignees;
 
                     if (assignees.length === 0) {
                       return <span>Unassigned</span>;
@@ -621,9 +705,18 @@ export default function TaskDetailPage() {
                                 fontWeight: 700,
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.22)',
                                 zIndex: visible.length - index,
+                                overflow: 'hidden',
                               }}
                             >
-                              {avatarInitials(label)}
+                              {resolveAvatarUrl(assignee) ? (
+                                <img
+                                  src={resolveAvatarUrl(assignee)}
+                                  alt={label}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                              ) : (
+                                avatarInitials(label)
+                              )}
                             </span>
                           );
                         })}
@@ -698,20 +791,49 @@ export default function TaskDetailPage() {
                     <option key={status.key} value={status.key}>{status.label}</option>
                   ))}
                 </select>
-                <select
-                  className="input"
-                  value={taskAssigneeIds}
-                  onChange={(e) => {
-                    const values = Array.from(e.currentTarget.selectedOptions).map((option) => option.value);
-                    setTaskAssigneeIds(values);
-                  }}
-                  multiple
-                  size={Math.min(6, Math.max(3, users.length))}
-                >
-                  {users.map((user) => (
-                    <option key={user._id} value={user._id}>{user.name} ({user.email})</option>
-                  ))}
-                </select>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {taskAssigneeIds.length === 0 ? (
+                      <span className="text-xs text-muted">No assignees selected.</span>
+                    ) : (
+                      taskAssigneeIds.map((assigneeId) => {
+                        const assignee = userById.get(assigneeId);
+                        if (!assignee) return null;
+                        return (
+                          <span key={`quick-assignee-${assigneeId}`} className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            {assignee.name}
+                            <button
+                              type="button"
+                              onClick={() => removeAssignee('quick', assigneeId)}
+                              style={{ color: 'inherit', lineHeight: 1 }}
+                              aria-label={`Remove ${assignee.name}`}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })
+                    )}
+                  </div>
+                  {!showQuickAssigneePicker ? (
+                    <button className="btn btn-secondary" type="button" onClick={() => setShowQuickAssigneePicker(true)}>
+                      <Plus size={13} /> Add Assignee
+                    </button>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8 }}>
+                      <select className="input" value={quickAssigneeCandidate} onChange={(e) => setQuickAssigneeCandidate(e.target.value)}>
+                        <option value="">Select assignee</option>
+                        {users
+                          .filter((user) => !taskAssigneeIds.includes(user._id))
+                          .map((user) => (
+                            <option key={`quick-user-option-${user._id}`} value={user._id}>{user.name} ({user.email})</option>
+                          ))}
+                      </select>
+                      <button className="btn btn-primary" type="button" onClick={() => addAssignee('quick')} disabled={!quickAssigneeCandidate}>Add</button>
+                      <button className="btn btn-secondary" type="button" onClick={() => { setShowQuickAssigneePicker(false); setQuickAssigneeCandidate(''); }}>Cancel</button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button className="btn btn-primary" type="button" onClick={saveTaskMeta} disabled={savingTaskMeta}>

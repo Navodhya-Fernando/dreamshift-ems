@@ -61,9 +61,21 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       .sort({ createdAt: -1, created_at: -1 })
       .toArray();
 
-    const users = await User.find({}, { _id: 1, name: 1, email: 1 }).lean();
-    const userById = new Map(users.map((user) => [String(user._id), { _id: String(user._id), name: user.name, email: user.email }]));
-    const userByEmail = new Map(users.map((user) => [String(user.email || '').toLowerCase(), { _id: String(user._id), name: user.name, email: user.email }]));
+    const users = await User.find({}, { _id: 1, name: 1, email: 1, image: 1, linkedinProfilePicUrl: 1 }).lean();
+    const userById = new Map(users.map((user) => [String(user._id), {
+      _id: String(user._id),
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      linkedinProfilePicUrl: user.linkedinProfilePicUrl,
+    }]));
+    const userByEmail = new Map(users.map((user) => [String(user.email || '').toLowerCase(), {
+      _id: String(user._id),
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      linkedinProfilePicUrl: user.linkedinProfilePicUrl,
+    }]));
 
     const tasks = tasksRaw.map((task) => ({
       ...(() => {

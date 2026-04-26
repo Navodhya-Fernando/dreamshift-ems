@@ -79,8 +79,8 @@ input[type='time'] {
 input[type='date']::-webkit-calendar-picker-indicator,
 input[type='datetime-local']::-webkit-calendar-picker-indicator,
 input[type='time']::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(1.35);
-  opacity: 0.92;
+  filter: brightness(0) invert(1) saturate(0) brightness(1.8);
+  opacity: 1;
   cursor: pointer;
 }
 

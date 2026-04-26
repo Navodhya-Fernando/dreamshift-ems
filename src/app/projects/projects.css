@@ -390,10 +390,18 @@
   justify-content: center;
   margin-left: -6px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+  overflow: hidden;
 }
 
 .assignee-avatar:first-child {
   margin-left: 0;
+}
+
+.assignee-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .assignee-avatar-more {
@@ -492,6 +500,225 @@
   text-transform: uppercase;
 }
 
+.project-kanban-assignees {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.project-kanban-assignee-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.project-kanban-assignee-trigger {
+  flex-shrink: 0;
+  padding-inline: 10px;
+  font-size: 11px;
+}
+
+.project-kanban-assignee-dropdown {
+  margin-top: 2px;
+}
+
+.assignee-picker-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.assignee-picker-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.assignee-picker-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.assignee-picker-button {
+  flex-shrink: 0;
+}
+
+.assignee-picker-empty {
+  padding: 10px 12px;
+  border: 1px dashed var(--border-md);
+  border-radius: var(--r-md);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 12px;
+}
+
+.assignee-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assignee-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-md);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.assignee-chip-avatar,
+.assignee-option-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.assignee-chip-avatar img,
+.assignee-option-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.assignee-chip-name {
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.assignee-chip-remove {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.assignee-chip-remove:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.assignee-dropdown {
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, rgba(24, 24, 31, 0.98), rgba(17, 17, 23, 0.98));
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.assignee-dropdown-topbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.assignee-dropdown-search {
+  flex: 1;
+  min-width: 0;
+}
+
+.assignee-dropdown-done {
+  white-space: nowrap;
+}
+
+.assignee-dropdown-list {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.assignee-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+  text-align: left;
+  transition: background var(--t), border-color var(--t), transform var(--t);
+}
+
+.assignee-option:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-md);
+}
+
+.assignee-option.is-selected {
+  background: rgba(91, 107, 248, 0.12);
+  border-color: rgba(91, 107, 248, 0.4);
+}
+
+.assignee-option-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.assignee-option-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.assignee-option-email {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.assignee-option-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border-md);
+  color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.assignee-option-check.is-visible {
+  color: #fff;
+  border-color: rgba(91, 107, 248, 0.65);
+  background: var(--accent);
+}
+
+.assignee-dropdown-empty {
+  padding: 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 .comment-input-area {
   margin-top: 8px;
 }
@@ -516,5 +743,12 @@
 
   .project-kanban-board {
     grid-template-columns: repeat(5, minmax(200px, 1fr));
+  }
+
+  .assignee-picker-header,
+  .assignee-dropdown-topbar,
+  .project-kanban-assignee-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

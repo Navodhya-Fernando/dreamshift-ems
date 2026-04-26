@@ -29,8 +29,8 @@ type ProjectPayload = {
     endDate?: string;
     status: string;
     priority?: string;
-    assigneeId?: { _id?: string; name?: string; email?: string };
-    assigneeIds?: Array<{ _id?: string; name?: string; email?: string }>;
+    assigneeId?: { _id?: string; name?: string; email?: string; image?: string; linkedinProfilePicUrl?: string };
+    assigneeIds?: Array<{ _id?: string; name?: string; email?: string; image?: string; linkedinProfilePicUrl?: string }>;
   }>;
   taskStats: {
     total: number;
@@ -50,6 +50,8 @@ type UserOption = {
   _id: string;
   name: string;
   email: string;
+  image?: string;
+  linkedinProfilePicUrl?: string;
 };
 
 type TaskTemplateOption = {
@@ -129,7 +131,12 @@ function avatarTone(value: string) {
   return palette[hash % palette.length];
 }
 
-function AssigneeStack({ assignees }: { assignees: Array<{ _id?: string; name?: string; email?: string }> }) {
+function resolveAvatarUrl(value?: { image?: string; linkedinProfilePicUrl?: string } | null) {
+  if (!value) return '';
+  return String(value.linkedinProfilePicUrl || value.image || '').trim();
+}
+
+function AssigneeStack({ assignees }: { assignees: Array<{ _id?: string; name?: string; email?: string; image?: string; linkedinProfilePicUrl?: string }> }) {
   if (!assignees.length) return <span className="text-xs text-muted">Unassigned</span>;
 
   const shown = assignees.slice(0, 3);
@@ -139,13 +146,14 @@ function AssigneeStack({ assignees }: { assignees: Array<{ _id?: string; name?: 
     <div className="assignee-stack" title={assignees.map((assignee) => assignee.name || assignee.email || 'User').join(', ')}>
       {shown.map((assignee, index) => {
         const label = String(assignee.name || assignee.email || 'User');
+        const avatarUrl = resolveAvatarUrl(assignee);
         return (
           <span
             key={`${assignee._id || label}-${index}`}
             className="assignee-avatar"
             style={{ background: avatarTone(label), zIndex: shown.length - index }}
           >
-            {initials(label)}
+            {avatarUrl ? <img src={avatarUrl} alt={label} /> : initials(label)}
           </span>
         );
       })}
@@ -183,13 +191,17 @@ export default function ProjectDetailPage() {
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [savingTask, setSavingTask] = useState(false);
+  const [showTaskAssigneePicker, setShowTaskAssigneePicker] = useState(false);
+  const [taskAssigneeQuery, setTaskAssigneeQuery] = useState('');
+  const [activeKanbanAssigneeTaskId, setActiveKanbanAssigneeTaskId] = useState<string | null>(null);
+  const [kanbanAssigneeQuery, setKanbanAssigneeQuery] = useState('');
   const [taskForm, setTaskForm] = useState({
     title: '',
     description: '',
     dueDate: '',
     status: 'TODO',
     priority: 'MEDIUM',
-    assigneeId: '',
+    assigneeIds: [] as string[],
   });
 
   const loadProject = useCallback(async () => {
@@ -220,10 +232,12 @@ export default function ProjectDetailPage() {
       }));
     }
     if (usersJson.success) {
-      setUsers((usersJson.data || []).map((user: { _id: string; name?: string; email?: string }) => ({
+      setUsers((usersJson.data || []).map((user: { _id: string; name?: string; email?: string; image?: string; linkedinProfilePicUrl?: string }) => ({
         _id: String(user._id),
         name: String(user.name || user.email || 'User'),
         email: String(user.email || ''),
+        image: String(user.image || ''),
+        linkedinProfilePicUrl: String(user.linkedinProfilePicUrl || ''),
       })));
     }
     if (templatesJson.success) {
@@ -259,6 +273,49 @@ export default function ProjectDetailPage() {
     const { total, done } = payload.taskStats;
     return total ? Math.round((done / total) * 100) : 0;
   }, [payload]);
+
+  const taskAssigneeOptions = useMemo(() => {
+    const query = taskAssigneeQuery.trim().toLowerCase();
+    return users.filter((user) => !query || user.name.toLowerCase().includes(query) || user.email.toLowerCase().includes(query));
+  }, [taskAssigneeQuery, users]);
+
+  const kanbanAssigneeOptions = useMemo(() => {
+    const query = kanbanAssigneeQuery.trim().toLowerCase();
+    return users.filter((user) => !query || user.name.toLowerCase().includes(query) || user.email.toLowerCase().includes(query));
+  }, [kanbanAssigneeQuery, users]);
+
+  const selectedTaskAssignees = useMemo(() => {
+    return users.filter((user) => taskForm.assigneeIds.includes(user._id));
+  }, [taskForm.assigneeIds, users]);
+
+  const resolveTaskAssigneeIds = (task: ProjectPayload['tasks'][number]) => {
+    const ids = (task.assigneeIds || []).map((assignee) => String(assignee._id || '')).filter(Boolean);
+    return ids.length > 0 ? ids : (task.assigneeId?._id ? [task.assigneeId._id] : []);
+  };
+
+  const toggleTaskFormAssignee = (userId: string) => {
+    setTaskForm((prev) => ({
+      ...prev,
+      assigneeIds: prev.assigneeIds.includes(userId)
+        ? prev.assigneeIds.filter((currentId) => currentId !== userId)
+        : [...prev.assigneeIds, userId],
+    }));
+  };
+
+  const removeTaskFormAssignee = (userId: string) => {
+    setTaskForm((prev) => ({
+      ...prev,
+      assigneeIds: prev.assigneeIds.filter((currentId) => currentId !== userId),
+    }));
+  };
+
+  const toggleKanbanAssignee = async (task: ProjectPayload['tasks'][number], userId: string) => {
+    const currentIds = resolveTaskAssigneeIds(task);
+    const nextIds = currentIds.includes(userId)
+      ? currentIds.filter((currentId) => currentId !== userId)
+      : [...currentIds, userId];
+    await updateTaskField(task, { assigneeIds: nextIds });
+  };
 
   if (loading) return <div className="page-wrapper">Loading project...</div>;
   if (!payload) return <div className="page-wrapper">Project not found.</div>;
@@ -365,6 +422,7 @@ export default function ProjectDetailPage() {
     if (!taskForm.title.trim()) return;
 
     setSavingTask(true);
+    const selectedAssignees = users.filter((user) => taskForm.assigneeIds.includes(user._id));
     try {
       const res = await fetch('/api/tasks', {
         method: 'POST',
@@ -376,7 +434,8 @@ export default function ProjectDetailPage() {
           dueDate: taskForm.dueDate || undefined,
           status: taskForm.status,
           priority: taskForm.priority,
-          assigneeId: taskForm.assigneeId || undefined,
+          assigneeId: selectedAssignees[0]?._id || undefined,
+          assigneeIds: taskForm.assigneeIds,
           subtasks: [],
         }),
       });
@@ -393,8 +452,10 @@ export default function ProjectDetailPage() {
         dueDate: '',
         status: projectTaskStatuses[0]?.key || 'TODO',
         priority: 'MEDIUM',
-        assigneeId: '',
+        assigneeIds: [],
       });
+      setShowTaskAssigneePicker(false);
+      setTaskAssigneeQuery('');
       setShowCreateTask(false);
       await loadProject();
     } catch (error: unknown) {
@@ -406,16 +467,18 @@ export default function ProjectDetailPage() {
 
   const updateTaskField = async (
     task: ProjectPayload['tasks'][number],
-    updates: { status?: string; assigneeId?: string }
+    updates: { status?: string; assigneeId?: string; assigneeIds?: string[] }
   ) => {
     setUpdatingTaskId(task._id);
+    const nextAssigneeIds = updates.assigneeIds || resolveTaskAssigneeIds(task);
     try {
       const res = await fetch(`/api/tasks/${task._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: updates.status || task.status,
-          assigneeId: updates.assigneeId ?? task.assigneeId?._id,
+          assigneeId: updates.assigneeId ?? nextAssigneeIds[0] ?? task.assigneeId?._id,
+          assigneeIds: nextAssigneeIds,
           title: task.title,
           description: task.description || '',
           dueDate: task.dueDate || undefined,
@@ -603,12 +666,89 @@ export default function ProjectDetailPage() {
                   <option value="HIGH">High</option>
                   <option value="URGENT">Urgent</option>
                 </select>
-                <select className="input" value={taskForm.assigneeId} onChange={(e) => setTaskForm((prev) => ({ ...prev, assigneeId: e.target.value }))}>
-                  <option value="">Select Assignee</option>
-                  {users.map((user) => (
-                    <option key={user._id} value={user._id}>{user.name} ({user.email})</option>
-                  ))}
-                </select>
+              </div>
+
+              <div className="assignee-picker-wrap">
+                <div className="assignee-picker-header">
+                  <div>
+                    <div className="assignee-picker-label">Assignees</div>
+                    <div className="text-xs text-muted">Pick one or more owners for the task.</div>
+                  </div>
+                  <button
+                    className="btn btn-secondary assignee-picker-button"
+                    type="button"
+                    onClick={() => setShowTaskAssigneePicker((current) => !current)}
+                  >
+                    <Plus size={12} />
+                    Add Assignee
+                  </button>
+                </div>
+
+                {selectedTaskAssignees.length > 0 ? (
+                  <div className="assignee-chip-row">
+                    {selectedTaskAssignees.map((user) => {
+                      const avatarUrl = resolveAvatarUrl(user);
+                      const initialsText = initials(user.name || user.email || 'User');
+                      return (
+                        <span key={user._id} className="assignee-chip">
+                          <span className="assignee-chip-avatar" style={!avatarUrl ? { background: avatarTone(user.name || user.email || user._id) } : undefined}>
+                            {avatarUrl ? <img src={avatarUrl} alt={user.name} /> : initialsText}
+                          </span>
+                          <span className="assignee-chip-name">{user.name}</span>
+                          <button type="button" className="assignee-chip-remove" onClick={() => removeTaskFormAssignee(user._id)} aria-label={`Remove ${user.name}`}>
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="assignee-picker-empty">No assignees selected yet.</div>
+                )}
+
+                {showTaskAssigneePicker && (
+                  <div className="assignee-dropdown" onClick={(event) => event.stopPropagation()}>
+                    <div className="assignee-dropdown-topbar">
+                      <input
+                        className="input assignee-dropdown-search"
+                        placeholder="Search people..."
+                        value={taskAssigneeQuery}
+                        onChange={(event) => setTaskAssigneeQuery(event.target.value)}
+                      />
+                      <button className="btn btn-secondary assignee-dropdown-done" type="button" onClick={() => setShowTaskAssigneePicker(false)}>
+                        Done
+                      </button>
+                    </div>
+                    <div className="assignee-dropdown-list">
+                      {taskAssigneeOptions.length === 0 ? (
+                        <div className="assignee-dropdown-empty">No people match this search.</div>
+                      ) : (
+                        taskAssigneeOptions.map((user) => {
+                          const selected = taskForm.assigneeIds.includes(user._id);
+                          const avatarUrl = resolveAvatarUrl(user);
+                          const initialsText = initials(user.name || user.email || 'User');
+                          return (
+                            <button
+                              key={user._id}
+                              type="button"
+                              className={`assignee-option ${selected ? 'is-selected' : ''}`}
+                              onClick={() => toggleTaskFormAssignee(user._id)}
+                            >
+                              <span className="assignee-option-avatar" style={!avatarUrl ? { background: avatarTone(user.name || user.email || user._id) } : undefined}>
+                                {avatarUrl ? <img src={avatarUrl} alt={user.name} /> : initialsText}
+                              </span>
+                              <span className="assignee-option-meta">
+                                <span className="assignee-option-name">{user.name}</span>
+                                <span className="assignee-option-email">{user.email}</span>
+                              </span>
+                              <span className={`assignee-option-check ${selected ? 'is-visible' : ''}`}>✓</span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                 <button className="btn btn-secondary" type="button" onClick={() => setShowCreateTask(false)} disabled={savingTask}>Cancel</button>
@@ -696,17 +836,73 @@ export default function ProjectDetailPage() {
                               >
                                 {statusLabelByKey.get(String(task.status || 'TODO').toUpperCase()) || String(task.status || 'TODO')}
                               </span>
-                              <select
-                                className="input"
-                                value={task.assigneeId?._id || ''}
-                                onChange={(e) => updateTaskField(task, { assigneeId: e.target.value || '' })}
-                                disabled={updatingTaskId === task._id}
-                              >
-                                <option value="">Unassigned</option>
-                                {users.map((user) => (
-                                  <option key={`${task._id}-assignee-${user._id}`} value={user._id}>{user.name}</option>
-                                ))}
-                              </select>
+                              <div className="project-kanban-assignees">
+                                <div className="project-kanban-assignee-row">
+                                  <AssigneeStack assignees={(task.assigneeIds && task.assigneeIds.length > 0) ? task.assigneeIds : (task.assigneeId ? [task.assigneeId] : [])} />
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary assignee-picker-button project-kanban-assignee-trigger"
+                                    onClick={() => {
+                                      const nextTaskId = activeKanbanAssigneeTaskId === task._id ? null : task._id;
+                                      setActiveKanbanAssigneeTaskId(nextTaskId);
+                                      setKanbanAssigneeQuery('');
+                                    }}
+                                    disabled={updatingTaskId === task._id}
+                                  >
+                                    <Plus size={11} />
+                                    Edit Assignees
+                                  </button>
+                                </div>
+
+                                {activeKanbanAssigneeTaskId === task._id ? (
+                                  <div className="assignee-dropdown project-kanban-assignee-dropdown" onClick={(event) => event.stopPropagation()}>
+                                    <div className="assignee-dropdown-topbar">
+                                      <input
+                                        className="input assignee-dropdown-search"
+                                        placeholder="Search people..."
+                                        value={kanbanAssigneeQuery}
+                                        onChange={(event) => setKanbanAssigneeQuery(event.target.value)}
+                                      />
+                                      <button
+                                        className="btn btn-secondary assignee-dropdown-done"
+                                        type="button"
+                                        onClick={() => setActiveKanbanAssigneeTaskId(null)}
+                                      >
+                                        Done
+                                      </button>
+                                    </div>
+                                    <div className="assignee-dropdown-list">
+                                      {kanbanAssigneeOptions.length === 0 ? (
+                                        <div className="assignee-dropdown-empty">No people match this search.</div>
+                                      ) : (
+                                        kanbanAssigneeOptions.map((user) => {
+                                          const selected = resolveTaskAssigneeIds(task).includes(user._id);
+                                          const avatarUrl = resolveAvatarUrl(user);
+                                          const initialsText = initials(user.name || user.email || 'User');
+                                          return (
+                                            <button
+                                              key={`${task._id}-assignee-${user._id}`}
+                                              type="button"
+                                              className={`assignee-option ${selected ? 'is-selected' : ''}`}
+                                              onClick={() => toggleKanbanAssignee(task, user._id)}
+                                              disabled={updatingTaskId === task._id}
+                                            >
+                                              <span className="assignee-option-avatar" style={!avatarUrl ? { background: avatarTone(user.name || user.email || user._id) } : undefined}>
+                                                {avatarUrl ? <img src={avatarUrl} alt={user.name} /> : initialsText}
+                                              </span>
+                                              <span className="assignee-option-meta">
+                                                <span className="assignee-option-name">{user.name}</span>
+                                                <span className="assignee-option-email">{user.email}</span>
+                                              </span>
+                                              <span className={`assignee-option-check ${selected ? 'is-visible' : ''}`}>✓</span>
+                                            </button>
+                                          );
+                                        })
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : null}
+                              </div>
                             </div>
                           </div>
                         ))

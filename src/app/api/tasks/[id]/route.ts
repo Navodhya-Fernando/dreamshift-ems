@@ -52,7 +52,10 @@ function resolveTaskAssigneeIds(task: Record<string, unknown>) {
   return Array.from(new Set(fromArray));
 }
 
-function normalizeTask(task: Record<string, unknown>, assignees: Array<{ _id: string; name?: string; email?: string }> = []) {
+function normalizeTask(
+  task: Record<string, unknown>,
+  assignees: Array<{ _id: string; name?: string; email?: string; image?: string; linkedinProfilePicUrl?: string }> = []
+) {
   const rawSubtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
   const subtasks = rawSubtasks.map((subtask, index) => {
     const item = subtask as { title?: string; isCompleted?: boolean; completed?: boolean; dueDate?: string; due_date?: string };
@@ -112,17 +115,34 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     const assigneeIds = resolveTaskAssigneeIds(task as Record<string, unknown>);
     const assigneeUsers = assigneeIds.length
-      ? await User.find({ _id: { $in: assigneeIds } }, { _id: 1, name: 1, email: 1 }).lean()
+      ? await User.find({ _id: { $in: assigneeIds } }, { _id: 1, name: 1, email: 1, image: 1, linkedinProfilePicUrl: 1 }).lean()
       : [];
-    const userById = new Map(assigneeUsers.map((user) => [String(user._id), { _id: String(user._id), name: user.name, email: user.email }]));
+    const userById = new Map(
+      assigneeUsers.map((user) => [
+        String(user._id),
+        {
+          _id: String(user._id),
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          linkedinProfilePicUrl: user.linkedinProfilePicUrl,
+        },
+      ])
+    );
     const assignees = assigneeIds
       .map((assigneeId) => userById.get(assigneeId))
-      .filter(Boolean) as Array<{ _id: string; name?: string; email?: string }>;
+      .filter(Boolean) as Array<{ _id: string; name?: string; email?: string; image?: string; linkedinProfilePicUrl?: string }>;
 
     if (assignees.length === 0 && task.assignee) {
-      const legacyUser = await User.findOne({ email: String(task.assignee).toLowerCase() }, { _id: 1, name: 1, email: 1 }).lean();
+      const legacyUser = await User.findOne({ email: String(task.assignee).toLowerCase() }, { _id: 1, name: 1, email: 1, image: 1, linkedinProfilePicUrl: 1 }).lean();
       if (legacyUser) {
-        assignees.push({ _id: String(legacyUser._id), name: legacyUser.name, email: legacyUser.email });
+        assignees.push({
+          _id: String(legacyUser._id),
+          name: legacyUser.name,
+          email: legacyUser.email,
+          image: legacyUser.image,
+          linkedinProfilePicUrl: legacyUser.linkedinProfilePicUrl,
+        });
       }
     }
     
