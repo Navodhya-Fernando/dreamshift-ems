@@ -104,6 +104,8 @@ export async function GET(req: Request) {
     const assigneeMatchers: Array<Record<string, unknown>> = [
       { assigneeId: userId },
       { assigneeId: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : userId },
+      { assigneeIds: userId },
+      { assigneeIds: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : userId },
     ];
     if (userEmail) {
       assigneeMatchers.push({ assignee: userEmail });

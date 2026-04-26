@@ -43,6 +43,8 @@ function buildAssigneeFilter(user: { _id: unknown; email?: string | null; name?:
     { assigneeId: userId },
     { assigneeId: user._id },
     { assigneeId: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : user._id },
+    { assigneeIds: userId },
+    { assigneeIds: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : user._id },
   ];
 
   if (user.email) {

@@ -371,6 +371,36 @@
   background: var(--bg-elevated);
 }
 
+.assignee-stack {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 2px;
+}
+
+.assignee-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.24);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+}
+
+.assignee-avatar:first-child {
+  margin-left: 0;
+}
+
+.assignee-avatar-more {
+  background: rgba(148, 163, 184, 0.32);
+  color: var(--text-primary);
+}
+
 .project-kanban-board {
   display: grid;
   grid-template-columns: repeat(5, minmax(220px, 1fr));

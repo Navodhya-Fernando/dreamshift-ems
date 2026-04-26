@@ -35,7 +35,24 @@ function toLegacyPriority(priority?: string) {
   return 'Medium';
 }
 
-function normalizeTask(task: Record<string, unknown>, assignee?: { _id: string; name?: string; email?: string } | null) {
+function normalizeAssigneeIds(value: unknown) {
+  const rawValues = Array.isArray(value) ? value : value ? [value] : [];
+  const normalized = rawValues
+    .map((item) => String(item || '').trim())
+    .filter((item) => item && mongoose.isValidObjectId(item));
+  return Array.from(new Set(normalized));
+}
+
+function resolveTaskAssigneeIds(task: Record<string, unknown>) {
+  const fromArray = Array.isArray(task.assigneeIds)
+    ? task.assigneeIds.map((item) => String(item || '')).filter((item) => item && mongoose.isValidObjectId(item))
+    : [];
+  const primary = String(task.assigneeId || '').trim();
+  if (primary && mongoose.isValidObjectId(primary)) fromArray.push(primary);
+  return Array.from(new Set(fromArray));
+}
+
+function normalizeTask(task: Record<string, unknown>, assignees: Array<{ _id: string; name?: string; email?: string }> = []) {
   const rawSubtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
   const subtasks = rawSubtasks.map((subtask, index) => {
     const item = subtask as { title?: string; isCompleted?: boolean; completed?: boolean; dueDate?: string; due_date?: string };
@@ -55,7 +72,8 @@ function normalizeTask(task: Record<string, unknown>, assignee?: { _id: string; 
     endDate: task.endDate || task.end_date,
     status: normalizeStatus(String(task.status || 'TODO')).toLowerCase(),
     priority: String(task.priority || 'MEDIUM').toLowerCase(),
-    assigneeId: assignee || undefined,
+    assigneeId: assignees[0] || undefined,
+    assigneeIds: assignees,
     subtasks,
   };
 }
@@ -92,16 +110,23 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const allowed = await hasWorkspaceAccess(userId, String(workspaceId));
     if (!allowed) return NextResponse.json({ success: false, error: 'Forbidden task access' }, { status: 403 });
 
-    let assignee: { _id: string; name?: string; email?: string } | null = null;
-    if (task.assigneeId) {
-      const user = await User.findById(task.assigneeId, { _id: 1, name: 1, email: 1 }).lean();
-      assignee = user ? { _id: String(user._id), name: user.name, email: user.email } : null;
-    } else if (task.assignee) {
-      const user = await User.findOne({ email: String(task.assignee).toLowerCase() }, { _id: 1, name: 1, email: 1 }).lean();
-      assignee = user ? { _id: String(user._id), name: user.name, email: user.email } : null;
+    const assigneeIds = resolveTaskAssigneeIds(task as Record<string, unknown>);
+    const assigneeUsers = assigneeIds.length
+      ? await User.find({ _id: { $in: assigneeIds } }, { _id: 1, name: 1, email: 1 }).lean()
+      : [];
+    const userById = new Map(assigneeUsers.map((user) => [String(user._id), { _id: String(user._id), name: user.name, email: user.email }]));
+    const assignees = assigneeIds
+      .map((assigneeId) => userById.get(assigneeId))
+      .filter(Boolean) as Array<{ _id: string; name?: string; email?: string }>;
+
+    if (assignees.length === 0 && task.assignee) {
+      const legacyUser = await User.findOne({ email: String(task.assignee).toLowerCase() }, { _id: 1, name: 1, email: 1 }).lean();
+      if (legacyUser) {
+        assignees.push({ _id: String(legacyUser._id), name: legacyUser.name, email: legacyUser.email });
+      }
     }
     
-    return NextResponse.json({ success: true, data: normalizeTask(task, assignee) }, { status: 200 });
+    return NextResponse.json({ success: true, data: normalizeTask(task, assignees) }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ success: false, error: message }, { status: 400 });
@@ -143,8 +168,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const projectTaskStatuses = normalizeProjectTaskStatuses(project.taskStatuses || DEFAULT_PROJECT_TASK_STATUSES);
     const nextStatus = normalizeTaskStatusForProject(normalizeStatus(body.status || String(currentTask.status || 'TODO')), projectTaskStatuses);
-    const previousAssigneeId = String(currentTask.assigneeId || '');
-    const nextAssigneeId = String(body.assigneeId ?? currentTask.assigneeId ?? '');
+    const previousAssigneeIds = resolveTaskAssigneeIds(currentTask as Record<string, unknown>);
+    const incomingAssignees = body.assigneeIds !== undefined
+      ? body.assigneeIds
+      : body.assigneeId !== undefined
+      ? body.assigneeId
+      : undefined;
+    const nextAssigneeIds = incomingAssignees === undefined ? previousAssigneeIds : normalizeAssigneeIds(incomingAssignees);
+    const nextPrimaryAssigneeId = nextAssigneeIds[0] || undefined;
     const currentProjectId = currentTask.projectId || currentTask.project_id;
     const updatePayload: Record<string, unknown> = {
       title: body.title ?? currentTask.title,
@@ -152,7 +183,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       dueDate: body.dueDate ?? currentTask.dueDate ?? currentTask.due_date,
       startDate: body.startDate ?? currentTask.startDate ?? currentTask.start_date,
       endDate: body.endDate ?? currentTask.endDate ?? currentTask.end_date,
-      assigneeId: body.assigneeId ?? currentTask.assigneeId,
+      assigneeId: nextPrimaryAssigneeId,
+      assigneeIds: nextAssigneeIds,
       projectId: body.projectId ?? currentProjectId,
       status: nextStatus,
       priority: body.priority ? String(body.priority).toUpperCase() : String(currentTask.priority || 'MEDIUM').toUpperCase(),
@@ -188,8 +220,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
       if (body.projectId) legacyPayload.project_id = body.projectId;
 
-      if (body.assigneeId) {
-        const targetUser = await User.findById(body.assigneeId, { email: 1 }).lean();
+      if (nextPrimaryAssigneeId) {
+        const targetUser = await User.findById(nextPrimaryAssigneeId, { email: 1 }).lean();
         if (targetUser?.email) legacyPayload.assignee = targetUser.email;
       }
 
@@ -201,10 +233,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const updated = await Task.collection.findOne({ _id: taskObjectId });
     const task = updated || currentTask;
 
-    if (nextAssigneeId && nextAssigneeId !== previousAssigneeId) {
+    const newlyAssigned = nextAssigneeIds.filter((assigneeId) => !previousAssigneeIds.includes(assigneeId));
+    for (const assigneeId of newlyAssigned) {
       try {
         await notifyUser({
-          userId: nextAssigneeId,
+          userId: assigneeId,
           type: 'assignment',
           title: 'Task assignment updated',
           message: `You were assigned to "${String(updatePayload.title || currentTask.title || 'Untitled task')}".`,
@@ -221,7 +254,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       }
     }
     
-    return NextResponse.json({ success: true, data: normalizeTask(task, null) }, { status: 200 });
+    return NextResponse.json({ success: true, data: normalizeTask(task, []) }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ success: false, error: message }, { status: 400 });

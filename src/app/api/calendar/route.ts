@@ -52,6 +52,8 @@ export async function GET() {
     const assigneeMatchers: Array<Record<string, unknown>> = [
       { assigneeId: userId },
       { assigneeId: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : userId },
+      { assigneeIds: userId },
+      { assigneeIds: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : userId },
     ];
     if (userEmail) {
       assigneeMatchers.push({ assignee: userEmail });
@@ -92,6 +94,7 @@ export async function GET() {
       priority: String(task.priority || 'MEDIUM').toLowerCase(),
       projectName: projectNameById.get(String(task.projectId || task.project_id)) || 'General',
       assigneeName: (task.assigneeId ? userById.get(String(task.assigneeId))?.name : undefined)
+        || (Array.isArray(task.assigneeIds) && task.assigneeIds.length > 0 ? userById.get(String(task.assigneeIds[0]))?.name : undefined)
         || (task.assignee ? userByEmail.get(String(task.assignee).toLowerCase())?.name : undefined)
         || String(task.assignee || 'Unassigned'),
     }));

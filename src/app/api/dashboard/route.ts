@@ -12,6 +12,8 @@ function buildAssigneeFilter(user: { _id: string; email?: string | null; name?: 
   const matchers: Array<Record<string, unknown>> = [
     { assigneeId: user._id },
     { assigneeId: mongoose.isValidObjectId(user._id) ? new mongoose.Types.ObjectId(user._id) : user._id },
+    { assigneeIds: user._id },
+    { assigneeIds: mongoose.isValidObjectId(user._id) ? new mongoose.Types.ObjectId(user._id) : user._id },
   ];
   if (user.email) {
     matchers.push({ assignee: user.email });

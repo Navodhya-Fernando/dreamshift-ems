@@ -25,16 +25,20 @@ function getTaskDueDate(task: Record<string, unknown>) {
   return Number.isNaN(dueDate.getTime()) ? null : dueDate;
 }
 
-function getTaskAssigneeId(task: Record<string, unknown>, userByEmail: Map<string, string>) {
+function getTaskAssigneeIds(task: Record<string, unknown>, userByEmail: Map<string, string>) {
+  const fromArray = Array.isArray(task.assigneeIds)
+    ? task.assigneeIds.map((value) => String(value || '').trim()).filter((value) => value && mongoose.isValidObjectId(value))
+    : [];
+
   const assigneeId = String(task.assigneeId || '').trim();
-  if (assigneeId && mongoose.isValidObjectId(assigneeId)) return assigneeId;
+  if (assigneeId && mongoose.isValidObjectId(assigneeId)) fromArray.push(assigneeId);
 
   const assigneeEmail = String(task.assignee || '').trim().toLowerCase();
   if (assigneeEmail && userByEmail.has(assigneeEmail)) {
-    return String(userByEmail.get(assigneeEmail));
+    fromArray.push(String(userByEmail.get(assigneeEmail)));
   }
 
-  return '';
+  return Array.from(new Set(fromArray));
 }
 
 function toUtcDateStamp(value: Date) {
@@ -62,6 +66,8 @@ function buildAssigneeMatchers(userId: string, email?: string, name?: string) {
   const matchers: Array<Record<string, unknown>> = [
     { assigneeId: userId },
     { assigneeId: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : userId },
+    { assigneeIds: userId },
+    { assigneeIds: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : userId },
   ];
 
   if (email) {
@@ -167,8 +173,8 @@ export async function GET(req: Request) {
         continue;
       }
 
-      const assigneeId = getTaskAssigneeId(task, usersByEmail);
-      if (!assigneeId) {
+      const assigneeIds = getTaskAssigneeIds(task, usersByEmail);
+      if (assigneeIds.length === 0) {
         skipped += 1;
         continue;
       }
@@ -178,23 +184,25 @@ export async function GET(req: Request) {
       const link = `/tasks/${taskId}`;
 
       if (dueDate.getTime() < now.getTime()) {
-        const overdueDayKey = `task.deadline.overdue:${taskId}:${toUtcDateStamp(now)}`;
-        const sent = await notifyUserOnce({
-          userId: assigneeId,
-          type: 'deadline',
-          title: 'Task is overdue',
-          message: `"${taskTitle}" is overdue. Please review and update it.`,
-          link,
-          metadata: {
-            taskId,
-            event: 'task.deadline.overdue',
-            dueDate: dueDate.toISOString(),
-          },
-          dedupeKey: overdueDayKey,
-          dedupeWindowHours: 25,
-          emailSubject: `Overdue task: ${taskTitle}`,
-        });
-        if (sent) overdueAlerts += 1;
+        for (const assigneeId of assigneeIds) {
+          const overdueDayKey = `task.deadline.overdue:${taskId}:${assigneeId}:${toUtcDateStamp(now)}`;
+          const sent = await notifyUserOnce({
+            userId: assigneeId,
+            type: 'deadline',
+            title: 'Task is overdue',
+            message: `"${taskTitle}" is overdue. Please review and update it.`,
+            link,
+            metadata: {
+              taskId,
+              event: 'task.deadline.overdue',
+              dueDate: dueDate.toISOString(),
+            },
+            dedupeKey: overdueDayKey,
+            dedupeWindowHours: 25,
+            emailSubject: `Overdue task: ${taskTitle}`,
+          });
+          if (sent) overdueAlerts += 1;
+        }
         continue;
       }
     }

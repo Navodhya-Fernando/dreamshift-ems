@@ -22,6 +22,22 @@ function normalizePriority(priority?: string) {
   return String(priority || 'MEDIUM').toLowerCase();
 }
 
+function normalizeAssigneeIds(value: unknown, fallbackUserId?: string) {
+  const rawValues = Array.isArray(value)
+    ? value
+    : value
+    ? [value]
+    : fallbackUserId
+    ? [fallbackUserId]
+    : [];
+
+  const normalized = rawValues
+    .map((item) => String(item || '').trim())
+    .filter((item) => item && mongoose.isValidObjectId(item));
+
+  return Array.from(new Set(normalized));
+}
+
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -112,6 +128,8 @@ export async function GET(req: Request) {
         $or: [
           { assigneeId: requested },
           { assigneeId: mongoose.isValidObjectId(String(requested)) ? new mongoose.Types.ObjectId(String(requested)) : requested },
+          { assigneeIds: requested },
+          { assigneeIds: mongoose.isValidObjectId(String(requested)) ? new mongoose.Types.ObjectId(String(requested)) : requested },
           { assignee: requestedEmail },
           { assignee: requestedEmail.toLowerCase() },
           { assignee: requestedName },
@@ -131,9 +149,22 @@ export async function GET(req: Request) {
     const data = tasks.map((task) => {
       const normalizedProjectId = task.projectId ? String(task.projectId) : String(task.project_id || '');
       const legacyAssigneeEmail = String(task.assignee || '').toLowerCase();
-      const assigneeFromId = task.assigneeId ? userById.get(String(task.assigneeId)) : undefined;
+      const primaryAssigneeFromId = task.assigneeId ? userById.get(String(task.assigneeId)) : undefined;
       const assigneeFromEmail = legacyAssigneeEmail ? userByEmail.get(legacyAssigneeEmail) : undefined;
-      const assignee = assigneeFromId || assigneeFromEmail;
+      const rawAssigneeIds = Array.isArray(task.assigneeIds)
+        ? task.assigneeIds.map((value) => String(value || '')).filter(Boolean)
+        : [];
+      const mergedAssigneeIds = Array.from(
+        new Set([
+          ...rawAssigneeIds,
+          ...(task.assigneeId ? [String(task.assigneeId)] : []),
+          ...(assigneeFromEmail?._id ? [String(assigneeFromEmail._id)] : []),
+        ])
+      );
+      const assigneeUsers = mergedAssigneeIds
+        .map((id) => userById.get(id))
+        .filter(Boolean) as Array<{ _id: string; name?: string; email?: string }>;
+      const primaryAssignee = assigneeUsers[0] || primaryAssigneeFromId || assigneeFromEmail;
 
       const subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
 
@@ -145,7 +176,8 @@ export async function GET(req: Request) {
               name: projectNameById.get(normalizedProjectId) || 'Project',
             }
           : undefined,
-        assigneeId: assignee,
+        assigneeId: primaryAssignee,
+        assigneeIds: assigneeUsers,
         dueDate: task.dueDate || task.due_date,
         startDate: task.startDate || task.start_date,
         endDate: task.endDate || task.end_date,
@@ -190,6 +222,8 @@ export async function POST(req: Request) {
     const normalizedPriority = (body.priority || 'MEDIUM').toUpperCase();
     const nextStartDate = body.startDate || (normalizedStatus === 'IN_PROGRESS' ? new Date() : undefined);
     const nextEndDate = body.endDate || (normalizedStatus === 'DONE' ? new Date() : undefined);
+    const assigneeIds = normalizeAssigneeIds(body.assigneeIds ?? body.assigneeId, userId);
+    const primaryAssigneeId = assigneeIds[0] || userId;
     
     const task = await Task.create({
       ...body,
@@ -197,11 +231,11 @@ export async function POST(req: Request) {
       priority: normalizedPriority,
       startDate: nextStartDate,
       endDate: nextEndDate,
-      assigneeId: body.assigneeId || userId,
+      assigneeId: primaryAssigneeId,
+      assigneeIds,
     });
 
-    const assigneeId = String(task.assigneeId || body.assigneeId || '');
-    if (assigneeId) {
+    for (const assigneeId of assigneeIds) {
       try {
         await notifyUser({
           userId: assigneeId,

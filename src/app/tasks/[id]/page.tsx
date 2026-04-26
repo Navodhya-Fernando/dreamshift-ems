@@ -28,6 +28,7 @@ type TaskDetail = {
   endDate?: string;
   projectId?: string | { _id?: string; name?: string };
   assigneeId?: { _id?: string; name?: string; email?: string };
+  assigneeIds?: Array<{ _id?: string; name?: string; email?: string }>;
   subtasks?: Subtask[];
 };
 
@@ -53,6 +54,22 @@ const DEFAULT_TASK_STATUSES = [
   { key: 'DONE', label: 'Done' },
 ];
 
+function avatarInitials(value: string) {
+  return value
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function avatarTone(value: string) {
+  const hash = Array.from(value).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const palette = ['#2563EB', '#0F766E', '#7C3AED', '#DC2626', '#EA580C'];
+  return palette[hash % palette.length];
+}
+
 export default function TaskDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -69,7 +86,7 @@ export default function TaskDetailPage() {
   const [editingSubtaskTitle, setEditingSubtaskTitle] = useState('');
   const [editingSubtaskDueDate, setEditingSubtaskDueDate] = useState('');
   const [taskStatus, setTaskStatus] = useState('TODO');
-  const [taskAssigneeId, setTaskAssigneeId] = useState('');
+  const [taskAssigneeIds, setTaskAssigneeIds] = useState<string[]>([]);
   const [projectStatuses, setProjectStatuses] = useState<Array<{ key: string; label: string }>>(DEFAULT_TASK_STATUSES);
   const [taskForm, setTaskForm] = useState({
     title: '',
@@ -79,7 +96,7 @@ export default function TaskDetailPage() {
     endDate: '',
     priority: 'MEDIUM',
     status: 'TODO',
-    assigneeId: '',
+    assigneeIds: [] as string[],
   });
   const [subtaskForm, setSubtaskForm] = useState({
     title: '',
@@ -126,7 +143,8 @@ export default function TaskDetailPage() {
   useEffect(() => {
     if (!data) return;
     setTaskStatus(String(data.status || 'TODO').toUpperCase());
-    setTaskAssigneeId(data.assigneeId?._id || '');
+    const resolvedAssigneeIds = (data.assigneeIds || []).map((assignee) => String(assignee._id || '')).filter(Boolean);
+    setTaskAssigneeIds(resolvedAssigneeIds.length > 0 ? resolvedAssigneeIds : (data.assigneeId?._id ? [data.assigneeId._id] : []));
     setTaskForm({
       title: data.title || '',
       description: data.description || '',
@@ -135,7 +153,7 @@ export default function TaskDetailPage() {
       endDate: toDateTimeLocalInput(data.endDate),
       priority: String(data.priority || 'MEDIUM').toUpperCase(),
       status: String(data.status || 'TODO').toUpperCase(),
-      assigneeId: data.assigneeId?._id || '',
+      assigneeIds: resolvedAssigneeIds.length > 0 ? resolvedAssigneeIds : (data.assigneeId?._id ? [data.assigneeId._id] : []),
     });
   }, [data]);
 
@@ -187,7 +205,7 @@ export default function TaskDetailPage() {
           endDate: toIsoOrUndefined(taskForm.endDate),
           status: taskForm.status,
           priority: taskForm.priority,
-          assigneeId: taskForm.assigneeId || undefined,
+          assigneeIds: taskForm.assigneeIds,
           projectId: projectId || undefined,
           subtasks: (data.subtasks || []).map((subtask) => ({
             title: subtask.title,
@@ -253,7 +271,7 @@ export default function TaskDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: taskStatus,
-          assigneeId: taskAssigneeId || undefined,
+          assigneeIds: taskAssigneeIds,
           title: data.title,
           description: data.description || '',
           dueDate: data.dueDate || undefined,
@@ -283,7 +301,7 @@ export default function TaskDetailPage() {
     if (!data) return;
 
     const resolvedProjectId = typeof data.projectId === 'object' ? data.projectId?._id : data.projectId;
-    const resolvedAssigneeId = data.assigneeId?._id;
+    const resolvedAssigneeIds = (data.assigneeIds || []).map((assignee) => String(assignee._id || '')).filter(Boolean);
 
     const res = await fetch(`/api/tasks/${taskId}`, {
       method: 'PUT',
@@ -297,7 +315,7 @@ export default function TaskDetailPage() {
         startDate: toIsoOrUndefined(toDateTimeLocalInput(data.startDate)),
         endDate: toIsoOrUndefined(toDateTimeLocalInput(data.endDate)),
         projectId: resolvedProjectId,
-        assigneeId: resolvedAssigneeId,
+        assigneeIds: resolvedAssigneeIds.length > 0 ? resolvedAssigneeIds : (data.assigneeId?._id ? [data.assigneeId._id] : []),
         subtasks: nextSubtasks,
       }),
     });
@@ -513,8 +531,16 @@ export default function TaskDetailPage() {
                       <option value="HIGH">High</option>
                       <option value="URGENT">Urgent</option>
                     </select>
-                    <select className="input" value={taskForm.assigneeId} onChange={(e) => setTaskForm((prev) => ({ ...prev, assigneeId: e.target.value }))}>
-                      <option value="">Unassigned</option>
+                    <select
+                      className="input"
+                      value={taskForm.assigneeIds}
+                      onChange={(e) => {
+                        const values = Array.from(e.currentTarget.selectedOptions).map((option) => option.value);
+                        setTaskForm((prev) => ({ ...prev, assigneeIds: values }));
+                      }}
+                      multiple
+                      size={Math.min(6, Math.max(3, users.length))}
+                    >
                       {users.map((user) => (
                         <option key={user._id} value={user._id}>{user.name} ({user.email})</option>
                       ))}
@@ -557,10 +583,73 @@ export default function TaskDetailPage() {
               </div>
 
               <div className="card" style={{ padding: 12 }}>
-                <div className="text-xs text-muted">Assignee</div>
+                <div className="text-xs text-muted">Assignees</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
                   <User size={14} />
-                  <span>{data.assigneeId?.name || data.assigneeId?.email || 'Unassigned'}</span>
+                  {(() => {
+                    const assignees = (data.assigneeIds || []).length > 0
+                      ? (data.assigneeIds || [])
+                      : (data.assigneeId ? [data.assigneeId] : []);
+
+                    if (assignees.length === 0) {
+                      return <span>Unassigned</span>;
+                    }
+
+                    const visible = assignees.slice(0, 4);
+                    const extra = assignees.length - visible.length;
+                    const title = assignees.map((assignee) => assignee.name || assignee.email || 'User').join(', ');
+
+                    return (
+                      <div title={title} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {visible.map((assignee, index) => {
+                          const label = String(assignee.name || assignee.email || 'User');
+                          return (
+                            <span
+                              key={`${assignee._id || label}-${index}`}
+                              style={{
+                                width: 22,
+                                height: 22,
+                                borderRadius: '999px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginLeft: index === 0 ? 0 : -7,
+                                border: '1px solid rgba(255,255,255,0.24)',
+                                background: avatarTone(label),
+                                color: '#fff',
+                                fontSize: 9,
+                                fontWeight: 700,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.22)',
+                                zIndex: visible.length - index,
+                              }}
+                            >
+                              {avatarInitials(label)}
+                            </span>
+                          );
+                        })}
+                        {extra > 0 ? (
+                          <span
+                            style={{
+                              width: 22,
+                              height: 22,
+                              borderRadius: '999px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              marginLeft: -7,
+                              border: '1px solid rgba(255,255,255,0.24)',
+                              background: 'rgba(148,163,184,0.32)',
+                              color: 'var(--text-primary)',
+                              fontSize: 9,
+                              fontWeight: 700,
+                            }}
+                          >
+                            +{extra}
+                          </span>
+                        ) : null}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -609,8 +698,16 @@ export default function TaskDetailPage() {
                     <option key={status.key} value={status.key}>{status.label}</option>
                   ))}
                 </select>
-                <select className="input" value={taskAssigneeId} onChange={(e) => setTaskAssigneeId(e.target.value)}>
-                  <option value="">Unassigned</option>
+                <select
+                  className="input"
+                  value={taskAssigneeIds}
+                  onChange={(e) => {
+                    const values = Array.from(e.currentTarget.selectedOptions).map((option) => option.value);
+                    setTaskAssigneeIds(values);
+                  }}
+                  multiple
+                  size={Math.min(6, Math.max(3, users.length))}
+                >
                   {users.map((user) => (
                     <option key={user._id} value={user._id}>{user.name} ({user.email})</option>
                   ))}

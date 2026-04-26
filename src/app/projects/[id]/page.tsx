@@ -30,6 +30,7 @@ type ProjectPayload = {
     status: string;
     priority?: string;
     assigneeId?: { _id?: string; name?: string; email?: string };
+    assigneeIds?: Array<{ _id?: string; name?: string; email?: string }>;
   }>;
   taskStats: {
     total: number;
@@ -110,6 +111,47 @@ function normalizeStatusEntries(value: string): ProjectTaskStatus[] {
 
   if (entries.length === 0) return DEFAULT_TASK_STATUSES;
   return entries;
+}
+
+function initials(value: string) {
+  return value
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function avatarTone(value: string) {
+  const hash = Array.from(value).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const palette = ['#2563EB', '#0F766E', '#7C3AED', '#DC2626', '#EA580C'];
+  return palette[hash % palette.length];
+}
+
+function AssigneeStack({ assignees }: { assignees: Array<{ _id?: string; name?: string; email?: string }> }) {
+  if (!assignees.length) return <span className="text-xs text-muted">Unassigned</span>;
+
+  const shown = assignees.slice(0, 3);
+  const extra = assignees.length - shown.length;
+
+  return (
+    <div className="assignee-stack" title={assignees.map((assignee) => assignee.name || assignee.email || 'User').join(', ')}>
+      {shown.map((assignee, index) => {
+        const label = String(assignee.name || assignee.email || 'User');
+        return (
+          <span
+            key={`${assignee._id || label}-${index}`}
+            className="assignee-avatar"
+            style={{ background: avatarTone(label), zIndex: shown.length - index }}
+          >
+            {initials(label)}
+          </span>
+        );
+      })}
+      {extra > 0 ? <span className="assignee-avatar assignee-avatar-more">+{extra}</span> : null}
+    </div>
+  );
 }
 
 export default function ProjectDetailPage() {
@@ -584,8 +626,8 @@ export default function ProjectDetailPage() {
                   <div>
                     <div className="task-row-title"><Link href={`/tasks/${task._id}`}>{task.title}</Link></div>
                     <div className="text-xs text-muted">
-                      {task.assigneeId?.name || 'Unassigned'}
-                      {' · '}
+                      <AssigneeStack assignees={(task.assigneeIds && task.assigneeIds.length > 0) ? task.assigneeIds : (task.assigneeId ? [task.assigneeId] : [])} />
+                      <span style={{ margin: '0 6px' }}>·</span>
                       {task.dueDate ? `Due ${new Date(task.dueDate).toLocaleDateString()}` : 'No deadline'}
                     </div>
                   </div>

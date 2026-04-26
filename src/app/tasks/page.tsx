@@ -34,6 +34,7 @@ type AssignedTask = {
   startDate?: string;
   endDate?: string;
   assigneeId?: { _id?: string; name?: string; email?: string };
+  assigneeIds?: Array<{ _id?: string; name?: string; email?: string }>;
   projectId?: { _id?: string; name?: string };
 };
 
@@ -51,7 +52,7 @@ type TaskForm = {
   title: string;
   description: string;
   projectId: string;
-  assigneeId: string;
+  assigneeIds: string[];
   dueDate: string;
   priority: string;
   status: string;
@@ -92,7 +93,7 @@ const EMPTY_FORM: TaskForm = {
   title: '',
   description: '',
   projectId: '',
-  assigneeId: '',
+  assigneeIds: [],
   dueDate: '',
   priority: 'medium',
   status: 'todo',
@@ -241,7 +242,7 @@ export default function TasksPage() {
     setForm({
       ...EMPTY_FORM,
       projectId: initialProjectId,
-      assigneeId: users[0]?._id || '',
+      assigneeIds: users[0]?._id ? [users[0]._id] : [],
       status: initialStatuses[0]?.key || 'todo',
     });
     if (initialWorkspaceId) setModalWorkspaceId(initialWorkspaceId);
@@ -257,7 +258,9 @@ export default function TasksPage() {
       title: task.title || '',
       description: task.description || '',
       projectId: task.projectId?._id || '',
-      assigneeId: task.assigneeId?._id || '',
+      assigneeIds: (task.assigneeIds || []).map((assignee) => String(assignee._id || '')).filter(Boolean).length > 0
+        ? (task.assigneeIds || []).map((assignee) => String(assignee._id || '')).filter(Boolean)
+        : (task.assigneeId?._id ? [task.assigneeId._id] : []),
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : '',
       priority: task.priority || 'medium',
       status: task.status || 'todo',
@@ -274,7 +277,7 @@ export default function TasksPage() {
     setSaving(true);
     const previousTasks = data.tasks;
     const selectedProject = projects.find((project) => project._id === form.projectId);
-    const selectedUser = users.find((user) => user._id === form.assigneeId);
+    const selectedUsers = users.filter((user) => form.assigneeIds.includes(user._id));
 
     const optimisticTask: AssignedTask = {
       _id: editingTaskId || `temp-${Date.now()}`,
@@ -286,7 +289,8 @@ export default function TasksPage() {
       startDate: form.startDate || undefined,
       endDate: form.endDate || undefined,
       projectId: selectedProject ? { _id: selectedProject._id, name: selectedProject.name } : undefined,
-      assigneeId: selectedUser ? { _id: selectedUser._id, name: selectedUser.name, email: selectedUser.email } : undefined,
+      assigneeId: selectedUsers[0] ? { _id: selectedUsers[0]._id, name: selectedUsers[0].name, email: selectedUsers[0].email } : undefined,
+      assigneeIds: selectedUsers.map((user) => ({ _id: user._id, name: user.name, email: user.email })),
     };
 
     setData((prev) => {
@@ -401,10 +405,19 @@ export default function TasksPage() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
-                <select className="input" value={form.assigneeId} onChange={(e) => setForm((prev) => ({ ...prev, assigneeId: e.target.value }))}>
-                  <option value="">Select Assignee</option>
+                <select
+                  className="input"
+                  value={form.assigneeIds}
+                  onChange={(e) => {
+                    const values = Array.from(e.currentTarget.selectedOptions).map((option) => option.value);
+                    setForm((prev) => ({ ...prev, assigneeIds: values }));
+                  }}
+                  multiple
+                  size={Math.min(6, Math.max(3, users.length))}
+                >
                   {users.map((user) => <option key={user._id} value={user._id}>{user.name} ({user.email})</option>)}
                 </select>
+                <div className="text-xs text-muted">Hold Ctrl/Cmd to select multiple assignees.</div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>

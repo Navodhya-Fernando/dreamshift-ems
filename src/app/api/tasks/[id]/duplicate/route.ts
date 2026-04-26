@@ -76,6 +76,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       priority: normalizePriority(sourceTask.priority),
       projectId: mongoose.isValidObjectId(projectId) ? new mongoose.Types.ObjectId(projectId) : projectId,
       assigneeId: sourceTask.assigneeId,
+      assigneeIds: Array.isArray(sourceTask.assigneeIds) ? sourceTask.assigneeIds : (sourceTask.assigneeId ? [sourceTask.assigneeId] : []),
       dueDate: sourceTask.dueDate || sourceTask.due_date,
       startDate: undefined,
       endDate: undefined,

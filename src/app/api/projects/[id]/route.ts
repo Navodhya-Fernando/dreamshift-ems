@@ -66,6 +66,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const userByEmail = new Map(users.map((user) => [String(user.email || '').toLowerCase(), { _id: String(user._id), name: user.name, email: user.email }]));
 
     const tasks = tasksRaw.map((task) => ({
+      ...(() => {
+        const assigneeIds = Array.isArray(task.assigneeIds)
+          ? task.assigneeIds.map((value) => String(value || '')).filter(Boolean)
+          : [];
+        const assigneeUsers = assigneeIds
+          .map((assigneeId) => userById.get(assigneeId))
+          .filter(Boolean);
+        return {
+          assigneeIds: assigneeUsers,
+        };
+      })(),
       ...task,
       description: task.description || '',
       dueDate: task.dueDate || task.due_date,

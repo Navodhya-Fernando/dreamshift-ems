@@ -70,6 +70,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       status: normalizeStatus(task.status),
       priority: String(task.priority || 'MEDIUM').toUpperCase(),
       assigneeId: mongoose.isValidObjectId(String(task.assigneeId)) ? task.assigneeId : undefined,
+      assigneeIds: Array.isArray(task.assigneeIds)
+        ? task.assigneeIds.filter((assigneeId) => mongoose.isValidObjectId(String(assigneeId)))
+        : mongoose.isValidObjectId(String(task.assigneeId))
+        ? [task.assigneeId]
+        : [],
       projectId: duplicatedProject._id,
       dueDate: task.dueDate || task.due_date,
       startDate: task.startDate || task.start_date,

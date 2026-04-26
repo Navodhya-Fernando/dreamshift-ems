@@ -7,6 +7,7 @@ export interface ITask extends Document {
   projectId: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   assigneeId?: mongoose.Types.ObjectId;
+  assigneeIds?: mongoose.Types.ObjectId[];
   dueDate?: Date;
   startDate?: Date;
   endDate?: Date;
@@ -36,6 +37,7 @@ const TaskSchema: Schema = new Schema(
       default: 'MEDIUM'
     },
     assigneeId: { type: Schema.Types.ObjectId, ref: 'User' },
+    assigneeIds: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     projectId: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
     dueDate: { type: Date, required: false },
     startDate: { type: Date, required: false },

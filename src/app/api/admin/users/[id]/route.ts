@@ -87,9 +87,13 @@ function normalizeEmploymentHistory(value?: unknown) {
 }
 
 function buildAssigneeFilter(user: { _id: unknown; email?: string | null; name?: string | null }) {
+  const userId = String(user._id || '');
   const matchers: Array<Record<string, unknown>> = [
+    { assigneeId: userId },
     { assigneeId: user._id },
-    { assigneeId: mongoose.isValidObjectId(String(user._id)) ? new mongoose.Types.ObjectId(String(user._id)) : user._id },
+    { assigneeId: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : user._id },
+    { assigneeIds: userId },
+    { assigneeIds: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : user._id },
   ];
   if (user.email) {
     matchers.push({ assignee: user.email });
