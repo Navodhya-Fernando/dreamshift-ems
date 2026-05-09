@@ -68,6 +68,22 @@
   gap: 12px;
 }
 
+.time-filter-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.time-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.time-filter-note {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 .time-kpi {
   display: flex;
   align-items: center;
@@ -456,7 +472,8 @@
   .time-tracker-form,
   .time-quick-grid,
   .time-table-header,
-  .time-table-row {
+  .time-table-row,
+  .time-filter-grid {
     grid-template-columns: 1fr;
   }
 

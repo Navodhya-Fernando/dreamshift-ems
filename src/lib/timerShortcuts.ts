@@ -121,24 +121,46 @@ export function subscribeTimerCommand(handler: (command: TimerCommand) => void) 
 export async function persistElapsedToTask(snapshot: TimerSnapshot) {
   if (!snapshot.activeTask || snapshot.elapsedSeconds <= 0) return;
 
-  const readRes = await fetch(`/api/tasks/${snapshot.activeTask}`, { cache: 'no-store' });
-  const readJson = await readRes.json();
-  if (!readJson.success) {
-    throw new Error(readJson.error || 'Unable to read task for timer save');
+  const readTaskResponse = await fetch(`/api/tasks/${snapshot.activeTask}`, { cache: 'no-store' });
+  const readTaskJson = await readTaskResponse.json();
+  if (!readTaskResponse.ok || !readTaskJson.success) {
+    throw new Error(readTaskJson.error || 'Unable to read task for timer save');
   }
 
-  const currentSpent = Number(readJson.data?.timeSpent || 0);
+  const currentSpent = Number(readTaskJson.data?.timeSpent || 0);
   const nextSpent = currentSpent + snapshot.elapsedSeconds;
 
-  const writeRes = await fetch(`/api/tasks/${snapshot.activeTask}`, {
+  const endTime = new Date();
+  const startTime = new Date(endTime.getTime() - snapshot.elapsedSeconds * 1000);
+
+  const response = await fetch('/api/time-entries', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      taskId: snapshot.activeTask,
+      source: 'TIMER',
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      note: snapshot.activityTitle || undefined,
+    }),
+  });
+
+  const json = await response.json();
+  if (!response.ok || !json.success) {
+    throw new Error(json.error || 'Unable to save timer session');
+  }
+
+  const updateResponse = await fetch(`/api/tasks/${snapshot.activeTask}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ timeSpent: nextSpent }),
   });
-  const writeJson = await writeRes.json();
-  if (!writeJson.success) {
-    throw new Error(writeJson.error || 'Unable to save timer session');
+  const updateJson = await updateResponse.json();
+  if (!updateResponse.ok || !updateJson.success) {
+    throw new Error(updateJson.error || 'Unable to update task total');
   }
+
+  return { entry: json.data, nextSpent };
 }
 
 export const timerShortcutEvents = {

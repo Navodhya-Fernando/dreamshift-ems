@@ -7,14 +7,15 @@ import { Clock as ClockIcon, Play, Square, FileText, RefreshCw, TimerReset, Tren
 import DataStatusBanner from '@/components/ui/DataStatusBanner';
 import { useCachedApi } from '@/lib/useCachedApi';
 import { toastError, toastInfo, toastSuccess } from '@/lib/toast';
-import { dispatchTimerCommand, readTimerSnapshot, subscribeTimerCommand, subscribeTimerState, writeTimerSnapshot } from '@/lib/timerShortcuts';
+import { dispatchTimerCommand, persistElapsedToTask, readTimerSnapshot, subscribeTimerCommand, subscribeTimerState, writeTimerSnapshot } from '@/lib/timerShortcuts';
 import './time.css';
 
 type TimeTask = {
   _id: string;
   title: string;
   timeSpent?: number;
-  projectId?: { name?: string } | string;
+  projectId?: { _id?: string; name?: string } | string;
+  workspaceId?: { _id?: string; name?: string } | string;
   dueDate?: string;
   status?: string;
 };
@@ -82,6 +83,229 @@ function getEntrySourceTone(source?: string) {
   return { label: 'Timer', color: '#2DD4BF', bg: 'rgba(45,212,191,0.14)' };
 }
 
+type TimeWindowFilter = 'THIS_WEEK' | 'THIS_MONTH' | 'LAST_7_DAYS' | 'LAST_30_DAYS' | 'ALL_TIME' | 'CUSTOM';
+
+type CustomDateRange = {
+  start: string;
+  end: string;
+};
+
+function startOfLocalDay(date: Date) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function endOfLocalDay(date: Date) {
+  const next = new Date(date);
+  next.setHours(23, 59, 59, 999);
+  return next;
+}
+
+function getWindowRange(filter: TimeWindowFilter, customRange: CustomDateRange) {
+  const now = new Date();
+
+  if (filter === 'ALL_TIME') return { start: null as Date | null, end: null as Date | null };
+
+  if (filter === 'CUSTOM') {
+    if (!customRange.start || !customRange.end) return { start: null as Date | null, end: null as Date | null };
+    const start = startOfLocalDay(new Date(customRange.start));
+    const end = endOfLocalDay(new Date(customRange.end));
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end.getTime() < start.getTime()) {
+      return { start: null as Date | null, end: null as Date | null };
+    }
+    return { start, end };
+  }
+
+  if (filter === 'THIS_MONTH') {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { start, end: endOfLocalDay(now) };
+  }
+
+  if (filter === 'LAST_30_DAYS') {
+    const start = startOfLocalDay(new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000));
+    return { start, end: endOfLocalDay(now) };
+  }
+
+  if (filter === 'LAST_7_DAYS') {
+    const start = startOfLocalDay(new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000));
+    return { start, end: endOfLocalDay(now) };
+  }
+
+  const weekday = now.getDay();
+  const diffToMonday = (weekday + 6) % 7;
+  const start = startOfLocalDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToMonday));
+  return { start, end: endOfLocalDay(now) };
+}
+
+function formatWindowLabel(filter: TimeWindowFilter, customRange: CustomDateRange) {
+  if (filter === 'THIS_MONTH') return 'This Month';
+  if (filter === 'LAST_7_DAYS') return 'Last 7 Days';
+  if (filter === 'LAST_30_DAYS') return 'Last 30 Days';
+  if (filter === 'ALL_TIME') return 'All Time';
+  if (filter === 'CUSTOM' && customRange.start && customRange.end) {
+    return `${customRange.start} to ${customRange.end}`;
+  }
+  if (filter === 'CUSTOM') return 'Custom Range';
+  return "This Week";
+}
+
+type TaskPickerItem = {
+  _id: string;
+  title: string;
+  projectId: string;
+  projectName: string;
+  workspaceId: string;
+  workspaceName: string;
+  timeSpent?: number;
+  dueDate?: string;
+  status?: string;
+};
+
+function getTaskRef(value: TimeTask['projectId'] | TimeTask['workspaceId']) {
+  if (!value) return { id: '', name: '' };
+  if (typeof value === 'object') return { id: String(value._id || ''), name: String(value.name || '') };
+  return { id: String(value || ''), name: '' };
+}
+
+function buildTaskPickerItem(task: TimeTask): TaskPickerItem {
+  const projectRef = getTaskRef(task.projectId);
+  const workspaceRef = getTaskRef(task.workspaceId);
+  return {
+    _id: task._id,
+    title: task.title,
+    projectId: projectRef.id,
+    projectName: projectRef.name || 'General',
+    workspaceId: workspaceRef.id,
+    workspaceName: workspaceRef.name || 'Workspace',
+    timeSpent: task.timeSpent,
+    dueDate: task.dueDate,
+    status: task.status,
+  };
+}
+
+function TaskPickerSelect({
+  label,
+  value,
+  onChange,
+  tasks,
+  placeholder,
+  searchPlaceholder,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  tasks: TaskPickerItem[];
+  placeholder: string;
+  searchPlaceholder: string;
+  disabled?: boolean;
+}) {
+  const [workspaceId, setWorkspaceId] = useState('');
+  const [projectId, setProjectId] = useState('');
+
+  const valueTask = useMemo(() => tasks.find((task) => task._id === value) || null, [tasks, value]);
+
+  useEffect(() => {
+    if (!valueTask) return;
+    setWorkspaceId(valueTask.workspaceId);
+    setProjectId(valueTask.projectId);
+  }, [valueTask]);
+
+  const workspaceOptions = useMemo(() => {
+    const grouped = new Map<string, { id: string; name: string }>();
+    tasks.forEach((task) => {
+      if (!task.workspaceId) return;
+      grouped.set(task.workspaceId, { id: task.workspaceId, name: task.workspaceName });
+    });
+    return Array.from(grouped.values()).sort((left, right) => left.name.localeCompare(right.name));
+  }, [tasks]);
+
+  const projectOptions = useMemo(() => {
+    if (!workspaceId) return [];
+    const grouped = new Map<string, { id: string; name: string }>();
+    tasks.forEach((task) => {
+      if (!task.workspaceId || task.workspaceId !== workspaceId || !task.projectId) return;
+      grouped.set(task.projectId, { id: task.projectId, name: task.projectName });
+    });
+    return Array.from(grouped.values()).sort((left, right) => left.name.localeCompare(right.name));
+  }, [tasks, workspaceId]);
+
+  const taskOptions = useMemo(() => {
+    if (!workspaceId || !projectId) return [];
+    return tasks
+      .filter((task) => task.workspaceId === workspaceId && task.projectId === projectId)
+      .sort((left, right) => left.title.localeCompare(right.title));
+  }, [tasks, workspaceId, projectId]);
+
+  const selectedTask = useMemo(() => tasks.find((task) => task._id === value), [tasks, value]);
+
+  useEffect(() => {
+    if (!selectedTask) return;
+    if (selectedTask.workspaceId !== workspaceId) setWorkspaceId(selectedTask.workspaceId);
+    if (selectedTask.projectId !== projectId) setProjectId(selectedTask.projectId);
+  }, [selectedTask, workspaceId, projectId]);
+
+  useEffect(() => {
+    if (workspaceId && !projectOptions.some((option) => option.id === projectId)) {
+      setProjectId('');
+      onChange('');
+    }
+  }, [workspaceId, projectId, projectOptions, onChange]);
+
+  useEffect(() => {
+    if (projectId && !taskOptions.some((task) => task._id === value)) {
+      onChange('');
+    }
+  }, [projectId, taskOptions, value, onChange]);
+
+  return (
+    <div className="time-field">
+      <span className="time-field-label">{label}</span>
+      <select
+        className="time-select"
+        value={workspaceId}
+        onChange={(event) => {
+          setWorkspaceId(event.target.value);
+          setProjectId('');
+          onChange('');
+        }}
+        disabled={disabled || workspaceOptions.length === 0}
+      >
+        <option value="">Select workspace</option>
+        {workspaceOptions.map((workspace) => (
+          <option key={workspace.id} value={workspace.id}>{workspace.name}</option>
+        ))}
+      </select>
+      <select
+        className="time-select"
+        value={projectId}
+        onChange={(event) => {
+          setProjectId(event.target.value);
+          onChange('');
+        }}
+        disabled={disabled || !workspaceId || projectOptions.length === 0}
+      >
+        <option value="">Select project</option>
+        {projectOptions.map((project) => (
+          <option key={project.id} value={project.id}>{project.name}</option>
+        ))}
+      </select>
+      <select
+        className="time-select"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={disabled || !workspaceId || !projectId || taskOptions.length === 0}
+      >
+        <option value="">{placeholder}</option>
+        {taskOptions.map((task) => (
+          <option key={task._id} value={task._id}>{task.title}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 export default function TimeTrackerPage() {
   const { data: session } = useSession();
   const {
@@ -111,6 +335,9 @@ export default function TimeTrackerPage() {
   const [timerRunning, setTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [manualSaving, setManualSaving] = useState(false);
+  const [timeWindow, setTimeWindow] = useState<TimeWindowFilter>('THIS_WEEK');
+  const [customDateRange, setCustomDateRange] = useState<CustomDateRange>({ start: '', end: '' });
+  const [visibleEntryCount, setVisibleEntryCount] = useState(5);
   const [manualEntry, setManualEntry] = useState({
     taskId: '',
     startTime: '',
@@ -189,6 +416,8 @@ export default function TimeTrackerPage() {
       if (command === 'stop') {
         setTimerRunning(false);
         setElapsedSeconds(0);
+        refreshEntries().catch(() => undefined);
+        refresh().catch(() => undefined);
       }
     });
 
@@ -219,16 +448,46 @@ export default function TimeTrackerPage() {
     return [...tasks].sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0));
   }, [tasks]);
 
-  const totalTrackedSeconds = useMemo(() => {
-    return tasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
-  }, [tasks]);
+  const taskPickerItems = useMemo(() => assignedTasks.map(buildTaskPickerItem), [assignedTasks]);
 
   const activeTaskRecord = useMemo(() => assignedTasks.find((task) => task._id === activeTask), [assignedTasks, activeTask]);
   const taskById = useMemo(() => new Map(tasks.map((task) => [task._id, task])), [tasks]);
+  const selectedWindowRange = useMemo(() => getWindowRange(timeWindow, customDateRange), [timeWindow, customDateRange]);
+  const windowLabel = useMemo(() => formatWindowLabel(timeWindow, customDateRange), [timeWindow, customDateRange]);
 
   const loggedEntries = useMemo(() => {
-    return [...timeEntries].sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
-  }, [timeEntries]);
+    const sortedEntries = [...timeEntries].sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+    if (timeWindow === 'ALL_TIME') {
+      return sortedEntries;
+    }
+    const { start, end } = selectedWindowRange;
+    if (!start || !end) {
+      return [];
+    }
+    return sortedEntries.filter((entry) => {
+      const startedAt = new Date(entry.startTime).getTime();
+      return startedAt >= start.getTime() && startedAt <= end.getTime();
+    });
+  }, [selectedWindowRange, timeEntries, timeWindow]);
+
+  const filteredTaskDurations = useMemo(() => {
+    const durations = new Map<string, number>();
+    loggedEntries.forEach((entry) => {
+      durations.set(entry.taskId, (durations.get(entry.taskId) || 0) + (entry.durationSeconds || 0));
+    });
+    return durations;
+  }, [loggedEntries]);
+
+  const totalTrackedSeconds = useMemo(() => {
+    return loggedEntries.reduce((sum, entry) => sum + (entry.durationSeconds || 0), 0);
+  }, [loggedEntries]);
+
+  const visibleLoggedEntries = useMemo(() => loggedEntries.slice(0, visibleEntryCount), [loggedEntries, visibleEntryCount]);
+  const canLoadMoreEntries = loggedEntries.length > visibleLoggedEntries.length;
+
+  useEffect(() => {
+    setVisibleEntryCount(5);
+  }, [timeWindow, customDateRange.end, customDateRange.start]);
 
   const overdueTasks = useMemo(() => {
     const now = Date.now();
@@ -249,7 +508,15 @@ export default function TimeTrackerPage() {
       .slice(0, 4);
   }, [tasks]);
 
-  const topTrackedTask = useMemo(() => assignedTasks[0], [assignedTasks]);
+  const topTrackedTask = useMemo(() => {
+    return [...assignedTasks]
+      .map((task) => ({
+        ...task,
+        timeSpent: filteredTaskDurations.get(task._id) || 0,
+      }))
+      .filter((task) => (task.timeSpent || 0) > 0)
+      .sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0))[0];
+  }, [assignedTasks, filteredTaskDurations]);
 
   const quickPicks = useMemo(() => {
     return focusTasks.length > 0 ? focusTasks : assignedTasks.slice(0, 4);
@@ -257,10 +524,14 @@ export default function TimeTrackerPage() {
 
   const taskTotalRows = useMemo(() => {
     return [...assignedTasks]
+      .map((task) => ({
+        ...task,
+        timeSpent: filteredTaskDurations.get(task._id) || 0,
+      }))
       .filter((task) => (task.timeSpent || 0) > 0)
       .sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0))
       .slice(0, 5);
-  }, [assignedTasks]);
+  }, [assignedTasks, filteredTaskDurations]);
 
   const toggleTimer = () => {
     if (!activeTask) {
@@ -286,30 +557,22 @@ export default function TimeTrackerPage() {
 
     const previous = targetTask.timeSpent || 0;
     const updatedTotal = previous + elapsedSeconds;
-    const endTime = new Date();
-    const startTime = new Date(endTime.getTime() - elapsedSeconds * 1000);
 
     try {
-      const res = await fetch('/api/time-entries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          taskId: activeTask,
-          source: 'TIMER',
-          startTime: startTime.toISOString(),
-          endTime: endTime.toISOString(),
-          note: activityTitle || undefined,
-        }),
+      const result = await persistElapsedToTask({
+        activeTask,
+        activityTitle,
+        elapsedSeconds,
+        isRunning: false,
+        lastTickAt: null,
       });
-      const json = await res.json();
-      if (!json.success) {
-        throw new Error(json.error || 'Failed to log tracked time');
-      }
 
       setData((prev) => prev.map((task) => (
         task._id === activeTask ? { ...task, timeSpent: updatedTotal } : task
       )));
-      setTimeEntries((prev) => [json.data as TimeEntry, ...prev]);
+      if (result?.entry) {
+        setTimeEntries((prev) => [result.entry as TimeEntry, ...prev]);
+      }
       setElapsedSeconds(0);
       toastSuccess(`Added ${formatTime(elapsedSeconds)} to ${targetTask.title}.`);
     } catch (err: unknown) {
@@ -416,6 +679,10 @@ export default function TimeTrackerPage() {
     }
   };
 
+  const loadMoreEntries = () => {
+    setVisibleEntryCount((current) => Math.min(current + 15, loggedEntries.length));
+  };
+
   const totalAssignedTasks = tasks.length;
   const completionCount = useMemo(() => tasks.filter((task) => normalizeStatus(task.status) === 'done').length, [tasks]);
   const completionRate = totalAssignedTasks ? Math.round((completionCount / totalAssignedTasks) * 100) : 0;
@@ -433,13 +700,14 @@ export default function TimeTrackerPage() {
               </div>
             </div>
             <div className="modal-body" style={{ display: 'grid', gap: 10 }}>
-              <select
-                className="input"
+              <TaskPickerSelect
+                label="Task"
                 value={editingEntry.taskId}
-                onChange={(event) => setEditingEntry((prev) => prev ? { ...prev, taskId: event.target.value } : prev)}
-              >
-                {assignedTasks.map((task) => <option key={`edit-${task._id}`} value={task._id}>{task.title}</option>)}
-              </select>
+                onChange={(taskId) => setEditingEntry((prev) => prev ? { ...prev, taskId } : prev)}
+                tasks={taskPickerItems}
+                placeholder="Select task"
+                searchPlaceholder="Search workspace, project, or task"
+              />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
                 <input className="input" type="datetime-local" value={editingEntry.startTime} onChange={(event) => setEditingEntry((prev) => prev ? { ...prev, startTime: event.target.value } : prev)} />
                 <input className="input" type="datetime-local" value={editingEntry.endTime} onChange={(event) => setEditingEntry((prev) => prev ? { ...prev, endTime: event.target.value } : prev)} />
@@ -490,6 +758,56 @@ export default function TimeTrackerPage() {
         onRefresh={refresh}
       />
 
+      <div className="time-panel card time-filter-panel">
+        <div className="time-panel-header" style={{ marginBottom: 10 }}>
+          <div>
+            <div className="card-title">Time window</div>
+            <div className="card-subtitle">Filter the timesheet summaries and log list</div>
+          </div>
+          <span className="time-panel-chip">Showing {windowLabel}</span>
+        </div>
+        <div className="time-filter-grid">
+          <label className="time-field">
+            <span className="time-field-label">Preset</span>
+            <select className="time-select" value={timeWindow} onChange={(event) => setTimeWindow(event.target.value as TimeWindowFilter)}>
+              <option value="THIS_WEEK">This Week</option>
+              <option value="THIS_MONTH">This Month</option>
+              <option value="LAST_7_DAYS">Last 7 Days</option>
+              <option value="LAST_30_DAYS">Last 30 Days</option>
+              <option value="ALL_TIME">All Time</option>
+              <option value="CUSTOM">Custom Range</option>
+            </select>
+          </label>
+          {timeWindow === 'CUSTOM' ? (
+            <>
+              <label className="time-field">
+                <span className="time-field-label">Start date</span>
+                <input
+                  className="time-input"
+                  type="date"
+                  value={customDateRange.start}
+                  onChange={(event) => setCustomDateRange((prev) => ({ ...prev, start: event.target.value }))}
+                />
+              </label>
+              <label className="time-field">
+                <span className="time-field-label">End date</span>
+                <input
+                  className="time-input"
+                  type="date"
+                  value={customDateRange.end}
+                  onChange={(event) => setCustomDateRange((prev) => ({ ...prev, end: event.target.value }))}
+                />
+              </label>
+            </>
+          ) : null}
+        </div>
+        <div className="time-filter-note">
+          {timeWindow === 'CUSTOM' && (!customDateRange.start || !customDateRange.end)
+            ? 'Pick both dates to apply the custom range.'
+            : 'This affects logged hours, task totals, and the entries list below.'}
+        </div>
+      </div>
+
       <section className="time-kpi-grid">
         {[
           { label: 'Assigned Tasks', value: totalAssignedTasks, icon: Layers3, color: '#5B6BF8' },
@@ -535,21 +853,15 @@ export default function TimeTrackerPage() {
                   />
                 </label>
 
-                <label className="time-field">
-                  <span className="time-field-label">Task</span>
-                  <select
-                    className="time-select"
-                    value={activeTask}
-                    onChange={(e) => setActiveTask(e.target.value)}
-                    disabled={timerRunning}
-                  >
-                    <option value="">Select assigned task</option>
-                    {assignedTasks.map((task) => {
-                      const projectName = typeof task.projectId === 'object' ? task.projectId?.name || 'General' : 'General';
-                      return <option key={task._id} value={task._id}>{task.title} · {projectName}</option>;
-                    })}
-                  </select>
-                </label>
+                <TaskPickerSelect
+                  label="Task"
+                  value={activeTask}
+                  onChange={setActiveTask}
+                  tasks={taskPickerItems}
+                  placeholder="Select assigned task"
+                  searchPlaceholder="Search workspace, project, or task"
+                  disabled={timerRunning}
+                />
               </div>
 
               <div className="time-tracker-status">
@@ -583,17 +895,14 @@ export default function TimeTrackerPage() {
             </div>
 
             <form onSubmit={submitManualEntry} style={{ display: 'grid', gap: 10 }}>
-              <select
-                className="time-select"
+              <TaskPickerSelect
+                label="Task"
                 value={manualEntry.taskId}
-                onChange={(e) => setManualEntry((prev) => ({ ...prev, taskId: e.target.value }))}
-                required
-              >
-                <option value="">Select task</option>
-                {assignedTasks.map((task) => (
-                  <option key={`manual-${task._id}`} value={task._id}>{task.title}</option>
-                ))}
-              </select>
+                onChange={(taskId) => setManualEntry((prev) => ({ ...prev, taskId }))}
+                tasks={taskPickerItems}
+                placeholder="Select task"
+                searchPlaceholder="Search workspace, project, or task"
+              />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
                 <input
                   className="time-input"
@@ -672,10 +981,10 @@ export default function TimeTrackerPage() {
             {entriesLoading ? (
               <div className="time-empty">Loading entries...</div>
             ) : loggedEntries.length === 0 ? (
-              <div className="time-empty">No logged entries yet.</div>
+              <div className="time-empty">No logged entries for {windowLabel.toLowerCase()}.</div>
             ) : (
               <div style={{ display: 'grid', gap: 10 }}>
-                {loggedEntries.map((entry) => {
+                {visibleLoggedEntries.map((entry) => {
                   const task = taskById.get(entry.taskId);
                   const projectName = typeof task?.projectId === 'object' ? task.projectId?.name || 'General' : 'General';
                   const sourceTone = getEntrySourceTone(entry.source);
@@ -737,6 +1046,13 @@ export default function TimeTrackerPage() {
                     </div>
                   );
                 })}
+                {canLoadMoreEntries ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 4 }}>
+                    <button type="button" className="btn btn-secondary" onClick={loadMoreEntries}>
+                      View more
+                    </button>
+                  </div>
+                ) : null}
               </div>
             )}
           </div>
@@ -808,7 +1124,7 @@ export default function TimeTrackerPage() {
             <div className="time-panel-header">
               <div>
                 <div className="card-title">Task totals</div>
-                <div className="card-subtitle">Top tasks by total tracked time</div>
+                <div className="card-subtitle">Top tasks by total tracked time in {windowLabel.toLowerCase()}</div>
               </div>
               <span className="time-panel-chip">{taskTotalRows.length} rows</span>
             </div>

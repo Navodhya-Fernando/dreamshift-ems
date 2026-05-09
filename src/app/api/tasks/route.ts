@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import mongoose from 'mongoose';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/mongoose';
+import Workspace from '@/models/Workspace';
 import Task from '@/models/Task';
 import Project from '@/models/Project';
 import User from '@/models/User';
@@ -60,7 +61,7 @@ export async function GET(req: Request) {
             { workspace_id: { $in: accessibleWorkspaceIds } },
           ],
         },
-        { projection: { _id: 1, name: 1 } }
+        { projection: { _id: 1, name: 1, workspaceId: 1, workspace_id: 1 } }
       )
       .toArray();
 
@@ -70,6 +71,19 @@ export async function GET(req: Request) {
       .map((id) => new mongoose.Types.ObjectId(id));
 
     const projectNameById = new Map(accessibleProjects.map((project) => [String(project._id), String(project.name || 'Project')]));
+    const projectWorkspaceById = new Map(accessibleProjects.map((project) => [String(project._id), String(project.workspaceId || project.workspace_id || '')]));
+
+    const accessibleWorkspaces = await Workspace.collection
+      .find(
+        {
+          $or: [
+            { _id: { $in: accessibleWorkspaceObjectIds } },
+          ],
+        },
+        { projection: { _id: 1, name: 1 } }
+      )
+      .toArray();
+    const workspaceNameById = new Map(accessibleWorkspaces.map((workspace) => [String(workspace._id), String(workspace.name || 'Workspace')]));
 
     const users = await User.find({}, { _id: 1, name: 1, email: 1 }).lean();
     const currentUser = users.find((user) => String(user._id) === String(userId));
@@ -148,6 +162,7 @@ export async function GET(req: Request) {
 
     const data = tasks.map((task) => {
       const normalizedProjectId = task.projectId ? String(task.projectId) : String(task.project_id || '');
+      const normalizedWorkspaceId = normalizedProjectId ? String(projectWorkspaceById.get(normalizedProjectId) || '') : '';
       const legacyAssigneeEmail = String(task.assignee || '').toLowerCase();
       const primaryAssigneeFromId = task.assigneeId ? userById.get(String(task.assigneeId)) : undefined;
       const assigneeFromEmail = legacyAssigneeEmail ? userByEmail.get(legacyAssigneeEmail) : undefined;
@@ -174,6 +189,12 @@ export async function GET(req: Request) {
           ? {
               _id: normalizedProjectId,
               name: projectNameById.get(normalizedProjectId) || 'Project',
+            }
+          : undefined,
+        workspaceId: normalizedWorkspaceId
+          ? {
+              _id: normalizedWorkspaceId,
+              name: workspaceNameById.get(normalizedWorkspaceId) || 'Workspace',
             }
           : undefined,
         assigneeId: primaryAssignee,
