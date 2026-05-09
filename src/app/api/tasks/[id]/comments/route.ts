@@ -285,7 +285,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           actorId: currentUserId,
           event: 'comment.mention',
         },
-        emailSubject: `Mentioned in task comment`,
       });
     }
 

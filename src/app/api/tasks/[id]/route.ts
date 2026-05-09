@@ -267,7 +267,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             actorId: userId,
             event: 'task.reassigned',
           },
-          emailSubject: `Task assignment: ${String(updatePayload.title || currentTask.title || 'Untitled task')}`,
         });
       } catch (notifyError) {
         console.warn('Failed to send assignment notification on task update:', notifyError);

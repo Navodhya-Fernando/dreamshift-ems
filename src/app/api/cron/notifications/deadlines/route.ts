@@ -199,7 +199,6 @@ export async function GET(req: Request) {
             },
             dedupeKey: overdueDayKey,
             dedupeWindowHours: 25,
-            emailSubject: `Overdue task: ${taskTitle}`,
           });
           if (sent) overdueAlerts += 1;
         }
@@ -280,7 +279,6 @@ export async function GET(req: Request) {
           },
           dedupeKey: overdueDayKey,
           dedupeWindowHours: 25,
-          emailSubject: `Overdue project: ${projectName}`,
         });
         if (sent) projectOverdueAlerts += 1;
         continue;
@@ -300,7 +298,6 @@ export async function GET(req: Request) {
         },
         dedupeKey: dueSoonKey,
         dedupeWindowHours: 72,
-        emailSubject: `Project deadline reminder: ${projectName}`,
       });
       if (sent) projectDueSoonAlerts += 1;
     }

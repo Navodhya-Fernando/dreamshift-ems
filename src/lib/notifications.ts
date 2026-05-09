@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongoose';
 import Notification, { type NotificationType } from '@/models/Notification';
 import User from '@/models/User';
-import { sendBrevoEmail } from '@/lib/brevo';
 
 type NotifyUserInput = {
   userId: string;
@@ -11,8 +10,6 @@ type NotifyUserInput = {
   message: string;
   link?: string;
   metadata?: Record<string, unknown>;
-  emailSubject?: string;
-  emailHtml?: string;
 };
 
 type NotifyUserOnceInput = NotifyUserInput & {
@@ -58,22 +55,6 @@ export async function notifyUser(input: NotifyUserInput): Promise<void> {
           : true;
 
   if (!shouldSendForType) return;
-
-  const htmlContent =
-    input.emailHtml ||
-    `<p>${input.message}</p>${input.link ? `<p><a href="${input.link}">Open in DreamShift</a></p>` : ''}`;
-
-  const sent = await sendBrevoEmail({
-    toEmail: String(targetUser.email),
-    toName: String(targetUser.name || ''),
-    subject: input.emailSubject || input.title,
-    htmlContent,
-    textContent: input.message,
-  });
-
-  if (!sent) {
-    console.warn(`Failed to send notification email to ${String(targetUser.email)}`);
-  }
 }
 
 export async function notifyUserOnce(input: NotifyUserOnceInput): Promise<boolean> {
