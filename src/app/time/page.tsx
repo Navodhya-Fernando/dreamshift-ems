@@ -207,7 +207,11 @@ function TaskPickerSelect({
   const valueTask = useMemo(() => tasks.find((task) => task._id === value) || null, [tasks, value]);
 
   useEffect(() => {
-    if (!valueTask) return;
+    if (!valueTask) {
+      setWorkspaceId('');
+      setProjectId('');
+      return;
+    }
     setWorkspaceId(valueTask.workspaceId);
     setProjectId(valueTask.projectId);
   }, [valueTask]);
