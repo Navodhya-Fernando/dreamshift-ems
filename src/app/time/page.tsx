@@ -262,14 +262,14 @@ function TaskPickerSelect({
   }, [selectedTask, workspaceId, projectId]);
 
   useEffect(() => {
-    if (workspaceId && !projectOptions.some((option) => option.id === projectId)) {
+    if (workspaceId && projectId && !projectOptions.some((option) => option.id === projectId)) {
       setProjectId('');
       onChange('');
     }
   }, [workspaceId, projectId, projectOptions, onChange]);
 
   useEffect(() => {
-    if (projectId && !taskOptions.some((task) => task._id === value)) {
+    if (projectId && value && !taskOptions.some((task) => task._id === value)) {
       onChange('');
     }
   }, [projectId, taskOptions, value, onChange]);
