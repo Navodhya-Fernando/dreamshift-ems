@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { Clock as ClockIcon, Play, Square, FileText, RefreshCw, TimerReset, TrendingUp, Layers3, ArrowRight, CheckCircle2, Sparkles, Pencil, Trash2 } from 'lucide-react';
@@ -203,18 +203,29 @@ function TaskPickerSelect({
 }) {
   const [workspaceId, setWorkspaceId] = useState('');
   const [projectId, setProjectId] = useState('');
+  const previousValueRef = useRef(value);
 
   const valueTask = useMemo(() => tasks.find((task) => task._id === value) || null, [tasks, value]);
 
   useEffect(() => {
+    const previousValue = previousValueRef.current;
+    previousValueRef.current = value;
+
     if (!valueTask) {
-      setWorkspaceId('');
-      setProjectId('');
+      if (previousValue) {
+        setWorkspaceId('');
+        setProjectId('');
+      }
       return;
     }
-    setWorkspaceId(valueTask.workspaceId);
-    setProjectId(valueTask.projectId);
-  }, [valueTask]);
+
+    if (workspaceId !== valueTask.workspaceId) {
+      setWorkspaceId(valueTask.workspaceId);
+    }
+    if (projectId !== valueTask.projectId) {
+      setProjectId(valueTask.projectId);
+    }
+  }, [value, valueTask, workspaceId, projectId]);
 
   const workspaceOptions = useMemo(() => {
     const grouped = new Map<string, { id: string; name: string }>();
