@@ -190,6 +190,7 @@ export default function ProjectDetailPage() {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [showCreateTask, setShowCreateTask] = useState(false);
+  const [taskView, setTaskView] = useState<'list' | 'board'>('list');
   const [savingTask, setSavingTask] = useState(false);
   const [showTaskAssigneePicker, setShowTaskAssigneePicker] = useState(false);
   const [taskAssigneeQuery, setTaskAssigneeQuery] = useState('');
@@ -626,7 +627,7 @@ export default function ProjectDetailPage() {
       <div className="project-grid">
         <section className="project-tasks-area card" style={{ padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 8, flexWrap: 'wrap' }}>
-            <div className="section-title">Tasks</div>
+            <div className="section-title">Tasks</div><div className="project-view-switch" role="group" aria-label="Task view"><button type="button" className={`btn ${taskView === 'list' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={taskView === 'list'} onClick={() => setTaskView('list')}>List</button><button type="button" className={`btn ${taskView === 'board' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={taskView === 'board'} onClick={() => setTaskView('board')}>Board</button></div>
             <button className="btn btn-secondary" type="button" onClick={() => setShowCreateTask((prev) => !prev)}>
               <Plus size={13} /> {showCreateTask ? 'Close' : 'Create Task'}
             </button>
@@ -757,7 +758,7 @@ export default function ProjectDetailPage() {
             </form>
           )}
 
-          {payload.tasks.length === 0 ? (
+          {taskView === 'list' && (payload.tasks.length === 0 ? (
             <div className="text-sm text-muted">No tasks yet for this project.</div>
           ) : (
             <div className="task-inline-list">
@@ -778,10 +779,9 @@ export default function ProjectDetailPage() {
                 </div>
               ))}
             </div>
-          )}
+          ))}
 
-          <div style={{ marginTop: 16 }}>
-            <div className="section-title" style={{ marginBottom: 10 }}>Kanban</div>
+          {taskView === 'board' && <div style={{ marginTop: 16 }}>
             <div className="project-kanban-board">
               {projectTaskStatuses.map((column) => {
                 const columnTasks = payload.tasks.filter((task) => String(task.status || 'TODO').toUpperCase() === column.key);
@@ -912,7 +912,7 @@ export default function ProjectDetailPage() {
                 );
               })}
             </div>
-          </div>
+          </div>}
         </section>
 
         <aside className="project-meta-area">
@@ -931,7 +931,7 @@ export default function ProjectDetailPage() {
           </div>
 
           <div className="card" style={{ padding: 16, marginTop: 12 }}>
-            <h3 className="text-sm font-bold uppercase text-muted flex items-center gap-2 mb-3"><Sparkles size={14} /> Data Science Insights</h3>
+            <h3 className="text-sm font-bold uppercase text-muted flex items-center gap-2 mb-3"><Sparkles size={14} /> Delivery indicators</h3>
             <div className="text-sm" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <AlertCircle size={14} color={riskScore > 65 ? '#EF4444' : '#F59E0B'} />
               Delivery Risk Score: <strong>{riskScore}/100</strong>

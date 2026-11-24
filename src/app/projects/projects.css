@@ -752,3 +752,6 @@
     align-items: stretch;
   }
 }
+
+.project-view-switch{display:inline-flex;gap:4px;border:1px solid var(--border-md);padding:3px;border-radius:12px;background:rgba(255,255,255,.04)}
+.project-tasks-area{min-width:0;overflow-x:auto}

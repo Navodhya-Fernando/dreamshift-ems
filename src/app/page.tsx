@@ -4,8 +4,7 @@ import React from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
-  CheckSquare, Clock, TrendingUp, AlertCircle,
-  ArrowRight, Activity, BrainCircuit
+  CheckSquare, Clock, AlertCircle, ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
 import DataStatusBanner from '@/components/ui/DataStatusBanner';
@@ -39,7 +38,8 @@ type DashboardTask = {
   title: string;
   dueDate?: string;
   status: string;
-  projectId?: { name?: string };
+  projectId?: { name?: string } | string;
+  projectName?: string;
 };
 
 type ActivityItem = {
@@ -101,7 +101,7 @@ export default function HomePage() {
 
   if (status !== 'authenticated') {
     return (
-      <div className="page-wrapper animate-in">
+      <div className="page-wrapper home-page animate-in">
         <div className="card" style={{ padding: 20, color: 'var(--text-secondary)' }}>
           Preparing your workspace...
         </div>
@@ -110,14 +110,13 @@ export default function HomePage() {
   }
 
   return (
-    <div className="page-wrapper animate-in">
+    <div className="page-wrapper home-page animate-in">
       <div className="home-header">
         <div>
           <h1 className="home-greeting">{greeting()}, {firstName}.</h1>
           <p className="text-muted text-sm">Here&apos;s what&apos;s happening in your workspace today.</p>
         </div>
         <div className="home-header-actions">
-          <button className="btn btn-secondary" onClick={refresh} disabled={isRefreshing}>Refresh</button>
           <Link href="/tasks" className="btn btn-primary">
             View all tasks <ArrowRight size={14} />
           </Link>
@@ -135,10 +134,9 @@ export default function HomePage() {
 
       <div className="kpi-grid">
         {[
-          { label: 'Active Tasks', value: data.kpi.active, icon: CheckSquare, color: '#5B6BF8' },
-          { label: 'Completion Rate', value: `${data.kpi.completion}%`, icon: TrendingUp, color: '#10B981' },
+          { label: 'Open tasks', value: data.kpi.active, icon: CheckSquare, color: '#5B6BF8' },
           { label: 'Hours Logged', value: data.kpi.hours, icon: Clock, color: '#F59E0B' },
-          { label: 'Overdue', value: data.kpi.overdue, icon: AlertCircle, color: '#EF4444' },
+          { label: 'Overdue tasks', value: data.kpi.overdue, icon: AlertCircle, color: '#EF4444' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div className="kpi-card" key={label}>
             <div className="kpi-icon" style={{ background: `${color}1A`, color }}>
@@ -174,57 +172,21 @@ export default function HomePage() {
                 <span>Task</span><span>Project</span><span>Due</span><span>Status</span>
               </div>
               {data.myTasks.map((task) => (
-                <div key={task._id} className={`task-row ${urgencyClass(task.dueDate)}`}>
+                <Link href={`/tasks/${task._id}`} key={task._id} className={`task-row ${urgencyClass(task.dueDate)}`}>
                   <span className="task-row-title">{task.title}</span>
-                  <span className="text-muted text-sm">{task.projectId?.name || 'General'}</span>
+                  <span className="text-muted text-sm">{task.projectName || (typeof task.projectId === 'object' ? task.projectId?.name : undefined) || 'General'}</span>
                   <span className="text-sm" style={{ color: task.dueDate && new Date(task.dueDate) < new Date() ? 'var(--urgency-critical)' : 'var(--text-secondary)' }}>
                     {formatDate(task.dueDate)}
                   </span>
                   <span className={`badge badge-${task.status === 'done' ? 'done' : task.status === 'in_progress' ? 'doing' : 'todo'}`}>
-                    {task.status === 'in_progress' ? 'In Progress' : task.status === 'done' ? 'Done' : 'To Do'}
+                    {task.status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           )}
 
-          <div className="insight-grid">
-            <div className="insight-card card">
-              <div className="insight-header">
-                <div className="insight-icon" style={{ background: 'rgba(91,107,248,0.1)', color: '#5B6BF8' }}>
-                  <BrainCircuit size={16} />
-                </div>
-                <div>
-                  <div className="insight-title">Completion Probability</div>
-                  <div className="insight-subtitle">Model-driven delivery confidence</div>
-                </div>
-                <div className="insight-score" style={{ color: '#10B981' }}>{data.insights.completionProbability}%</div>
-              </div>
-              <div className="insight-bar-track">
-                <div className="insight-bar-fill" style={{ width: `${data.insights.completionProbability}%`, background: '#10B981' }} />
-              </div>
-              <p className="insight-footnote">Derived from completion rate, overdue load, and assignment velocity.</p>
-            </div>
-
-            <div className="insight-card card">
-              <div className="insight-header">
-                <div className="insight-icon" style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>
-                  <Activity size={16} />
-                </div>
-                <div>
-                  <div className="insight-title">Burnout Risk</div>
-                  <div className="insight-subtitle">Workload concentration score</div>
-                </div>
-                <div className="insight-score" style={{ color: data.insights.burnoutRiskScore > 70 ? '#EF4444' : data.insights.burnoutRiskScore > 40 ? '#F59E0B' : '#10B981' }}>
-                  {data.insights.burnoutRiskLabel}
-                </div>
-              </div>
-              <div className="insight-bar-track">
-                <div className="insight-bar-fill" style={{ width: `${data.insights.burnoutRiskScore}%`, background: data.insights.burnoutRiskScore > 70 ? '#EF4444' : data.insights.burnoutRiskScore > 40 ? '#F59E0B' : '#10B981' }} />
-              </div>
-              <p className="insight-footnote">Scored from active and overdue assigned tasks.</p>
-            </div>
-          </div>
+          <Link href="/analytics" className="btn btn-ghost">View performance analytics <ArrowRight size={14} /></Link>
         </div>
 
         <div className="home-col-side">
@@ -239,13 +201,13 @@ export default function HomePage() {
                 <div className="deadline-meta"><span>You are clear for now</span><span>—</span></div>
               </div>
             ) : data.upcoming.map((item) => (
-              <div key={item.id} className={`deadline-item card ${urgencyClass(item.dueDate)}`}>
+              <Link href={`/tasks/${item.id}`} key={item.id} className={`deadline-item card ${urgencyClass(item.dueDate)}`}>
                 <div className="deadline-title">{item.title}</div>
                 <div className="deadline-meta">
                   <span>{item.projectName}</span>
                   <span style={{ color: 'var(--urgency-critical)' }}>{formatDate(item.dueDate)}</span>
                 </div>
-              </div>
+              </Link>
             ))}
 
             <Link href="/notifications" className="btn btn-secondary w-full justify-center" style={{ marginTop: 8 }}>

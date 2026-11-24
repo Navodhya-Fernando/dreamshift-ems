@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* ─── Design Tokens ──────────────────────────────── */
 :root {
@@ -18,8 +17,8 @@
   --text-disabled: #939dab;
 
   /* Accent */
-  --accent:        #7198ff;
-  --accent-hover:  #4A59E0;
+  --accent:        #5279dd;
+  --accent-hover:  #4168cd;
   --accent-subtle: rgba(91,107,248,0.12);
 
   /* Status */
@@ -479,3 +478,8 @@ html, body { font-family: -apple-system, BlinkMacSystemFont, Inter, system-ui, s
 }
 @media (max-width:480px) { .shell-topbar-title {font-size:13px;} .shell-topbar-actions {margin-left:auto;} .shell-timer-shortcuts {gap:4px;} .shell-timer-btn {width:28px;height:28px;} }
 @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+
+/* Shared task tabs and glass panels */
+.project-view-switch .btn { min-height:32px; }
+.shell-topbar { flex-shrink:0; }
+@media(max-width:600px){.shell-notifications-wrap .notifications-dropdown{position:fixed;top:60px;right:12px;width:calc(100vw - 24px);max-width:380px}}
