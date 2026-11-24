@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongoose';
+import { runDueRecurringTasks } from '@/lib/runRecurringTasks';
 import Task from '@/models/Task';
 import Project from '@/models/Project';
 import User from '@/models/User';
@@ -109,6 +110,8 @@ export async function GET(req: Request) {
     await dbConnect();
 
     const now = new Date();
+    let recurring: {scanned:number;created:number;paused:number} | {error:string};
+    try { recurring = await runDueRecurringTasks(now); } catch (error) { console.error('Recurring task scheduler failed',error); recurring = {error:'Recurring task scheduler failed'}; }
     const horizon = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
     const tasks = await Task.collection
@@ -441,6 +444,7 @@ export async function GET(req: Request) {
           skippedProjects,
           dailySummaryScheduled,
           dailySummarySkipped,
+          recurring,
         },
       },
       { status: 200 }
