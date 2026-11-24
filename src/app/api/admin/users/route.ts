@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 import dbConnect from '@/lib/mongoose';
-import { normalizePlatformRole } from '@/lib/roles';
-import { hasAdminAccess } from '@/lib/roles.server';
+import { normalizePlatformRole, canAssignPlatformRole } from '@/lib/roles';
+import { hasPlatformPermission, getActorRole } from '@/lib/roles.server';
 import User from '@/models/User';
 import WorkspaceMember from '@/models/WorkspaceMember';
 import Workspace from '@/models/Workspace';
@@ -73,13 +73,13 @@ export async function GET() {
 
     await dbConnect();
 
-    const canAccess = await hasAdminAccess((session.user as { id: string }).id);
+    const canAccess = await hasPlatformPermission((session.user as { id: string }).id, 'company.users.manage');
     if (!canAccess) {
       return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
     }
 
     const [users, memberships, workspaces] = await Promise.all([
-      User.find({}, { password: 0 }).sort({ createdAt: -1 }).lean(),
+      User.find({}, { password: 0, passwordResetTokenHash: 0, passwordResetExpires: 0, calendarSyncToken: 0 }).sort({ createdAt: -1 }).lean(),
       WorkspaceMember.find({}).lean(),
       Workspace.find({}, { name: 1 }).lean(),
     ]);
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
 
     await dbConnect();
 
-    const canAccess = await hasAdminAccess((session.user as { id: string }).id);
+    const canAccess = await hasPlatformPermission((session.user as { id: string }).id, 'company.users.manage');
     if (!canAccess) {
       return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
     }
@@ -167,6 +167,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Email already exists' }, { status: 400 });
     }
 
+    const actorRole = await getActorRole((session.user as {id:string}).id);
+    if (!actorRole || !canAssignPlatformRole(actorRole, undefined, role) || !(await hasPlatformPermission((session.user as {id:string}).id,'company.roles.assign'))) return NextResponse.json({success:false,error:'Role assignment forbidden'},{status:403});
     const normalizedStatus = normalizeEmploymentStatus(employmentStatus);
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -187,7 +189,7 @@ export async function POST(req: Request) {
       employmentHistory: normalizeEmploymentHistory(employmentHistory),
     });
 
-    return NextResponse.json({ success: true, data: user }, { status: 201 });
+    return NextResponse.json({ success: true, data: { _id:user._id, name:user.name, email:user.email, role:user.role } }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ success: false, error: message }, { status: 400 });

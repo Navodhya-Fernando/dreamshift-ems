@@ -23,7 +23,7 @@ import DataStatusBanner from '@/components/ui/DataStatusBanner';
 import { parseDisplayDate, formatDisplayDate } from '@/lib/date';
 import { useCachedApi } from '@/lib/useCachedApi';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { normalizePlatformRole, type PlatformRole } from '@/lib/roles';
+import { normalizePlatformRole, roleAllows, type PlatformRole } from '@/lib/roles';
 import './admin.css';
 
 type WorkspaceReport = {
@@ -161,7 +161,7 @@ type UserFormState = {
 const ROLE_OPTIONS: Array<{ value: PlatformRole; label: string }> = [
   { value: 'EMPLOYEE', label: 'Employee' },
   { value: 'WORKSPACE_ADMIN', label: 'Workspace Admin' },
-  { value: 'Admin', label: 'Platform Admin' },
+  { value: 'ADMIN', label: 'Company Admin' },
   { value: 'OWNER', label: 'Owner' },
 ];
 
@@ -345,7 +345,7 @@ function normalizeRoleHistory(user: AdminUserRecord | null) {
 
 export default function AdminConsolePage() {
   const { data: session, status } = useSession();
-  const canAccessAdmin = !session?.user?.role || ['OWNER', 'ADMIN', 'WORKSPACE_ADMIN'].includes(normalizePlatformRole(session.user.role));
+  const canAccessAdmin = Boolean(session?.user?.role && roleAllows('PLATFORM',session.user.role,'company.users.manage'));
   const [view,setView]=useState<'people'|'workspaces'|'insights'>('people');
   const [windowDays, setWindowDays] = useState<0 | 7 | 30 | 90>(0);
   const [densityMode, setDensityMode] = useState<'expanded' | 'compact'>('expanded');

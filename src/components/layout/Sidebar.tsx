@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Home, FolderOpen, CheckSquare, Calendar, BarChart2, Clock, MessageCircle, Settings, User, LogOut, ChevronRight, Zap, Shield, FileStack } from 'lucide-react';
-import { normalizePlatformRole } from '@/lib/roles';
+import { roleAllows } from '@/lib/roles';
 import './Sidebar.css';
 const groups = [
   { label: 'My work', items: [
@@ -27,7 +27,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const canAccessAdmin = Boolean(session?.user?.role && ['OWNER','ADMIN','WORKSPACE_ADMIN'].includes(normalizePlatformRole(session.user.role)));
+  const canAccessAdmin = Boolean(session?.user?.role && roleAllows('PLATFORM',session.user.role,'company.monitor'));
   const initials = session?.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) || 'U';
   const isActive = (path: string) => path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(path + '/') || (path === '/admin/monitoring' && pathname.startsWith('/admin'));
   const close = () => { setShowUserMenu(false); onNavigate?.(); };

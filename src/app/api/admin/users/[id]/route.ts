@@ -4,8 +4,8 @@ import mongoose from 'mongoose';
 import { authOptions } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 import dbConnect from '@/lib/mongoose';
-import { normalizePlatformRole } from '@/lib/roles';
-import { hasAdminAccess } from '@/lib/roles.server';
+import { normalizePlatformRole, canAssignPlatformRole } from '@/lib/roles';
+import { hasPlatformPermission, getActorRole } from '@/lib/roles.server';
 import User from '@/models/User';
 import WorkspaceMember from '@/models/WorkspaceMember';
 import Workspace from '@/models/Workspace';
@@ -104,11 +104,11 @@ function buildAssigneeFilter(user: { _id: unknown; email?: string | null; name?:
 }
 
 async function canAdminAccess(session: { user?: { id?: string } } | null | undefined) {
-  return session?.user?.id ? hasAdminAccess(session.user.id) : false;
+  return session?.user?.id ? hasPlatformPermission(session.user.id,'company.users.manage') : false;
 }
 
 async function getUserDetail(id: string) {
-  const user = await User.findById(id, { password: 0 }).lean();
+  const user = await User.findById(id, { password: 0, passwordResetTokenHash: 0, passwordResetExpires: 0, calendarSyncToken: 0 }).lean();
   if (!user) return null;
 
   const [memberships, allWorkspaces] = await Promise.all([
@@ -179,6 +179,11 @@ async function updateUser(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
+    const actorId = session.user.id!;
+    const actorRole = await getActorRole(actorId);
+    if (!actorRole || (normalizePlatformRole(existing.role)==='OWNER' && actorRole!=='OWNER')) return NextResponse.json({success:false,error:'Cannot modify company owner'},{status:403});
+    if (String(existing._id)===actorId && ((typeof body.role==='string' && normalizePlatformRole(body.role)!==actorRole) || normalizeEmploymentStatus(body.employmentStatus)==='LEFT')) return NextResponse.json({success:false,error:'You cannot change your own access or offboard yourself'},{status:400});
+    if (typeof body.role==='string' && (!canAssignPlatformRole(actorRole,existing.role,body.role) || !(await hasPlatformPermission(actorId,'company.roles.assign')))) return NextResponse.json({success:false,error:'Role assignment forbidden'},{status:403});
     const setPayload: Record<string, unknown> = {};
     const unsetPayload: Record<string, ''> = {};
 

@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/mongoose';
 import WorkspaceMember from '@/models/WorkspaceMember';
 import User from '@/models/User';
+import Workspace from '@/models/Workspace';
+import { hasWorkspacePermission } from '@/lib/roles.server';
 
 type SessionUser = { id: string };
 
@@ -16,14 +18,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     await dbConnect();
     const { email, role } = await req.json();
 
-    // Verify creator is OWNER or ADMIN
-    const requester = await WorkspaceMember.findOne({ workspaceId, userId: (session.user as SessionUser).id });
-    if (!requester || !['OWNER', 'ADMIN', 'WORKSPACE_ADMIN'].includes(requester.role)) {
-      return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
-    }
-
+    if (!(await Workspace.exists({_id:workspaceId}))) return NextResponse.json({success:false,error:'Workspace not found'},{status:404});
+    if (!(await hasWorkspacePermission((session.user as SessionUser).id,workspaceId,'workspace.members.manage'))) return NextResponse.json({success:false,error:'Insufficient permissions'},{status:403});
+    const requestedRole=String(role||'EMPLOYEE').trim().toUpperCase();
+    if(!['ADMIN','WORKSPACE_ADMIN','EMPLOYEE'].includes(requestedRole))return NextResponse.json({success:false,error:'Select a valid membership role'},{status:400});
     // Find the user to invite
-    const userToInvite = await User.findOne({ email });
+    const userToInvite = await User.findOne({ email:String(email||'').trim().toLowerCase() });
     if (!userToInvite) {
       return NextResponse.json({ success: false, error: 'User with this email not found' }, { status: 404 });
     }
@@ -37,7 +37,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const membership = await WorkspaceMember.create({
       workspaceId,
       userId: userToInvite._id,
-      role: role || 'EMPLOYEE'
+      role: requestedRole
     });
 
     return NextResponse.json({ success: true, data: membership }, { status: 201 });
