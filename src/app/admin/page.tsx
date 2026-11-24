@@ -740,7 +740,7 @@ export default function AdminConsolePage() {
             Manage employee accounts, workspace memberships and reporting.
           </p>
         </div>
-        <div className="admin-hero-actions"><Link href="/admin/monitoring" className="btn btn-secondary">Operations overview</Link>
+        <div className="admin-hero-actions"><Link href="/admin/monitoring" className="btn btn-secondary">Operations overview</Link><Link href="/admin/roles" className="btn btn-secondary">Roles & permissions</Link>
           <div className="admin-toggle-group" role="group" aria-label="Time window">
             {[0, 7, 30, 90].map((days) => (
               <button

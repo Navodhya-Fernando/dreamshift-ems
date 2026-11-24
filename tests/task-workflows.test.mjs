@@ -37,3 +37,22 @@ test('telemetry preserves HTTP status and adds server timing',async()=>{
   const handler=monitored('test',async()=>new Response('ok',{status:201}));
   const response=await handler();assert.equal(response.status,201);assert.match(response.headers.get('server-timing'),/app;dur=\d+/);
 });
+
+import { roleAllows,canAssignPlatformRole,normalizePlatformRole } from '../src/lib/roles.ts';
+test('legacy role aliases normalize without granting unknown roles privileges',()=>{
+  assert.equal(normalizePlatformRole('Admin'),'ADMIN');
+  assert.equal(normalizePlatformRole('administrator'),'ADMIN');
+  assert.equal(normalizePlatformRole('unknown'),'EMPLOYEE');
+});
+test('workspace administrators cannot manage company accounts or monitoring',()=>{
+  assert.equal(roleAllows('WORKSPACE','ADMIN','workspace.members.manage'),true);
+  assert.equal(roleAllows('WORKSPACE','OWNER','company.monitor'),false);
+  assert.equal(roleAllows('PLATFORM','WORKSPACE_ADMIN','company.users.manage'),false);
+  assert.equal(roleAllows('PLATFORM','ADMIN','company.users.manage'),true);
+});
+test('owner roles cannot be granted or modified by ordinary admins',()=>{
+  assert.equal(canAssignPlatformRole('ADMIN','EMPLOYEE','OWNER'),false);
+  assert.equal(canAssignPlatformRole('ADMIN','OWNER','EMPLOYEE'),false);
+  assert.equal(canAssignPlatformRole('OWNER','EMPLOYEE','ADMIN'),true);
+  assert.equal(canAssignPlatformRole('WORKSPACE_ADMIN','EMPLOYEE','EMPLOYEE'),false);
+});

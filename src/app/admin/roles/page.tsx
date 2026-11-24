@@ -1,0 +1,16 @@
+"use client";
+import {useState} from 'react';
+import Link from 'next/link';
+import {useCachedApi} from '@/lib/useCachedApi';
+import type {RoleDefinition,Permission} from '@/lib/roles';
+type Row=RoleDefinition&{persisted:boolean};
+const labels:Record<Permission,string>={'company.monitor':'Company-wide monitoring','company.users.manage':'Manage employee accounts','company.roles.assign':'Assign platform roles','workspace.members.manage':'Manage workspace members','workspace.read':'View shared workspaces'};
+export default function RolesPage(){
+  const {data,loading,error,refresh}=useCachedApi<Row[]>({cacheKey:'admin-roles-v1',initialData:[],ttlMs:30000,fetcher:async()=>{const res=await fetch('/api/admin/roles',{cache:'no-store'});const json=await res.json();if(!res.ok||!json.success)throw Error(json.error||'Could not load roles');return json.data;}});
+  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
+  async function initialize(){setBusy(true);setMessage('');try{const res=await fetch('/api/admin/roles',{method:'POST'});const j=await res.json();if(!res.ok||!j.success)throw Error(j.error||'Initialization failed');setMessage(`${j.data.created} missing roles initialized.`);await refresh();}catch(e){setMessage(e instanceof Error?e.message:'Initialization failed');}finally{setBusy(false);}}
+  return <div className="page-wrapper"><Link href="/admin" className="btn btn-ghost">← Manage team</Link><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap',margin:'14px 0 20px'}}><div><h1 className="page-title">Roles & permissions</h1><p className="text-muted">Assign a role to a person rather than individual permissions.</p></div>{data.some(r=>!r.persisted)&&<button className="btn btn-primary" disabled={busy} onClick={()=>void initialize()}>{busy?'Initializing…':'Initialize role catalog'}</button>}</div>
+  {error&&<p role="alert">{error}</p>}{message&&<p role="status" style={{marginBottom:16}}>{message}</p>}
+  {loading?<p>Loading roles…</p>:!error&&(['PLATFORM','WORKSPACE'] as const).map(scope=><section key={scope} className="card" style={{padding:20,marginBottom:16}}><h2 className="section-title">{scope==='PLATFORM'?'Company roles':'Workspace roles'}</h2><p className="text-muted text-sm" style={{margin:'6px 0 14px'}}>{scope==='PLATFORM'?'Assigned on the employee account.':'Assigned for each individual workspace membership.'}</p><div style={{overflowX:'auto'}}><table style={{width:'100%',textAlign:'left',borderCollapse:'collapse'}}><thead><tr><th style={{padding:10}}>Role</th><th style={{padding:10}}>Permissions</th><th style={{padding:10}}>Storage</th></tr></thead><tbody>{data.filter(r=>r.scope===scope).map(r=><tr key={r.code} style={{borderTop:'1px solid var(--border)'}}><td style={{padding:10,fontWeight:600}}>{r.label}</td><td style={{padding:10}}>{r.permissions.map(p=>labels[p]||p).join(' · ')||'None'}</td><td style={{padding:10}} className="text-muted">{r.persisted?'Saved':'Built-in'}</td></tr>)}</tbody></table></div></section>)}
+  <p className="text-muted text-sm">Role assignment is managed on employee profiles and workspace memberships. Company owner access is protected. Shared workspace visibility is unchanged. Built-in role definitions are currently read-only.</p></div>;
+}
