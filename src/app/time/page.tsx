@@ -330,7 +330,6 @@ export default function TimeTrackerPage() {
     error,
     lastUpdated,
     refresh,
-    setData,
   } = useCachedApi<TimeTask[]>({
     cacheKey: 'time-tracker-tasks-v2',
     initialData: INITIAL_TASKS,
@@ -352,6 +351,7 @@ export default function TimeTrackerPage() {
   const activityTitle=timer?.note??note;
   const timerRunning=Boolean(timer?.runningSince);
   const [manualSaving, setManualSaving] = useState(false);
+  const manualRequest=useRef<{key:string;id:string}|null>(null);
   const [timeWindow, setTimeWindow] = useState<TimeWindowFilter>('THIS_WEEK');
   const [customDateRange, setCustomDateRange] = useState<CustomDateRange>({ start: '', end: '' });
   const [visibleEntryCount, setVisibleEntryCount] = useState(5);
@@ -479,6 +479,9 @@ export default function TimeTrackerPage() {
       return;
     }
 
+    if(manualSaving)return;
+    const key=JSON.stringify(manualEntry);
+    if(manualRequest.current?.key!==key)manualRequest.current={key,id:crypto.randomUUID()};
     setManualSaving(true);
     try {
       const res = await fetch('/api/time-entries', {
@@ -486,6 +489,7 @@ export default function TimeTrackerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           taskId: manualEntry.taskId,
+          requestId:manualRequest.current?.id,
           source: 'MANUAL',
           startTime: new Date(manualEntry.startTime).toISOString(),
           endTime: new Date(manualEntry.endTime).toISOString(),
@@ -497,16 +501,10 @@ export default function TimeTrackerPage() {
         throw new Error(json.error || 'Failed to create time entry');
       }
 
-      const created = json.data as TimeEntry;
-      setTimeEntries((prev) => [created, ...prev]);
-      setData((prev) => prev.map((task) => (
-        task._id === manualEntry.taskId
-          ? { ...task, timeSpent: (task.timeSpent || 0) + Number(created.durationSeconds || 0) }
-          : task
-      )));
+      manualRequest.current=null;
       setManualEntry({ taskId: '', startTime: '', endTime: '', note: '' });
       toastSuccess('Time entry logged');
-      await refreshEntries();
+      await Promise.all([refreshEntries(),refresh()]);
     } catch (error: unknown) {
       toastError(error instanceof Error ? error.message : 'Failed to create time entry');
     } finally {
@@ -530,8 +528,8 @@ export default function TimeTrackerPage() {
         body: JSON.stringify({
           taskId: editingEntry.taskId,
           source: editingEntry.source || 'TIMER',
-          startTime: toIsoOrUndefined(editingEntry.startTime),
-          endTime: toIsoOrUndefined(editingEntry.endTime),
+          startTime: editingEntry.startTime===toDateTimeInput(timeEntries.find(e=>e._id===editingEntry._id)?.startTime||'')?undefined:toIsoOrUndefined(editingEntry.startTime),
+          endTime: editingEntry.endTime===toDateTimeInput(timeEntries.find(e=>e._id===editingEntry._id)?.endTime||'')?undefined:toIsoOrUndefined(editingEntry.endTime),
           note: editingEntry.note || undefined,
         }),
       });
@@ -543,7 +541,7 @@ export default function TimeTrackerPage() {
       setTimeEntries((prev) => prev.map((entry) => (entry._id === editingEntry._id ? (json.data as TimeEntry) : entry)));
       setEditingEntry(null);
       toastSuccess('Time entry updated');
-      await refreshEntries();
+      await Promise.all([refreshEntries(),refresh()]);
     } catch (error: unknown) {
       toastError(error instanceof Error ? error.message : 'Failed to update time entry');
     } finally {
@@ -563,7 +561,7 @@ export default function TimeTrackerPage() {
 
       setTimeEntries((prev) => prev.filter((entry) => entry._id !== entryId));
       toastSuccess('Time entry deleted');
-      await refreshEntries();
+      await Promise.all([refreshEntries(),refresh()]);
     } catch (error: unknown) {
       toastError(error instanceof Error ? error.message : 'Failed to delete time entry');
     }
@@ -660,6 +658,7 @@ export default function TimeTrackerPage() {
             </div>
 
             {timerError&&<p role="alert" className="text-sm" style={{marginBottom:10}}>{timerError} <button className="btn btn-ghost" onClick={()=>void refreshTimer()}>Refresh timer</button></p>}
+            <p className="text-muted text-sm" style={{marginBottom:10}}>If you had a running timer before this upgrade, verify its duration and use the manual entry form to record any unsaved work.</p>
             <p className="text-muted text-sm" style={{marginBottom:10}}>Your timer is saved on the server and can be resumed on another device. An internet connection is required to change its state.</p>
             <div className="time-tracker-shell">
               <div className="time-tracker-form">

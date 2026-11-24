@@ -78,62 +78,25 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ success: false, error: nextTaskAccess.error }, { status: nextTaskAccess.status });
     }
 
-    const previousDuration = Number(existing.durationSeconds || 0);
-    const unchanged = startTime.getTime() === new Date(existing.startTime).getTime() && endTime.getTime() === new Date(existing.endTime).getTime();
-    const nextDuration = unchanged ? previousDuration : Math.max(0, Math.round((endTime.getTime() - startTime.getTime()) / 1000));
-    const previousTaskId = String(existing.taskId || '');
-
-    if (previousTaskId !== nextTaskId) {
-      if (previousDuration > 0) {
-        await Task.collection.updateOne(
-          { _id: new mongoose.Types.ObjectId(previousTaskId) },
-          { $inc: { timeSpent: -previousDuration } }
-        );
-      }
-      if (nextDuration > 0) {
-        await Task.collection.updateOne(
-          { _id: new mongoose.Types.ObjectId(nextTaskId) },
-          { $inc: { timeSpent: nextDuration } }
-        );
-      }
-    } else if (previousDuration !== nextDuration) {
-      await Task.collection.updateOne(
-        { _id: new mongoose.Types.ObjectId(nextTaskId) },
-        { $inc: { timeSpent: nextDuration - previousDuration } }
-      );
-    }
-
-    const updated = await TimeEntry.collection.findOneAndUpdate(
-      { _id: new mongoose.Types.ObjectId(id) },
-      {
-        $set: {
-          taskId: nextTaskId,
-          projectId: nextTaskAccess.projectId,
-          source: String(body.source || existing.source || 'TIMER').toUpperCase() === 'MANUAL' ? 'MANUAL' : 'TIMER',
-          startTime,
-          endTime,
-          durationSeconds: nextDuration,
-          note: String(body.note || '').trim(),
-        },
-      },
-      { returnDocument: 'after' }
-    );
-
-    const value = updated;
-    const data = value
-      ? {
-          ...value,
-          taskId: String(value.taskId || ''),
-          projectId: String(value.projectId || ''),
-          userId: String(value.userId || ''),
-          source: String(value.source || 'TIMER').toUpperCase() === 'MANUAL' ? 'MANUAL' : 'TIMER',
-          startTime: value.startTime,
-          endTime: value.endTime,
-          durationSeconds: Number(value.durationSeconds || 0),
-          note: String(value.note || ''),
-        }
-      : null;
-
+    const tx=await mongoose.startSession();
+    let data:Record<string,unknown>|null=null;
+    try{
+      await tx.withTransaction(async()=>{
+        const fresh=await TimeEntry.collection.findOne({_id:new mongoose.Types.ObjectId(id)},{session:tx});
+        if(!fresh||String(fresh.userId)!==userId)throw Error('Time entry no longer available');
+        // Do not overwrite edits made by another device while this request was being prepared.
+        if(String(fresh.updatedAt||'')!==String(existing.updatedAt||'')||String(fresh.taskId)!==String(existing.taskId)||Number(fresh.durationSeconds)!==Number(existing.durationSeconds))throw Error('Time entry changed; reload before editing.');
+        const previousDuration=Number(fresh.durationSeconds||0);
+        const unchanged=startTime.getTime()===new Date(fresh.startTime).getTime()&&endTime.getTime()===new Date(fresh.endTime).getTime();
+        const nextDuration=unchanged?previousDuration:Math.max(0,Math.round((endTime.getTime()-startTime.getTime())/1000));
+        const previousTaskId=String(fresh.taskId||'');
+        const adjust=async(taskId:string,seconds:number)=>{if(!seconds)return;const r=await Task.collection.updateOne({_id:new mongoose.Types.ObjectId(taskId)},{$inc:{timeSpent:seconds}},{session:tx});if(!r.matchedCount)throw Error('Task no longer available');};
+        if(previousTaskId!==nextTaskId){await adjust(previousTaskId,-previousDuration);await adjust(nextTaskId,nextDuration);}else await adjust(nextTaskId,nextDuration-previousDuration);
+        const value=await TimeEntry.collection.findOneAndUpdate({_id:new mongoose.Types.ObjectId(id)},{$set:{taskId:new mongoose.Types.ObjectId(nextTaskId),projectId:new mongoose.Types.ObjectId(nextTaskAccess.projectId!),startTime,endTime,durationSeconds:nextDuration,note:String(body.note??fresh.note??'').trim().slice(0,1000),updatedAt:new Date()}},{returnDocument:'after',session:tx});
+        if(!value)throw Error('Time entry no longer available');
+        data={...value,taskId:String(value.taskId),projectId:String(value.projectId),userId:String(value.userId),durationSeconds:Number(value.durationSeconds||0),note:String(value.note||'')};
+      });
+    }finally{await tx.endSession();}
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -162,17 +125,16 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ success: false, error: 'Forbidden time entry access' }, { status: 403 });
     }
 
-    const taskId = String(existing.taskId || '');
-    const durationSeconds = Number(existing.durationSeconds || 0);
-    if (taskId && durationSeconds > 0) {
-      await Task.collection.updateOne(
-        { _id: new mongoose.Types.ObjectId(taskId) },
-        { $inc: { timeSpent: -durationSeconds } }
-      );
-    }
-
-    await TimeEntry.collection.deleteOne({ _id: new mongoose.Types.ObjectId(id) });
-
+    const tx=await mongoose.startSession();
+    try{
+      await tx.withTransaction(async()=>{
+        const removed=await TimeEntry.collection.findOneAndDelete({_id:new mongoose.Types.ObjectId(id)},{session:tx});
+        if(!removed)return;
+        if(String(removed.userId)!==userId)throw Error('Forbidden time entry access');
+        const taskId=String(removed.taskId||''),seconds=Number(removed.durationSeconds||0);
+        if(mongoose.isValidObjectId(taskId)&&seconds>0)await Task.collection.updateOne({_id:new mongoose.Types.ObjectId(taskId)},{$inc:{timeSpent:-seconds}},{session:tx});
+      });
+    }finally{await tx.endSession();}
     return NextResponse.json({ success: true, data: { deleted: true } }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';

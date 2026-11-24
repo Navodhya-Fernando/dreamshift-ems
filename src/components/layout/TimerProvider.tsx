@@ -2,6 +2,7 @@
 import {createContext,useCallback,useContext,useEffect,useRef,useState} from 'react';
 import {useSession} from 'next-auth/react';
 import {elapsedAt} from '@/lib/timerMath';
+import {toastError} from '@/lib/toast';
 export type ActiveTimer={sessionId:string;taskId:string;taskTitle:string;note:string;startedAt:string;runningSince:string|null;elapsedSeconds:number;revision:number};
 type Action='start'|'pause'|'resume'|'stop';
 type Context={timer:ActiveTimer|null;ready:boolean;busy:boolean;error:string;clockOffset:number;act:(action:Action,taskId?:string,note?:string)=>Promise<boolean>;refresh:()=>Promise<void>};
@@ -18,7 +19,7 @@ const act=useCallback(async(action:Action,taskId?:string,note?:string)=>{
 if(!uid||owner.current!==uid||locked.current)return false;
 locked.current=true;const version=++generation.current;setBusy(true);setError('');
 let ok=false,conflict=false;
-try{const current=active.current;const r=await fetch('/api/time/timer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,taskId,note,sessionId:current?.sessionId,revision:current?.revision})});const j=await r.json();if(!r.ok||!j.success){conflict=r.status===409;throw Error(j.error||'Timer change failed');}if(version===generation.current){accept(j);ok=true;if(action==='stop')window.dispatchEvent(new Event('dreamshift:refresh-all'));}}catch(e){if(version===generation.current)setError(e instanceof Error?e.message:'Timer change failed');}finally{if(owner.current===uid){locked.current=false;setBusy(false);if(conflict)void refresh();}}
+try{const current=active.current;const r=await fetch('/api/time/timer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,taskId,note,sessionId:current?.sessionId,revision:current?.revision})});const j=await r.json();if(!r.ok||!j.success){conflict=r.status===409;throw Error(j.error||'Timer change failed');}if(version===generation.current){accept(j);ok=true;if(action==='stop')window.dispatchEvent(new Event('dreamshift:refresh-all'));}}catch(e){if(version===generation.current){const message=e instanceof Error?e.message:'Timer change failed';setError(message);toastError(message);}}finally{if(owner.current===uid){locked.current=false;setBusy(false);if(conflict)void refresh();}}
 return ok;
 },[uid,refresh]);
 return <C.Provider value={{timer:owner.current===uid?timer:null,ready:ready&&owner.current===uid,busy,error,clockOffset,act,refresh}}>{children}</C.Provider>;

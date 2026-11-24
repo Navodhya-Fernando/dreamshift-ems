@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import mongoose from 'mongoose';
+import { createHash } from 'node:crypto';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/mongoose';
 import TimeEntry from '@/models/TimeEntry';
@@ -104,24 +105,22 @@ export async function POST(req: Request) {
 
     const durationSeconds = Math.max(0, Math.round((endTime.getTime() - startTime.getTime()) / 1000));
 
-    const entry = await TimeEntry.create({
-      userId,
-      taskId,
-      projectId: resolvedProjectId,
-      source: String(body.source || 'TIMER').toUpperCase() === 'MANUAL' ? 'MANUAL' : 'TIMER',
-      startTime,
-      endTime,
-      durationSeconds,
-      note: String(body.note || '').trim(),
-    });
-
-    if (durationSeconds > 0) {
-      await Task.collection.updateOne(
-        { _id: new mongoose.Types.ObjectId(taskId) },
-        { $inc: { timeSpent: durationSeconds } }
-      );
-    }
-
+    const requestId=typeof body.requestId==='string'&&/^[0-9a-f-]{36}$/i.test(body.requestId)?body.requestId:null;
+    const entryId=requestId?new mongoose.Types.ObjectId(createHash('sha256').update('time-entry:'+userId+':'+requestId).digest('hex').slice(0,24)):new mongoose.Types.ObjectId();
+    const now=new Date();
+    const tx=await mongoose.startSession();
+    let entry:unknown=null;
+    try{
+      await tx.withTransaction(async()=>{
+        const existing=await TimeEntry.collection.findOne({_id:entryId},{session:tx});
+        if(existing){if(String(existing.userId)!==userId)throw Error('Entry conflict');entry=existing;return;}
+        const document={_id:entryId,userId:new mongoose.Types.ObjectId(userId),taskId:new mongoose.Types.ObjectId(taskId),projectId:new mongoose.Types.ObjectId(resolvedProjectId),source:String(body.source||'TIMER').toUpperCase()==='MANUAL'?'MANUAL':'TIMER',startTime,endTime,durationSeconds,note:String(body.note||'').trim().slice(0,1000),createdAt:now,updatedAt:now};
+        await TimeEntry.collection.insertOne(document,{session:tx});
+        const updated=await Task.collection.updateOne({_id:document.taskId},{$inc:{timeSpent:durationSeconds}},{session:tx});
+        if(!updated.matchedCount)throw Error('Task no longer available');
+        entry=document;
+      });
+    }finally{await tx.endSession();}
     return NextResponse.json({ success: true, data: entry }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
