@@ -19,7 +19,7 @@ const INITIAL_TIMER_STATE = {
 
 export default function ShellTopbar({ onToggleNav, navOpen }: { onToggleNav: () => void; navOpen: boolean }) {
   const pathname = usePathname();
-  const title = ({ '/': 'Home', '/tasks': 'My Tasks', '/projects': 'Workspaces', '/time': 'Time Tracking', '/calendar': 'Calendar', '/messages': 'Messages', '/admin': 'Administration', '/analytics': 'Analytics', '/settings': 'Settings', '/profile': 'Profile', '/notifications': 'Notifications', '/task-templates': 'Templates' } as Record<string, string>)[pathname === '/' ? '/' : '/' + pathname.split('/')[1]] || 'Workspace';
+  const title = ({ '/': 'Home', '/tasks': 'My Tasks', '/projects': 'Projects', '/workspaces': 'Workspaces', '/time': 'Time Tracking', '/calendar': 'Calendar', '/messages': 'Messages', '/admin': 'Administration', '/analytics': 'Analytics', '/settings': 'Settings', '/profile': 'Profile', '/notifications': 'Notifications', '/task-templates': 'Templates' } as Record<string, string>)[pathname === '/' ? '/' : '/' + pathname.split('/')[1]] || 'Workspace';
   const router = useRouter();
   const [savingTimer, setSavingTimer] = useState(false);
   const [timer, setTimer] = useState(INITIAL_TIMER_STATE);

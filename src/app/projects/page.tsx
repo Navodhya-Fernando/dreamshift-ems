@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronRight, FolderOpen, Plus, RefreshCw, Search, Sparkles, X } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { FolderOpen, Plus, Search, Star, X } from 'lucide-react';
 import DataStatusBanner from '@/components/ui/DataStatusBanner';
 import { useCachedApi } from '@/lib/useCachedApi';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -31,11 +32,6 @@ type TaskTemplateOption = {
   title: string;
 };
 
-const RISK_COLORS: Record<string, string> = {
-  LOW: '#10B981',
-  MEDIUM: '#F59E0B',
-  HIGH: '#EF4444',
-};
 
 function NewProjectModal({
   workspaces,
@@ -89,7 +85,7 @@ function NewProjectModal({
         <div className="modal-header">
           <div>
             <div className="text-xs text-muted" style={{ marginBottom: 2 }}>Create New Project</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>Premium Project Setup</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>New project</div>
           </div>
           <button type="button" className="btn btn-ghost p-1" onClick={onClose}><X size={16} /></button>
         </div>
@@ -116,7 +112,7 @@ function NewProjectModal({
                 className="input"
                 value={form.name}
                 onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Fraud Forecasting Initiative"
+                placeholder="Project name"
                 required
               />
             </div>
@@ -221,7 +217,7 @@ function NewWorkspaceModal({
                 className="input"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="AI Delivery Hub"
+                placeholder="Workspace name"
                 required
               />
             </div>
@@ -237,207 +233,34 @@ function NewWorkspaceModal({
 }
 
 export default function WorkspacesPage() {
-  const [search, setSearch] = useState('');
-  const [showNewProject, setShowNewProject] = useState(false);
-  const [showNewWorkspace, setShowNewWorkspace] = useState(false);
-
-  const templatesApi = useCachedApi<TaskTemplateOption[]>({
-    cacheKey: 'task-templates:project-options:v1',
-    initialData: [{ key: 'NO_TEMPLATE', title: 'No Template' }],
-    fetcher: async () => {
-      const res = await fetch('/api/task-templates', { cache: 'no-store' });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || 'Failed to load templates');
-      return (json.data || []).map((template: { key: string; title: string }) => ({
-        key: String(template.key || ''),
-        title: String(template.title || template.key || 'Template'),
-      }));
-    },
-    ttlMs: 30_000,
-  });
-
-  const fetchWorkspaceSummary = async (): Promise<WorkspaceSummary[]> => {
-    const res = await fetch('/api/sidebar', { cache: 'no-store' });
-    const json = await res.json();
-    if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-      return json.data as WorkspaceSummary[];
-    }
-
-    // Fallback path: compose from direct workspace/project APIs.
-    const wsRes = await fetch('/api/workspaces', { cache: 'no-store' });
-    const wsJson = await wsRes.json();
-    if (!wsJson.success) {
-      throw new Error(wsJson.error || 'Unable to load workspaces');
-    }
-
-    const fallback: WorkspaceSummary[] = await Promise.all(
-      (wsJson.data || []).map(async (ws: { _id: string; name: string }) => {
-        const projectsRes = await fetch(`/api/projects?workspaceId=${ws._id}`, { cache: 'no-store' });
-        const projectsJson = await projectsRes.json();
-        const projects = (projectsJson.success ? projectsJson.data : []).slice(0, 5).map((project: { _id: string; name: string; description?: string; deadline?: string; status?: 'ACTIVE' | 'CLOSED' }) => ({
-          id: project._id,
-          name: project.name,
-          description: project.description,
-          deadline: project.deadline,
-          status: String(project.status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'CLOSED' : 'ACTIVE',
-          completionPercent: 0,
-          risk: 'LOW' as const,
-        }));
-
-        return {
-          id: ws._id,
-          name: ws.name,
-          projects,
-          projectsCount: projectsJson.success ? projectsJson.count || projects.length : projects.length,
-          viewMorePath: `/projects/workspace/${ws._id}`,
-        };
-      })
-    );
-
-    return fallback;
-  };
-
-  const {
-    data: workspaces,
-    loading,
-    isRefreshing,
-    error,
-    lastUpdated,
-    refresh,
-  } = useCachedApi<WorkspaceSummary[]>({
-    cacheKey: 'workspace-summary-v1',
-    initialData: [],
-    fetcher: fetchWorkspaceSummary,
-    ttlMs: 120000,
-  });
-
-  const filtered = useMemo(() => {
-    if (!search.trim()) return workspaces;
-
-    return workspaces
-      .map((ws) => ({
-        ...ws,
-        projects: ws.projects.filter((p) => p.name.toLowerCase().includes(search.toLowerCase())),
-      }))
-      .filter((ws) => ws.projects.length > 0 || ws.name.toLowerCase().includes(search.toLowerCase()));
-  }, [search, workspaces]);
-
-  return (
-    <div className="page-wrapper animate-in">
-      {showNewProject && (
-        <NewProjectModal
-          workspaces={workspaces}
-          taskTemplates={templatesApi.data}
-          onClose={() => setShowNewProject(false)}
-          onCreated={refresh}
-        />
-      )}
-      {showNewWorkspace && (
-        <NewWorkspaceModal
-          onClose={() => setShowNewWorkspace(false)}
-          onCreated={refresh}
-        />
-      )}
-
-      <div className="explorer-header">
-        <div>
-          <nav className="breadcrumb">
-            <span>DreamShift</span>
-            <ChevronRight size={13} />
-            <span className="breadcrumb-active">Workspaces</span>
-          </nav>
-          <h1 className="page-title" style={{ marginTop: 6 }}>Workspace Explorer</h1>
-        </div>
-        <div className="explorer-actions">
-          <div className="search-wrap">
-            <Search size={14} className="search-icon" />
-            <input
-              className="input search-input"
-              placeholder="Search projects..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <button className="btn btn-secondary" onClick={refresh} disabled={isRefreshing}>
-            <RefreshCw size={14} /> Refresh
-          </button>
-          <button className="btn btn-secondary" onClick={() => setShowNewWorkspace(true)}>
-            <Plus size={15} /> New Workspace
-          </button>
-          <button className="btn btn-primary" onClick={() => setShowNewProject(true)}>
-            <Plus size={15} /> New Project
-          </button>
-        </div>
-      </div>
-
-      <DataStatusBanner
-        loading={loading}
-        error={error}
-        lastUpdated={lastUpdated}
-        isRefreshing={isRefreshing}
-        onRetry={refresh}
-        onRefresh={refresh}
-      />
-
-      {loading ? (
-        <div className="skeleton-grid">
-          {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton-card" />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="empty-center">
-          <FolderOpen size={40} color="var(--text-disabled)" />
-          <p>No workspaces or projects found.</p>
-        </div>
-      ) : (
-        filtered.map((ws) => (
-          <section key={ws.id} className="workspace-section">
-            <div className="workspace-section-header">
-              <div className="ws-dot" />
-              <span className="ws-name">{ws.name}</span>
-              <span className="ws-count">Showing {ws.projects.length} / {ws.projectsCount} projects</span>
-              <Link className="btn btn-secondary" style={{ marginLeft: 'auto', fontSize: 12 }} href={ws.viewMorePath}>
-                View More
-              </Link>
-            </div>
-
-            <div className="projects-grid">
-              {ws.projects.map((p) => (
-                <Link href={`/projects/${p.id}`} key={p.id} className="project-card card">
-                  <div className="project-card-top">
-                    <div className="project-icon"><FolderOpen size={16} /></div>
-                    <span className="badge" style={{
-                      background: `${RISK_COLORS[p.risk]}1A`,
-                      color: RISK_COLORS[p.risk],
-                      fontSize: 10,
-                    }}>
-                      <Sparkles size={10} /> {p.risk} RISK
-                    </span>
-                  </div>
-
-                  <div className="project-card-body">
-                    <div className="project-name">{p.name}</div>
-                    <div className="project-meta text-sm text-muted">
-                      {p.deadline ? `Deadline ${new Date(p.deadline).toLocaleDateString()}` : 'No deadline'}
-                    </div>
-                  </div>
-
-                  <div className="project-card-footer">
-                    <div className="progress-row">
-                      <span className="text-xs text-muted">{p.completionPercent}% complete</span>
-                      <span className={`badge ${String(p.status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'badge-blocked' : 'badge-done'}`}>
-                        {String(p.status || 'ACTIVE').toUpperCase() === 'CLOSED' ? 'Closed' : 'Active'}
-                      </span>
-                    </div>
-                    <div className="progress-track">
-                      <div className="progress-fill" style={{ width: `${p.completionPercent}%`, background: '#5B6BF8' }} />
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        ))
-      )}
+  const {data:session}=useSession();
+  const [search,setSearch]=useState(''),[workspace,setWorkspace]=useState(''),[status,setStatus]=useState('ACTIVE'),[view,setView]=useState<'list'|'grid'>('list'),[onlySaved,setOnlySaved]=useState(false),[saved,setSaved]=useState<string[]>([]),[savedReady,setSavedReady]=useState(false);
+  const [showNewProject,setShowNewProject]=useState(false),[showNewWorkspace,setShowNewWorkspace]=useState(false);
+  const userId=session?.user?.id;
+  const key='ems:project-favourites:'+userId;
+  useEffect(()=>{setSavedReady(false);try{const value=JSON.parse(localStorage.getItem(key)||'[]');setSaved(Array.isArray(value)?value.filter(x=>typeof x==='string'):[]);}catch{setSaved([]);}setSavedReady(Boolean(userId));},[key,userId]);
+  function toggle(id:string){if(!savedReady)return;const next=saved.includes(id)?saved.filter(x=>x!==id):[...saved,id];setSaved(next);try{localStorage.setItem(key,JSON.stringify(next));}catch{}}
+  const templatesApi=useCachedApi<TaskTemplateOption[]>({cacheKey:'task-templates:project-options:v1',initialData:[{key:'NO_TEMPLATE',title:'No Template'}],enabled:showNewProject,fetcher:async()=>{const res=await fetch('/api/task-templates');const j=await res.json();if(!res.ok||!j.success)throw Error(j.error||'Unable to load templates');return [{key:'NO_TEMPLATE',title:'No Template'},...(j.data||[]).filter((t:TaskTemplateOption)=>t.key!=='NO_TEMPLATE').map((t:TaskTemplateOption)=>({key:t.key,title:t.title}))];},ttlMs:30000});
+  const {data:workspaces,loading,error,lastUpdated,isRefreshing,refresh}=useCachedApi<WorkspaceSummary[]>({cacheKey:'project-directory-v1',initialData:[],ttlMs:60000,fetcher:async()=>{const res=await fetch('/api/sidebar?all=1');const j=await res.json();if(!res.ok||!j.success)throw Error(j.error||'Unable to load projects');return j.data;}});
+  const projects=useMemo(()=>workspaces.flatMap(w=>w.projects.map(p=>({...p,workspaceId:w.id,workspaceName:w.name}))),[workspaces]);
+  const filtered=useMemo(()=>projects.filter(p=>(!workspace||p.workspaceId===workspace)&&(status==='ALL'||String(p.status||'ACTIVE').toUpperCase()===status)&&(!onlySaved||saved.includes(p.id))&&[p.name,p.description,p.workspaceName].some(v=>String(v||'').toLowerCase().includes(search.trim().toLowerCase()))).sort((a,b)=>Number(saved.includes(b.id))-Number(saved.includes(a.id))),[projects,workspace,status,onlySaved,saved,search]);
+  return <div className="page-wrapper project-directory">
+    {showNewProject&&<NewProjectModal workspaces={workspaces} taskTemplates={templatesApi.data} onClose={()=>setShowNewProject(false)} onCreated={refresh}/>}
+    {showNewWorkspace&&<NewWorkspaceModal onClose={()=>setShowNewWorkspace(false)} onCreated={refresh}/>}
+    <div className="explorer-header"><div><h1 className="page-title">Projects</h1><p className="text-muted">Find and open any project directly.</p></div><div className="explorer-actions"><Link href="/workspaces" className="btn btn-secondary">Workspaces</Link><button className="btn btn-ghost" onClick={()=>setShowNewWorkspace(true)}><Plus size={15}/> Workspace</button><button className="btn btn-primary" onClick={()=>setShowNewProject(true)} disabled={loading||!workspaces.length}><Plus size={15}/> New project</button></div></div>
+    <DataStatusBanner loading={loading} error={error} lastUpdated={lastUpdated} isRefreshing={isRefreshing} onRetry={refresh} onRefresh={refresh}/>
+    <div className="directory-filters"><div className="search-wrap"><Search size={16} className="search-icon"/><input className="input search-input" aria-label="Search all projects" placeholder="Search all projects..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      <select className="input" aria-label="Workspace" value={workspace} onChange={e=>setWorkspace(e.target.value)}><option value="">All workspaces</option>{workspaces.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}</select>
+      <select className="input" aria-label="Project status" value={status} onChange={e=>setStatus(e.target.value)}><option value="ACTIVE">Active</option><option value="CLOSED">Closed</option><option value="ALL">All statuses</option></select>
+      <button className={`btn ${onlySaved?'btn-primary':'btn-secondary'}`} aria-pressed={onlySaved} onClick={()=>setOnlySaved(v=>!v)}><Star size={15}/> Favourites</button>
+      <div className="project-view-switch"><button className={`btn ${view==='list'?'btn-primary':'btn-ghost'}`} aria-pressed={view==='list'} onClick={()=>setView('list')}>List</button><button className={`btn ${view==='grid'?'btn-primary':'btn-ghost'}`} aria-pressed={view==='grid'} onClick={()=>setView('grid')}>Grid</button></div>
     </div>
-  );
+    {!loading&&<p className="text-muted text-sm" style={{margin:'12px 0'}}>{filtered.length} of {projects.length} projects</p>}
+    {!loading&&!filtered.length&&!error&&<div className="empty-center"><FolderOpen size={32}/><p>No matching projects.</p><button className="btn btn-secondary" onClick={()=>{setSearch('');setWorkspace('');setStatus('ALL');setOnlySaved(false);}}>Clear filters</button></div>}
+    <div className={view==='grid'?'directory-grid':'directory-list'}>{filtered.map(p=><article key={p.id} className="directory-project card">
+      <Link className="directory-project-link" href={`/projects/${p.id}`}><FolderOpen size={19}/><div className="directory-name"><strong>{p.name}</strong><span className="text-muted text-sm">{p.workspaceName}</span></div><div className="directory-progress"><span className="text-sm">{p.completionPercent}% complete</span><div className="progress-track"><div className="progress-fill" style={{width:p.completionPercent+'%',background:'var(--accent)'}}/></div></div><span className="text-muted text-sm">{p.deadline?new Date(p.deadline).toLocaleDateString():'No deadline'}</span></Link>
+      <button type="button" className="btn btn-ghost directory-star" aria-label={saved.includes(p.id)?'Remove '+p.name+' from favourites':'Favourite '+p.name} aria-pressed={saved.includes(p.id)} disabled={!savedReady} onClick={()=>toggle(p.id)}><Star size={18} fill={saved.includes(p.id)?'currentColor':'none'}/></button>
+    </article>)}</div>
+    <p className="text-muted text-sm" style={{marginTop:16}}>Favourites are saved on this browser for your account.</p>
+  </div>;
 }

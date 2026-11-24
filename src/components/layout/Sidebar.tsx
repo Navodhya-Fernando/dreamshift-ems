@@ -14,7 +14,8 @@ const groups = [
     { label: 'Time Tracking', path: '/time', icon: Clock },
   ] },
   { label: 'Team', items: [
-    { label: 'Workspaces', path: '/projects', icon: FolderOpen },
+    { label: 'Projects', path: '/projects', icon: FolderOpen },
+    { label: 'Workspaces', path: '/workspaces', icon: FolderOpen },
     { label: 'Messages', path: '/messages', icon: MessageCircle },
     { label: 'Templates', path: '/task-templates', icon: FileStack },
   ] },
@@ -29,7 +30,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const canAccessAdmin = Boolean(session?.user?.role && roleAllows('PLATFORM',session.user.role,'company.monitor'));
   const initials = session?.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) || 'U';
-  const isActive = (path: string) => path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(path + '/') || (path === '/admin/monitoring' && pathname.startsWith('/admin'));
+  const isActive = (path: string) => path === '/' ? pathname === '/' : pathname === path || (pathname.startsWith(path + '/') && !(path === '/projects' && pathname.startsWith('/projects/workspace/'))) || (path === '/workspaces' && pathname.startsWith('/projects/workspace/')) || (path === '/admin/monitoring' && pathname.startsWith('/admin'));
   const close = () => { setShowUserMenu(false); onNavigate?.(); };
   return <aside className="sidebar" id="ems-navigation">
     <Link href="/" onClick={close} className="sidebar-logo"><div className="sidebar-logo-icon"><Zap size={16} color="white" strokeWidth={2.5}/></div><div><div className="sidebar-logo-text">DreamShift</div><div className="sidebar-logo-sub">EMS</div></div></Link>

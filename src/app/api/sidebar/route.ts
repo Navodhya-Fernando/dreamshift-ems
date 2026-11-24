@@ -20,7 +20,7 @@ function buildTaskFilter(projectIds: Array<string | { toString(): string }>) {
   };
 }
 
-async function handleGET() {
+async function handleGET(req:Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -41,7 +41,9 @@ async function handleGET() {
       const group = grouped.get(key);
       if (group) group.push(p); else grouped.set(key, [p]);
     }
-    const ids = Array.from(grouped.values()).flatMap(group => group.slice(0,5)).flatMap(p => [p._id, String(p._id)]);
+    const includeAll = new URL(req.url).searchParams.get('all') === '1';
+    const visible = (group:typeof allProjects) => includeAll ? group : group.slice(0,5);
+    const ids = Array.from(grouped.values()).flatMap(visible).flatMap(p => [p._id, String(p._id)]);
     const totals = ids.length ? await Task.collection.aggregate<{ _id: string; total: number; done: number }>([
       { $match: buildTaskFilter(ids) },
       { $group: { _id: { $toString: { $ifNull: ['$projectId', '$project_id'] } }, total: { $sum: 1 }, done: { $sum: { $cond: [{ $in: [{ $toUpper: { $ifNull: ['$status', ''] } }, ['DONE','COMPLETED']] }, 1, 0] } } } },
@@ -50,7 +52,7 @@ async function handleGET() {
     const now = Date.now();
     const sidebarStructure = workspaces.map(ws => {
       const projects = grouped.get(String(ws._id)) || [];
-      return { id: ws._id, name: ws.name, projectsCount: projects.length, viewMorePath: `/projects/workspace/${ws._id}`, projects: projects.slice(0,5).map(p => {
+      return { id: ws._id, name: ws.name, projectsCount: projects.length, viewMorePath: `/projects/workspace/${ws._id}`, projects: visible(projects).map(p => {
         const count = byId.get(String(p._id));
         const completionPercent = count?.total ? Math.round(count.done / count.total * 100) : 0;
         const deadline = p.deadline || p.end_date;
