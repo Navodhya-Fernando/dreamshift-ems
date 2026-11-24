@@ -20,7 +20,7 @@ const groups = [
   ] },
   { label: 'Insights & management', items: [
     { label: 'Analytics', path: '/analytics', icon: BarChart2 },
-    { label: 'Administration', path: '/admin', icon: Shield },
+    { label: 'Administration', path: '/admin/monitoring', icon: Shield },
   ] },
 ];
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -29,12 +29,12 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const canAccessAdmin = Boolean(session?.user?.role && ['OWNER','ADMIN','WORKSPACE_ADMIN'].includes(normalizePlatformRole(session.user.role)));
   const initials = session?.user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) || 'U';
-  const isActive = (path: string) => path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(path + '/');
+  const isActive = (path: string) => path === '/' ? pathname === '/' : pathname === path || pathname.startsWith(path + '/') || (path === '/admin/monitoring' && pathname.startsWith('/admin'));
   const close = () => { setShowUserMenu(false); onNavigate?.(); };
   return <aside className="sidebar" id="ems-navigation">
     <Link href="/" onClick={close} className="sidebar-logo"><div className="sidebar-logo-icon"><Zap size={16} color="white" strokeWidth={2.5}/></div><div><div className="sidebar-logo-text">DreamShift</div><div className="sidebar-logo-sub">EMS</div></div></Link>
     <nav className="sidebar-nav" aria-label="Main navigation">
-      {groups.map(group => <div className="nav-group" key={group.label}><div className="nav-section-label">{group.label}</div>{group.items.filter(item => item.path !== '/admin' || canAccessAdmin).map(({label,path,icon: Icon}) => <Link key={path} href={path} onClick={close} aria-current={isActive(path) ? 'page' : undefined} className={`nav-link ${isActive(path) ? 'active' : ''}`}><Icon size={17} strokeWidth={1.8}/>{label}</Link>)}</div>)}
+      {groups.map(group => <div className="nav-group" key={group.label}><div className="nav-section-label">{group.label}</div>{group.items.filter(item => !item.path.startsWith('/admin') || canAccessAdmin).map(({label,path,icon: Icon}) => <Link key={path} href={path} onClick={close} aria-current={isActive(path) ? 'page' : undefined} className={`nav-link ${isActive(path) ? 'active' : ''}`}><Icon size={17} strokeWidth={1.8}/>{label}</Link>)}</div>)}
     </nav>
     <div className="sidebar-user">
       {showUserMenu && <div className="user-menu"><Link href="/profile" className="user-menu-item" onClick={close}><User size={15}/> Profile & Stats</Link><Link href="/settings" className="user-menu-item" onClick={close}><Settings size={15}/> Settings</Link><div className="user-menu-divider"/><button className="user-menu-item danger" onClick={() => signOut()}><LogOut size={15}/> Sign out</button></div>}

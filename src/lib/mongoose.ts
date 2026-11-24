@@ -23,8 +23,9 @@ async function dbConnect() {
       dbName: process.env.DB_NAME || 'dreamshift', // ← FIX: was defaulting to 'test'
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((m) => {
-      return m;
+    cached.promise = mongoose.connect(MONGODB_URI!, opts).catch(error => {
+      cached.promise = null;
+      throw error;
     });
   }
   cached.conn = await cached.promise;

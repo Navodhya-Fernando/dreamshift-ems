@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongoose';
+import SystemJobRun from '@/models/SystemJobRun';
 import { runDueRecurringTasks } from '@/lib/runRecurringTasks';
 import Task from '@/models/Task';
 import Project from '@/models/Project';
@@ -92,6 +93,8 @@ function normalizeDigestTaskStatus(status: unknown) {
 }
 
 export async function GET(req: Request) {
+  let jobId: mongoose.Types.ObjectId | null = null;
+  const startedAt = new Date();
   try {
     const expectedSecret = String(process.env.CRON_SECRET || '').trim();
     if (!expectedSecret) {
@@ -108,6 +111,7 @@ export async function GET(req: Request) {
     }
 
     await dbConnect();
+    try { const run = await SystemJobRun.collection.insertOne({name:'daily-operations',startedAt,status:'RUNNING',createdAt:startedAt,updatedAt:startedAt}); jobId = run.insertedId; } catch (e) { console.error('Job monitoring insert failed',e); }
 
     const now = new Date();
     let recurring: {scanned:number;created:number;paused:number} | {error:string};
@@ -429,6 +433,8 @@ export async function GET(req: Request) {
       dailySummaryScheduled += 1;
     }
 
+    if(jobId)try{await SystemJobRun.collection.updateOne({_id:jobId},{$set:{status:'error' in recurring?'PARTIAL':'SUCCESS',finishedAt:new Date(),durationMs:Date.now()-startedAt.getTime(),updatedAt:new Date(),details:{recurring,overdueAlerts,projectDueSoonAlerts,projectOverdueAlerts,dailySummaryScheduled,dailySummarySkipped}}});}catch(e){console.error('Job monitoring update failed',e);}
+
     return NextResponse.json(
       {
         success: true,
@@ -450,6 +456,7 @@ export async function GET(req: Request) {
       { status: 200 }
     );
   } catch (error: unknown) {
+    if(jobId)try{await SystemJobRun.collection.updateOne({_id:jobId},{$set:{status:'FAILED',finishedAt:new Date(),durationMs:Date.now()-startedAt.getTime(),updatedAt:new Date()}});}catch(e){console.error('Job monitoring update failed',e);}
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ success: false, error: message }, { status: 400 });
   }
