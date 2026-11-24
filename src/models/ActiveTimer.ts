@@ -1,0 +1,4 @@
+import mongoose,{Schema,type Model} from 'mongoose';
+interface ActiveTimerRecord{_id:mongoose.Types.ObjectId;sessionId:mongoose.Types.ObjectId;taskId:mongoose.Types.ObjectId;projectId:mongoose.Types.ObjectId;taskTitle:string;note:string;startedAt:Date;runningSince:Date|null;elapsedSeconds:number;revision:number;}
+const schema=new Schema<ActiveTimerRecord>({_id:{type:Schema.Types.ObjectId,required:true},sessionId:{type:Schema.Types.ObjectId,required:true},taskId:{type:Schema.Types.ObjectId,required:true},projectId:{type:Schema.Types.ObjectId,required:true},taskTitle:{type:String,required:true},note:{type:String,default:''},startedAt:{type:Date,required:true},runningSince:{type:Date,default:null},elapsedSeconds:{type:Number,required:true,default:0},revision:{type:Number,required:true,default:1}},{versionKey:false});
+export default (mongoose.models.ActiveTimer as Model<ActiveTimerRecord>|undefined)||mongoose.model<ActiveTimerRecord>('ActiveTimer',schema);

@@ -79,7 +79,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     const previousDuration = Number(existing.durationSeconds || 0);
-    const nextDuration = Math.max(0, Math.round((endTime.getTime() - startTime.getTime()) / 1000));
+    const unchanged = startTime.getTime() === new Date(existing.startTime).getTime() && endTime.getTime() === new Date(existing.endTime).getTime();
+    const nextDuration = unchanged ? previousDuration : Math.max(0, Math.round((endTime.getTime() - startTime.getTime()) / 1000));
     const previousTaskId = String(existing.taskId || '');
 
     if (previousTaskId !== nextTaskId) {
@@ -118,7 +119,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       { returnDocument: 'after' }
     );
 
-    const value = updated?.value;
+    const value = updated;
     const data = value
       ? {
           ...value,

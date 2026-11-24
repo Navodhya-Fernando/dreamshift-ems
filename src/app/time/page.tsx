@@ -3,11 +3,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Clock as ClockIcon, Play, Square, FileText, RefreshCw, TimerReset, TrendingUp, Layers3, ArrowRight, CheckCircle2, Sparkles, Pencil, Trash2 } from 'lucide-react';
+import { Clock as ClockIcon, FileText, RefreshCw, TimerReset, TrendingUp, Layers3, ArrowRight, CheckCircle2, Sparkles, Pencil, Trash2 } from 'lucide-react';
 import DataStatusBanner from '@/components/ui/DataStatusBanner';
 import { useCachedApi } from '@/lib/useCachedApi';
 import { toastError, toastInfo, toastSuccess } from '@/lib/toast';
-import { dispatchTimerCommand, persistElapsedToTask, readTimerSnapshot, subscribeTimerCommand, subscribeTimerState, writeTimerSnapshot } from '@/lib/timerShortcuts';
+import {useTimer,TimerClock} from '@/components/layout/TimerProvider';
 import './time.css';
 
 type TimeTask = {
@@ -345,10 +345,12 @@ export default function TimeTrackerPage() {
     ttlMs: 90_000,
   });
 
-  const [activeTask, setActiveTask] = useState('');
-  const [activityTitle, setActivityTitle] = useState('');
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const {timer,ready:timerReady,busy:timerBusy,error:timerError,act:timerAct,refresh:refreshTimer}=useTimer();
+  const [selectedTask,setActiveTask]=useState('');
+  const [note,setActivityTitle]=useState('');
+  const activeTask=timer?.taskId||selectedTask;
+  const activityTitle=timer?.note??note;
+  const timerRunning=Boolean(timer?.runningSince);
   const [manualSaving, setManualSaving] = useState(false);
   const [timeWindow, setTimeWindow] = useState<TimeWindowFilter>('THIS_WEEK');
   const [customDateRange, setCustomDateRange] = useState<CustomDateRange>({ start: '', end: '' });
@@ -380,84 +382,6 @@ export default function TimeTrackerPage() {
     },
     ttlMs: 30_000,
   });
-
-  useEffect(() => {
-    const hydrateFrame = window.requestAnimationFrame(() => {
-      const snapshot = readTimerSnapshot();
-      setActiveTask(snapshot.activeTask || '');
-      setActivityTitle(snapshot.activityTitle || '');
-      setTimerRunning(Boolean(snapshot.isRunning));
-      setElapsedSeconds(Number(snapshot.elapsedSeconds || 0));
-    });
-
-    return () => {
-      window.cancelAnimationFrame(hydrateFrame);
-    };
-  }, []);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
-    if (timerRunning) {
-      interval = setInterval(() => {
-        setElapsedSeconds((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [timerRunning]);
-
-  useEffect(() => {
-    const unsubscribeState = subscribeTimerState((snapshot) => {
-      setActiveTask(snapshot.activeTask || '');
-      setActivityTitle(snapshot.activityTitle || '');
-      setElapsedSeconds(Number(snapshot.elapsedSeconds || 0));
-      setTimerRunning(Boolean(snapshot.isRunning));
-    });
-
-    const unsubscribeCommand = subscribeTimerCommand((command) => {
-      if (command === 'start') {
-        if (!activeTask) {
-          toastInfo('Select a task first to start timer.');
-          return;
-        }
-        setTimerRunning(true);
-      }
-
-      if (command === 'pause') {
-        setTimerRunning(false);
-      }
-
-      if (command === 'stop') {
-        setTimerRunning(false);
-        setElapsedSeconds(0);
-        refreshEntries().catch(() => undefined);
-        refresh().catch(() => undefined);
-      }
-    });
-
-    return () => {
-      unsubscribeState();
-      unsubscribeCommand();
-    };
-  }, [activeTask]);
-
-  useEffect(() => {
-    if (!loading && tasks.length > 0 && !tasks.some((task) => task._id === activeTask)) {
-      setActiveTask('');
-      setTimerRunning(false);
-    }
-  }, [tasks, activeTask, loading]);
-
-  useEffect(() => {
-    writeTimerSnapshot({
-      activeTask,
-      activityTitle,
-      elapsedSeconds,
-      isRunning: timerRunning,
-      lastTickAt: timerRunning ? Date.now() : null,
-    });
-  }, [activeTask, activityTitle, elapsedSeconds, timerRunning]);
 
   const assignedTasks = useMemo(() => {
     return [...tasks].sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0));
@@ -547,55 +471,6 @@ export default function TimeTrackerPage() {
       .sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0))
       .slice(0, 5);
   }, [assignedTasks, filteredTaskDurations]);
-
-  const toggleTimer = () => {
-    if (!activeTask) {
-      toastInfo('Choose a task to track time against.');
-      return;
-    }
-
-    if (timerRunning) {
-      persistTrackedTime().catch(() => undefined);
-      setTimerRunning(false);
-      dispatchTimerCommand('pause');
-    } else {
-      setTimerRunning(true);
-      dispatchTimerCommand('start');
-    }
-  };
-
-  async function persistTrackedTime() {
-    if (!activeTask || elapsedSeconds <= 0) return;
-
-    const targetTask = tasks.find((task) => task._id === activeTask);
-    if (!targetTask) return;
-
-    const previous = targetTask.timeSpent || 0;
-    const updatedTotal = previous + elapsedSeconds;
-
-    try {
-      const result = await persistElapsedToTask({
-        activeTask,
-        activityTitle,
-        elapsedSeconds,
-        isRunning: false,
-        lastTickAt: null,
-      });
-
-      setData((prev) => prev.map((task) => (
-        task._id === activeTask ? { ...task, timeSpent: updatedTotal } : task
-      )));
-      if (result?.entry) {
-        setTimeEntries((prev) => [result.entry as TimeEntry, ...prev]);
-      }
-      setElapsedSeconds(0);
-      toastSuccess(`Added ${formatTime(elapsedSeconds)} to ${targetTask.title}.`);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save tracked time';
-      setData((prev) => prev.map((task) => (task._id === activeTask ? { ...task, timeSpent: previous } : task)));
-      toastError(message);
-    }
-  }
 
   const submitManualEntry = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -780,10 +655,12 @@ export default function TimeTrackerPage() {
                 <div className="card-subtitle">Pick a task, add context, and start tracking</div>
               </div>
               <span className={`time-chip ${timerRunning ? 'running' : 'idle'}`}>
-                {timerRunning ? 'Recording' : 'Paused'}
+                {timerRunning ? 'Recording' : timer ? 'Paused' : 'Ready'}
               </span>
             </div>
 
+            {timerError&&<p role="alert" className="text-sm" style={{marginBottom:10}}>{timerError} <button className="btn btn-ghost" onClick={()=>void refreshTimer()}>Refresh timer</button></p>}
+            <p className="text-muted text-sm" style={{marginBottom:10}}>Your timer is saved on the server and can be resumed on another device. An internet connection is required to change its state.</p>
             <div className="time-tracker-shell">
               <div className="time-tracker-form">
                 <label className="time-field">
@@ -793,6 +670,7 @@ export default function TimeTrackerPage() {
                     placeholder="Optional note for this session"
                     className="time-input"
                     value={activityTitle}
+                    disabled={Boolean(timer)||timerBusy}
                     onChange={(e) => setActivityTitle(e.target.value)}
                   />
                 </label>
@@ -804,12 +682,12 @@ export default function TimeTrackerPage() {
                   tasks={taskPickerItems}
                   placeholder="Select assigned task"
                   searchPlaceholder="Search workspace, project, or task"
-                  disabled={timerRunning}
+                  disabled={Boolean(timer)||timerBusy}
                 />
               </div>
 
               <div className="time-tracker-status">
-                <div className="time-clock">{formatTime(elapsedSeconds)}</div>
+                <TimerClock className="time-clock"/>
                 <div className="time-active-summary">
                   {activeTaskRecord ? (
                     <>
@@ -817,15 +695,15 @@ export default function TimeTrackerPage() {
                       <div className="time-active-subtitle">{typeof activeTaskRecord.projectId === 'object' ? activeTaskRecord.projectId?.name || 'General' : 'General'}</div>
                     </>
                   ) : (
-                    <div className="time-active-subtitle">Select a task to begin recording time.</div>
+                    <div className="time-active-subtitle">{timer?.taskTitle||'Select a task to begin recording time.'}</div>
                   )}
                 </div>
-                <button
-                  className={`time-action-btn ${timerRunning ? 'stop' : 'start'}`}
-                  onClick={toggleTimer}
-                >
-                  {timerRunning ? <Square size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
-                </button>
+                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                  {!timer?<button className="btn btn-primary" disabled={!timerReady||timerBusy||!activeTask} onClick={()=>void timerAct('start',activeTask,activityTitle)}>Start</button>:<>
+                    <button className="btn btn-secondary" disabled={timerBusy} onClick={()=>void timerAct(timerRunning?'pause':'resume')}>{timerRunning?'Pause':'Resume'}</button>
+                    <button className="btn btn-primary" disabled={timerBusy} onClick={()=>void timerAct('stop')}>Stop &amp; save</button>
+                  </>}
+                </div>
               </div>
             </div>
           </div>
@@ -967,6 +845,7 @@ export default function TimeTrackerPage() {
                     key={task._id}
                     className={`time-quick-card ${activeTask === task._id ? 'active' : ''}`}
                     type="button"
+                    disabled={Boolean(timer)||timerBusy}
                     onClick={() => setActiveTask(task._id)}
                   >
                     <div className="time-quick-top">
