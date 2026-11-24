@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Bell, RefreshCw, Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import { toastInfo } from '@/lib/toast';
+import { toastInfo, toastError } from '@/lib/toast';
 import { dispatchTimerCommand, persistElapsedToTask, readTimerSnapshot, subscribeTimerState, writeTimerSnapshot } from '@/lib/timerShortcuts';
 import { useCachedApi } from '@/lib/useCachedApi';
 import NotificationsPanel from '@/components/ui/NotificationsPanel';
@@ -21,6 +21,7 @@ export default function ShellTopbar({ onToggleNav, navOpen }: { onToggleNav: () 
   const pathname = usePathname();
   const title = ({ '/': 'Home', '/tasks': 'My Tasks', '/projects': 'Workspaces', '/time': 'Time Tracking', '/calendar': 'Calendar', '/messages': 'Messages', '/admin': 'Administration', '/analytics': 'Analytics', '/settings': 'Settings', '/profile': 'Profile', '/notifications': 'Notifications', '/task-templates': 'Templates' } as Record<string, string>)[pathname === '/' ? '/' : '/' + pathname.split('/')[1]] || 'Workspace';
   const router = useRouter();
+  const [savingTimer, setSavingTimer] = useState(false);
   const [timer, setTimer] = useState(INITIAL_TIMER_STATE);
   const [showNotifications, setShowNotifications] = useState(false);
   const { data: notificationData, refresh: refreshNotifications } = useCachedApi<{ unreadCount: number; items: unknown[] }>({
@@ -89,6 +90,8 @@ export default function ShellTopbar({ onToggleNav, navOpen }: { onToggleNav: () 
   };
 
   const onStop = async () => {
+    if (savingTimer) return;
+    setSavingTimer(true);
     const snapshot = readTimerSnapshot();
 
     try {
@@ -96,7 +99,9 @@ export default function ShellTopbar({ onToggleNav, navOpen }: { onToggleNav: () 
         await persistElapsedToTask(snapshot);
       }
     } catch {
-      // Keep shortcuts resilient even if sync fails.
+      toastError('Could not save time. Your timer has been retained.');
+      setSavingTimer(false);
+      return;
     }
 
     dispatchTimerCommand('stop');
@@ -106,6 +111,7 @@ export default function ShellTopbar({ onToggleNav, navOpen }: { onToggleNav: () 
       elapsedSeconds: 0,
       lastTickAt: null,
     });
+    setSavingTimer(false);
   };
 
   const formatTime = (secs: number) => {
@@ -143,7 +149,7 @@ export default function ShellTopbar({ onToggleNav, navOpen }: { onToggleNav: () 
           <button className={`shell-timer-btn ${!timer.isRunning ? 'active' : ''}`} type="button" onClick={onPause} title="Pause timer" disabled={!timer.isRunning}>
             <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6 4.75A1.25 1.25 0 0 1 7.25 3.5h1.5A1.25 1.25 0 0 1 10 4.75v10.5A1.25 1.25 0 0 1 8.75 16.5h-1.5A1.25 1.25 0 0 1 6 15.25V4.75zm4 0A1.25 1.25 0 0 1 11.25 3.5h1.5A1.25 1.25 0 0 1 14 4.75v10.5A1.25 1.25 0 0 1 12.75 16.5h-1.5A1.25 1.25 0 0 1 10 15.25V4.75z" /></svg>
           </button>
-          <button className="shell-timer-btn stop" type="button" onClick={onStop} title="Stop and save timer" disabled={timer.elapsedSeconds <= 0}>
+          <button className="shell-timer-btn stop" type="button" onClick={onStop} title="Stop and save timer" disabled={savingTimer || timer.elapsedSeconds <= 0}>
             <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="10" height="10" rx="1.5" /></svg>
           </button>
         </div>

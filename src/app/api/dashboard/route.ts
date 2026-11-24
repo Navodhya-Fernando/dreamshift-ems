@@ -27,7 +27,7 @@ function buildProjectFilter(projectIds: Array<string | { toString(): string }>) 
   const stringIds = projectIds.map((value) => String(value));
   return {
     $or: [
-      { _id: { $in: projectIds } },
+      { _id: { $in: projectIds.map(id => mongoose.isValidObjectId(String(id)) ? new mongoose.Types.ObjectId(String(id)) : id) } },
       { _id: { $in: stringIds } },
     ],
   };
@@ -46,22 +46,29 @@ export async function GET() {
     const user = await User.findById(userId, { name: 1, email: 1 }).lean();
 
     const assignedTasks = await Task.collection
-      .find(buildAssigneeFilter({ _id: userId, email: user?.email ?? undefined, name: user?.name ?? undefined }))
+      .find(buildAssigneeFilter({ _id: userId, email: user?.email ?? undefined, name: user?.name ?? undefined }), { projection: { title: 1, status: 1, dueDate: 1, due_date: 1, projectId: 1, project_id: 1, timeSpent: 1, updatedAt: 1, created_at: 1 } })
       .sort({ updatedAt: -1, created_at: -1 })
       .toArray();
-    const projectIds = [...new Set(assignedTasks.map((task) => String(task.projectId || task.project_id)).filter(Boolean))];
+    const projectIds = [...new Set(assignedTasks.map((task) => String(task.projectId || task.project_id || '')).filter(Boolean))];
     const projects = projectIds.length ? await Project.collection.find(buildProjectFilter(projectIds) as never, { projection: { _id: 1, name: 1 } }).toArray() : [];
     const projectNameById = new Map(projects.map((project) => [String(project._id), String(project.name || 'General')]));
 
-    const done = assignedTasks.filter((task) => task.status === 'DONE').length;
-    const active = assignedTasks.filter((task) => task.status !== 'DONE').length;
-    const overdue = assignedTasks.filter((task) => (task.dueDate || task.due_date) && new Date(task.dueDate || task.due_date).getTime() < Date.now() && task.status !== 'DONE').length;
+    const isDone = (status: unknown) => ['DONE','COMPLETED'].includes(String(status || '').toUpperCase());
+    const now = Date.now();
+    let done = 0, overdue = 0, totalSeconds = 0;
+    const openTasks = assignedTasks.filter(task => {
+      totalSeconds += Number(task.timeSpent || 0);
+      if (isDone(task.status)) { done++; return false; }
+      const due = task.dueDate || task.due_date;
+      if (due && new Date(due).getTime() < now) overdue++;
+      return true;
+    });
+    const active = openTasks.length;
     const completion = assignedTasks.length ? Math.round((done / assignedTasks.length) * 100) : 0;
-    const totalSeconds = assignedTasks.reduce((sum, task) => sum + (task.timeSpent || 0), 0);
     const hours = `${(totalSeconds / 3600).toFixed(1)}h`;
 
-    const upcoming = assignedTasks
-      .filter((task) => (task.dueDate || task.due_date) && task.status !== 'DONE')
+    const upcoming = openTasks
+      .filter((task) => (task.dueDate || task.due_date))
       .sort((a, b) => new Date((a.dueDate || a.due_date) as Date).getTime() - new Date((b.dueDate || b.due_date) as Date).getTime())
       .slice(0, 4)
       .map((task) => ({
@@ -105,7 +112,7 @@ export async function GET() {
         success: true,
         data: {
           kpi: { active, completion, hours, overdue },
-          myTasks: assignedTasks.slice(0, 6).map((task) => ({
+          myTasks: openTasks.slice(0, 6).map((task) => ({
             _id: task._id,
             title: task.title,
             dueDate: task.dueDate || task.due_date,

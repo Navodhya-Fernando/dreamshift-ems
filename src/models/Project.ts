@@ -45,4 +45,6 @@ const ProjectSchema: Schema = new Schema(
   { timestamps: true }
 );
 
+ProjectSchema.index({ workspaceId: 1, updatedAt: -1 });
+ProjectSchema.index({ workspace_id: 1 });
 export default mongoose.models?.Project || mongoose.model<IProject>('Project', ProjectSchema);

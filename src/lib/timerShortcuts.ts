@@ -121,15 +121,6 @@ export function subscribeTimerCommand(handler: (command: TimerCommand) => void) 
 export async function persistElapsedToTask(snapshot: TimerSnapshot) {
   if (!snapshot.activeTask || snapshot.elapsedSeconds <= 0) return;
 
-  const readTaskResponse = await fetch(`/api/tasks/${snapshot.activeTask}`, { cache: 'no-store' });
-  const readTaskJson = await readTaskResponse.json();
-  if (!readTaskResponse.ok || !readTaskJson.success) {
-    throw new Error(readTaskJson.error || 'Unable to read task for timer save');
-  }
-
-  const currentSpent = Number(readTaskJson.data?.timeSpent || 0);
-  const nextSpent = currentSpent + snapshot.elapsedSeconds;
-
   const endTime = new Date();
   const startTime = new Date(endTime.getTime() - snapshot.elapsedSeconds * 1000);
 
@@ -150,17 +141,8 @@ export async function persistElapsedToTask(snapshot: TimerSnapshot) {
     throw new Error(json.error || 'Unable to save timer session');
   }
 
-  const updateResponse = await fetch(`/api/tasks/${snapshot.activeTask}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ timeSpent: nextSpent }),
-  });
-  const updateJson = await updateResponse.json();
-  if (!updateResponse.ok || !updateJson.success) {
-    throw new Error(updateJson.error || 'Unable to update task total');
-  }
-
-  return { entry: json.data, nextSpent };
+  // The POST endpoint already increments task.timeSpent atomically.
+  return { entry: json.data };
 }
 
 export const timerShortcutEvents = {

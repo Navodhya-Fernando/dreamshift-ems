@@ -60,4 +60,9 @@ const TaskSchema: Schema = new Schema(
   { timestamps: true }
 );
 
+TaskSchema.index({ projectId: 1, status: 1 });
+TaskSchema.index({ assigneeId: 1, updatedAt: -1 });
+TaskSchema.index({ assigneeIds: 1, updatedAt: -1 });
+TaskSchema.index({ project_id: 1 });
+TaskSchema.index({ assignee: 1 });
 export default mongoose.models?.Task || mongoose.model<ITask>('Task', TaskSchema);
