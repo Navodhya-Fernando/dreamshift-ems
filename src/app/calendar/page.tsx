@@ -17,7 +17,9 @@ type CalendarEventItem = {
   date: string;
   dueDate?: string;
   end?: string;
-  kind?: 'meeting';
+  kind?: 'meeting'|'google';
+  allDay?:boolean;
+  url?:string;
   status: string;
   priority: string;
   projectName: string;
@@ -52,7 +54,7 @@ export default function CalendarPage() {
     isRefreshing,
     refresh,
   } = useCachedApi<CalendarResponse>({
-    cacheKey: 'calendar-events-v1',
+    cacheKey: 'calendar-events-v2',
     initialData: { events: [], summary: { total: 0, overdue: 0, dueThisWeek: 0 } },
     fetcher: async () => {
       const res = await fetch('/api/calendar', { cache: 'no-store' });
@@ -108,8 +110,8 @@ export default function CalendarPage() {
       title: event.title,
       start: event.date,
       end: event.end,
-      allDay: event.kind !== 'meeting',
-      backgroundColor: event.kind==='meeting'?'#7968bd':PRIORITY_COLORS[event.priority] || '#4361ee',
+      allDay: event.kind==='google'?Boolean(event.allDay):event.kind!=='meeting',
+      backgroundColor: event.kind==='google'?'#358a72':event.kind==='meeting'?'#7968bd':PRIORITY_COLORS[event.priority] || '#4361ee',
       borderColor: 'transparent',
       extendedProps: event,
     }));
@@ -164,7 +166,7 @@ export default function CalendarPage() {
       </div>
 
       <aside className="calendar-panel-side">
-        <h3 className="section-title" style={{ marginBottom: 10 }}>Sync Options</h3>
+        <h3 className="section-title" style={{ marginBottom: 10 }}>Calendar connections</h3><Link href="/settings/google-calendar" className="btn btn-primary" style={{marginBottom:12}}>Google Calendar</Link>
         <div className="calendar-side-card" style={{ marginBottom: 12 }}>
           <div className="calendar-sync-actions">
             <a className="btn btn-secondary" href={fallbackIcsUrl} download>
@@ -195,7 +197,7 @@ export default function CalendarPage() {
         ) : (
           <div className="calendar-side-card">
             <div className="calendar-side-title">{selectedEvent.title}</div>
-            {selectedEvent.kind==='meeting'?<><div className="calendar-side-row"><span>Starts</span><strong>{new Date(selectedEvent.date).toLocaleString()}</strong></div><div className="calendar-side-row"><span>Organizer</span><strong>{selectedEvent.assigneeName}</strong></div><Link href={`/calendar/meetings#${selectedEvent.id}`} className="btn btn-primary">Open meeting</Link></>:<><div className="calendar-side-row"><span>Project</span><strong>{selectedEvent.projectName}</strong></div>
+            {selectedEvent.kind==='google'?<><div className="calendar-side-row"><span>Source</span><strong>Google Calendar</strong></div><div className="calendar-side-row"><span>Starts</span><strong>{selectedEvent.allDay?selectedEvent.date:new Date(selectedEvent.date).toLocaleString()}</strong></div>{selectedEvent.url&&<a href={selectedEvent.url} target="_blank" rel="noreferrer" className="btn btn-secondary">Open in Google Calendar</a>}</>:selectedEvent.kind==='meeting'?<><div className="calendar-side-row"><span>Starts</span><strong>{new Date(selectedEvent.date).toLocaleString()}</strong></div><div className="calendar-side-row"><span>Organizer</span><strong>{selectedEvent.assigneeName}</strong></div><Link href={`/calendar/meetings#${selectedEvent.id}`} className="btn btn-primary">Open meeting</Link></>:<><div className="calendar-side-row"><span>Project</span><strong>{selectedEvent.projectName}</strong></div>
             <div className="calendar-side-row"><span>Assignee</span><strong>{selectedEvent.assigneeName}</strong></div>
             <div className="calendar-side-row"><span>Status</span><strong>{selectedEvent.status.replace('_', ' ')}</strong></div>
             <div className="calendar-side-row"><span>Priority</span><strong style={{ color: PRIORITY_COLORS[selectedEvent.priority] || '#4361ee' }}>{selectedEvent.priority}</strong></div>

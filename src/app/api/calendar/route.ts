@@ -8,6 +8,7 @@ import Task from '@/models/Task';
 import Project from '@/models/Project';
 import User from '@/models/User';
 import Meeting from '@/models/Meeting';
+import GoogleCalendarConnection from '@/models/GoogleCalendarConnection';
 import { getAccessibleWorkspaceIds } from '@/lib/tenancy';
 
 function getAnchorDate(task: Record<string, unknown>) {
@@ -114,7 +115,9 @@ async function handleGET() {
     const uid=new mongoose.Types.ObjectId(userId);
     const meetings=await Meeting.collection.find({$or:[{organizerId:uid},{attendeeIds:uid}],endTime:{$gte:new Date(Date.now()-90*86400000)},startTime:{$lte:new Date(Date.now()+365*86400000)}},{projection:{title:1,startTime:1,endTime:1,organizerId:1}}).sort({startTime:1}).limit(300).toArray();
     const meetingEvents=meetings.map(m=>({id:String(m._id),title:String(m.title),date:new Date(m.startTime).toISOString(),end:new Date(m.endTime).toISOString(),kind:'meeting',status:'scheduled',priority:'meeting',projectName:'Meeting',assigneeName:userById.get(String(m.organizerId))?.name||'Organizer'}));
-    return NextResponse.json({ success: true, data: { events:[...events,...meetingEvents], summary:{...summary,meetings:meetingEvents.length} } }, { status: 200 });
+    const connection=await GoogleCalendarConnection.findById(uid).select('events').lean();
+    const googleEvents=(connection?.events||[]).map(e=>({...e,kind:'google',status:'scheduled',priority:'google',projectName:'Google Calendar',assigneeName:'You'}));
+    return NextResponse.json({ success: true, data: { events:[...events,...meetingEvents,...googleEvents], summary:{...summary,meetings:meetingEvents.length,googleEvents:googleEvents.length} } }, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ success: false, error: message }, { status: 400 });

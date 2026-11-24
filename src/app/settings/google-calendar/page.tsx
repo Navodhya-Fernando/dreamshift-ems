@@ -1,0 +1,20 @@
+"use client";
+import {useState,useEffect} from 'react';
+import Link from 'next/link';
+type Status={configured:boolean;connected:boolean;calendarId:string;calendarName:string;lastSyncedAt:string|null};
+type Choice={id:string;name:string;primary:boolean};
+export default function GoogleCalendarSettings(){
+ const [status,setStatus]=useState<Status|null>(null),[choices,setChoices]=useState<Choice[]>([]),[selected,setSelected]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
+ async function refresh(){try{const r=await fetch('/api/integrations/google-calendar',{cache:'no-store'});const j=await r.json();if(!r.ok||!j.success)throw Error(j.error||'Settings unavailable');setStatus(j.data);setSelected(j.data.calendarId||'');}catch(e){setMessage(e instanceof Error?e.message:'Settings unavailable');}}
+ useEffect(()=>{void refresh();const result=new URLSearchParams(location.search).get('connection');if(result&&result!=='connected')setMessage('Google connection was not completed. Reconnect and allow both calendar permissions.');},[]);
+ async function action(name:string){setBusy(true);setMessage('');try{const r=await fetch('/api/integrations/google-calendar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:name,calendarId:selected})});const j=await r.json();if(!r.ok||!j.success)throw Error(j.error||'Request failed');if(name==='list')setChoices(j.data);else{setMessage(name==='disconnect'?'Disconnected and imported events removed.':`${j.data.count} calendar events imported.`);if(name==='disconnect')setChoices([]);await refresh();window.dispatchEvent(new Event('dreamshift:refresh-all'));}}catch(e){setMessage(e instanceof Error?e.message:'Request failed');}finally{setBusy(false);}}
+ return <div className="page-wrapper" style={{maxWidth:760}}><Link href="/settings" className="btn btn-ghost">← Settings</Link><h1 className="page-title" style={{margin:'14px 0'}}>Google Calendar</h1><section className="card" style={{padding:20,display:'grid',gap:14}}><h2 className="section-title">Your work calendar</h2><p className="text-muted">Connect your own Google account, select a dedicated DreamShift calendar and import its events into your EMS calendar. Imported events are visible only to your EMS account.</p>
+ {!status?<p>Loading settings…</p>:!status.configured?<p>Google Calendar is not configured. Ask an administrator to configure the integration.</p>:!status.connected?<a className="btn btn-primary" href="/api/integrations/google-calendar/connect">Connect Google Calendar</a>:<>
+ <p><strong>Connected</strong>{status.calendarName?' · '+status.calendarName:''}</p>
+ <p className="text-sm text-muted">{status.lastSyncedAt?'Last imported: '+new Date(status.lastSyncedAt).toLocaleString():'No events imported yet.'}</p>
+ <button className="btn btn-secondary" disabled={busy} onClick={()=>void action('list')}>Choose work calendar</button>
+ {choices.length>0&&<label>Calendar<select className="input" style={{width:'100%',marginTop:6}} value={selected} onChange={e=>setSelected(e.target.value)}><option value="">Select calendar</option>{choices.map(c=><option key={c.id} value={c.id}>{c.name}{c.primary?' (primary)':''}</option>)}</select></label>}
+ <button className="btn btn-primary" disabled={busy||!selected} onClick={()=>void action('sync')}>{busy?'Working…':'Import / refresh events'}</button><Link href="/calendar" className="btn btn-secondary">Open EMS calendar</Link><a className="btn btn-ghost" href="/api/integrations/google-calendar/connect">Reconnect account</a></>}
+ {status?.connected&&<button className="btn btn-ghost" disabled={busy} onClick={()=>{if(confirm('Disconnect Google Calendar and remove imported events?'))void action('disconnect');}}>Disconnect and remove imported events</button>}
+ {message&&<p role="status">{message}</p>}<p className="text-muted text-sm">This first integration imports events from 30 days ago to 90 days ahead when you request a refresh. It is read-only; EMS does not edit your Google events or automatically create tasks from them yet. Keep using the existing ICS subscription for outbound EMS deadlines.</p></section></div>;
+}

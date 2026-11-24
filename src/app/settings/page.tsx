@@ -263,7 +263,7 @@ export default function SettingsPage() {
           Employment records like role history and join date remain managed by workspace admins and owners.
         </p>
         <div className="settings-actions">
-          <Link href="/settings/install" className="btn btn-secondary">Install EMS</Link>
+          <Link href="/settings/install" className="btn btn-secondary">Install EMS</Link><Link href="/settings/google-calendar" className="btn btn-secondary">Google Calendar</Link>
           <Link href="/profile" className="btn btn-secondary"><Calendar size={13} /> View Profile</Link>
           <Link href={data?.user.linkedinProfileUrl || '#'} className="btn btn-ghost" target="_blank" rel="noreferrer"><LinkIcon size={13} /> LinkedIn</Link>
           <div className="settings-role-pill">{data?.user.designation || String(data?.user.role || 'EMPLOYEE').replace('_', ' ')}</div>
