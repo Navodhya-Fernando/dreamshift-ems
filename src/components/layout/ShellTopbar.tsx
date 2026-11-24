@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { toastInfo, toastError } from '@/lib/toast';
 import { dispatchTimerCommand, persistElapsedToTask, readTimerSnapshot, subscribeTimerState, writeTimerSnapshot } from '@/lib/timerShortcuts';
 import { useCachedApi } from '@/lib/useCachedApi';
+import CommandSearch from './CommandSearch';
 import NotificationsPanel from '@/components/ui/NotificationsPanel';
 
 const INITIAL_TIMER_STATE = {
@@ -125,7 +126,7 @@ export default function ShellTopbar({ onToggleNav, navOpen }: { onToggleNav: () 
     <div className="shell-topbar">
       <div className="shell-topbar-leading"><button className="shell-nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded={navOpen} aria-controls="ems-navigation" onClick={onToggleNav}><Menu size={20}/></button><div className="shell-topbar-title">{title}</div></div>
 
-      <div className="shell-topbar-actions">
+      <div className="shell-topbar-actions"><CommandSearch/>
         <div className="shell-notifications-wrap">
           <button
             className="shell-notifications-btn"

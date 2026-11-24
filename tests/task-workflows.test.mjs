@@ -56,3 +56,7 @@ test('owner roles cannot be granted or modified by ordinary admins',()=>{
   assert.equal(canAssignPlatformRole('OWNER','EMPLOYEE','ADMIN'),true);
   assert.equal(canAssignPlatformRole('WORKSPACE_ADMIN','EMPLOYEE','EMPLOYEE'),false);
 });
+
+import {parseSearchQuery,escapeSearchTerm} from '../src/lib/searchQuery.ts';
+test('natural language search parses assigned overdue tasks',()=>{const q=parseSearchQuery('Show my overdue marketing tasks');assert.equal(q.kind,'tasks');assert.equal(q.mine,true);assert.equal(q.overdue,true);assert.deepEqual(q.terms,['marketing']);});
+test('calendar search handles tomorrow and escapes regex literals',()=>{const q=parseSearchQuery('Show my meetings tomorrow',new Date('2026-11-24T12:00:00Z'));assert.equal(q.kind,'meetings');assert.equal(q.from.toISOString(),'2026-11-25T00:00:00.000Z');assert.equal(q.terms.length,0);assert.equal(new RegExp(escapeSearchTerm('a+b')).test('a+b'),true);assert.equal(new RegExp(escapeSearchTerm('a+b')).test('aaab'),false);});
