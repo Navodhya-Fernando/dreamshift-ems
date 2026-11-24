@@ -443,11 +443,11 @@ export default function TimeTrackerPage() {
   }, [activeTask]);
 
   useEffect(() => {
-    if (!tasks.some((task) => task._id === activeTask)) {
+    if (!loading && tasks.length > 0 && !tasks.some((task) => task._id === activeTask)) {
       setActiveTask('');
       setTimerRunning(false);
     }
-  }, [tasks, activeTask]);
+  }, [tasks, activeTask, loading]);
 
   useEffect(() => {
     writeTimerSnapshot({
@@ -743,7 +743,7 @@ export default function TimeTrackerPage() {
             <ArrowRight size={13} />
             <span className="breadcrumb-active">Timesheet</span>
           </nav>
-          <h1 className="page-title" style={{ marginBottom: 8 }}>Your Time</h1>
+          <h1 className="page-title" style={{ marginBottom: 8 }}>Time tracking</h1>
           <p className="time-hero-text">
             Track your assigned work without clutter. Start the timer, log focused sessions, and keep your timesheet easy to scan.
           </p>
@@ -772,6 +772,63 @@ export default function TimeTrackerPage() {
         onRetry={refresh}
         onRefresh={refresh}
       />
+
+          <div className="time-panel card">
+            <div className="time-panel-header">
+              <div>
+                <div className="card-title">Track time</div>
+                <div className="card-subtitle">Pick a task, add context, and start tracking</div>
+              </div>
+              <span className={`time-chip ${timerRunning ? 'running' : 'idle'}`}>
+                {timerRunning ? 'Recording' : 'Paused'}
+              </span>
+            </div>
+
+            <div className="time-tracker-shell">
+              <div className="time-tracker-form">
+                <label className="time-field">
+                  <span className="time-field-label">What are you working on?</span>
+                  <input
+                    type="text"
+                    placeholder="Optional note for this session"
+                    className="time-input"
+                    value={activityTitle}
+                    onChange={(e) => setActivityTitle(e.target.value)}
+                  />
+                </label>
+
+                <TaskPickerSelect
+                  label="Task"
+                  value={activeTask}
+                  onChange={setActiveTask}
+                  tasks={taskPickerItems}
+                  placeholder="Select assigned task"
+                  searchPlaceholder="Search workspace, project, or task"
+                  disabled={timerRunning}
+                />
+              </div>
+
+              <div className="time-tracker-status">
+                <div className="time-clock">{formatTime(elapsedSeconds)}</div>
+                <div className="time-active-summary">
+                  {activeTaskRecord ? (
+                    <>
+                      <div className="time-active-title">{activeTaskRecord.title}</div>
+                      <div className="time-active-subtitle">{typeof activeTaskRecord.projectId === 'object' ? activeTaskRecord.projectId?.name || 'General' : 'General'}</div>
+                    </>
+                  ) : (
+                    <div className="time-active-subtitle">Select a task to begin recording time.</div>
+                  )}
+                </div>
+                <button
+                  className={`time-action-btn ${timerRunning ? 'stop' : 'start'}`}
+                  onClick={toggleTimer}
+                >
+                  {timerRunning ? <Square size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                </button>
+              </div>
+            </div>
+          </div>
 
       <div className="time-panel card time-filter-panel">
         <div className="time-panel-header" style={{ marginBottom: 10 }}>
@@ -844,63 +901,6 @@ export default function TimeTrackerPage() {
 
       <section className="time-layout">
         <div className="time-main-column">
-          <div className="time-panel card">
-            <div className="time-panel-header">
-              <div>
-                <div className="card-title">Timer workspace</div>
-                <div className="card-subtitle">Pick a task, add context, and start tracking</div>
-              </div>
-              <span className={`time-chip ${timerRunning ? 'running' : 'idle'}`}>
-                {timerRunning ? 'Recording' : 'Paused'}
-              </span>
-            </div>
-
-            <div className="time-tracker-shell">
-              <div className="time-tracker-form">
-                <label className="time-field">
-                  <span className="time-field-label">What are you working on?</span>
-                  <input
-                    type="text"
-                    placeholder="Optional note for this session"
-                    className="time-input"
-                    value={activityTitle}
-                    onChange={(e) => setActivityTitle(e.target.value)}
-                  />
-                </label>
-
-                <TaskPickerSelect
-                  label="Task"
-                  value={activeTask}
-                  onChange={setActiveTask}
-                  tasks={taskPickerItems}
-                  placeholder="Select assigned task"
-                  searchPlaceholder="Search workspace, project, or task"
-                  disabled={timerRunning}
-                />
-              </div>
-
-              <div className="time-tracker-status">
-                <div className="time-clock">{formatTime(elapsedSeconds)}</div>
-                <div className="time-active-summary">
-                  {activeTaskRecord ? (
-                    <>
-                      <div className="time-active-title">{activeTaskRecord.title}</div>
-                      <div className="time-active-subtitle">{typeof activeTaskRecord.projectId === 'object' ? activeTaskRecord.projectId?.name || 'General' : 'General'}</div>
-                    </>
-                  ) : (
-                    <div className="time-active-subtitle">Select a task to begin recording time.</div>
-                  )}
-                </div>
-                <button
-                  className={`time-action-btn ${timerRunning ? 'stop' : 'start'}`}
-                  onClick={toggleTimer}
-                >
-                  {timerRunning ? <Square size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
-                </button>
-              </div>
-            </div>
-          </div>
-
           <div className="time-panel card">
             <div className="time-panel-header">
               <div>

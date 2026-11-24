@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import {
   Activity,
@@ -345,6 +346,7 @@ function normalizeRoleHistory(user: AdminUserRecord | null) {
 export default function AdminConsolePage() {
   const { data: session, status } = useSession();
   const canAccessAdmin = !session?.user?.role || ['OWNER', 'ADMIN', 'WORKSPACE_ADMIN'].includes(normalizePlatformRole(session.user.role));
+  const [view,setView]=useState<'people'|'workspaces'|'insights'>('people');
   const [windowDays, setWindowDays] = useState<0 | 7 | 30 | 90>(0);
   const [densityMode, setDensityMode] = useState<'expanded' | 'compact'>('expanded');
   const [openInterventionId, setOpenInterventionId] = useState<string | null>(null);
@@ -733,17 +735,12 @@ export default function AdminConsolePage() {
             <ChevronRight size={13} />
             <span className="breadcrumb-active">Admin Console</span>
           </nav>
-          <h1 className="page-title" style={{ marginBottom: 10 }}>Premium Admin Console</h1>
+          <h1 className="page-title" style={{ marginBottom: 10 }}>Manage team</h1>
           <p className="admin-hero-subtitle">
-            Deep workspace telemetry, employee intelligence, and secure account operations for operators who need to see the whole system.
+            Manage employee accounts, workspace memberships and reporting.
           </p>
-          <div className="admin-hero-tags">
-            <span className="badge"><Shield size={12} /> Platform access</span>
-            <span className="badge badge-soft"><Sparkles size={12} /> Insightful dashboards</span>
-            <span className="badge badge-soft"><Activity size={12} /> Live telemetry</span>
-          </div>
         </div>
-        <div className="admin-hero-actions">
+        <div className="admin-hero-actions"><Link href="/admin/monitoring" className="btn btn-secondary">Operations overview</Link>
           <div className="admin-toggle-group" role="group" aria-label="Time window">
             {[0, 7, 30, 90].map((days) => (
               <button
@@ -790,6 +787,8 @@ export default function AdminConsolePage() {
         onRefresh={refresh}
       />
 
+      <div className="project-view-switch" role="group" aria-label="Administration view" style={{margin:"12px 0 16px"}}>{(["people","workspaces","insights"] as const).map(v=><button key={v} className={`btn ${view===v?"btn-primary":"btn-ghost"}`} aria-pressed={view===v} onClick={()=>setView(v)}>{v==="people"?"People":v==="workspaces"?"Workspaces":"Legacy reports"}</button>)}</div>
+      {view==="insights"&&<><p className="text-muted text-sm" style={{marginBottom:12}}>Legacy indicators are heuristic estimates, not validated employee or health assessments.</p>
       <section className="admin-command-grid">
         <article className="card admin-command-card">
           <div className="admin-section-header">
@@ -909,7 +908,8 @@ export default function AdminConsolePage() {
         </div>
       </section>
 
-      <div className="admin-toolbar card">
+      </>}
+      {view!=="insights"&&<><div className="admin-toolbar card">
         <div className="admin-toolbar-search">
           <input
             className="input"
@@ -935,10 +935,10 @@ export default function AdminConsolePage() {
 
       <div className="admin-layout">
         <div className="admin-column-main">
-          <section className="admin-section card">
+          {view==="workspaces"&&<section className="admin-section card">
             <div className="admin-section-header">
               <div>
-                <div className="card-title">Workspace intelligence</div>
+                <div className="card-title">Workspaces</div>
                 <div className="card-subtitle">Sorted by risk so attention goes to the right place first.</div>
               </div>
               <span className="badge">{filteredWorkspaces.length} workspaces</span>
@@ -987,12 +987,12 @@ export default function AdminConsolePage() {
                 );
               })}
             </div>
-          </section>
+          </section>}
 
-          <section className="admin-section card">
+          {view==="people"&&<section className="admin-section card">
             <div className="admin-section-header">
               <div>
-                <div className="card-title">People intelligence</div>
+                <div className="card-title">People</div>
                 <div className="card-subtitle">Sorted by date joined so long-tenure teammates appear first.</div>
               </div>
               <span className="badge">{filteredUsers.length} users</span>
@@ -1046,14 +1046,14 @@ export default function AdminConsolePage() {
                 );
               })}
             </div>
-          </section>
+          </section>}
         </div>
 
         <aside className="admin-column-side">
-          <section className="admin-detail card">
+          {view==="workspaces"&&<section className="admin-detail card">
             <div className="admin-section-header">
               <div>
-                <div className="card-title">Workspace spotlight</div>
+                <div className="card-title">Workspace details</div>
                 <div className="card-subtitle">A compact dashboard for the selected workspace.</div>
               </div>
               <Building2 size={16} />
@@ -1087,12 +1087,12 @@ export default function AdminConsolePage() {
             ) : (
               <div className="admin-empty-state">No workspace selected.</div>
             )}
-          </section>
+          </section>}
 
-          <section className="admin-detail card">
+          {view==="people"&&<section className="admin-detail card">
             <div className="admin-section-header">
               <div>
-                <div className="card-title">User spotlight</div>
+                <div className="card-title">Employee details</div>
                 <div className="card-subtitle">Status, risk, and workspace membership for the selected user.</div>
               </div>
               <Users size={16} />
@@ -1226,12 +1226,12 @@ export default function AdminConsolePage() {
             ) : (
               <div className="admin-empty-state">No user selected.</div>
             )}
-          </section>
+          </section>}
 
-          <section className="admin-detail card">
+          {view==="people"&&<section className="admin-detail card">
             <div className="admin-section-header">
               <div>
-                <div className="card-title">Operations planner</div>
+                <div className="card-title">Team actions</div>
                 <div className="card-subtitle">A compact playbook for this week.</div>
               </div>
               <Sparkles size={16} />
@@ -1252,9 +1252,9 @@ export default function AdminConsolePage() {
                 <Edit3 size={14} /> Edit selected user
               </button>
             </div>
-          </section>
+          </section>}
         </aside>
-      </div>
+      </div></>}
 
       {deepDiveOpen && selectedUser ? (
         <div className="admin-drawer-backdrop" role="presentation" onClick={() => setDeepDiveOpen(false)}>

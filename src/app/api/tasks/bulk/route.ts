@@ -1,3 +1,4 @@
+import { monitored } from '@/lib/routeTelemetry';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import mongoose from 'mongoose';
@@ -15,7 +16,7 @@ import Notification from '@/models/Notification';
 const oid = (id: string) => new mongoose.Types.ObjectId(id);
 const derivedId = (key: string) => oid(createHash('sha256').update(key).digest('hex').slice(0,24));
 const fail = (error: string, status = 400) => NextResponse.json({ success:false, error }, { status });
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
@@ -59,3 +60,5 @@ export async function POST(req: Request) {
     return NextResponse.json({success:true,data:{count:docs.length,created:result.upsertedCount}},{status:201});
   } catch(e) { console.error('Bulk task import failed',e); return fail('Import failed. Check your CSV or retry the same import.'); }
 }
+
+export const POST=monitored('tasks/bulk.post',handlePOST);

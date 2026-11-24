@@ -1,3 +1,4 @@
+import { monitored } from '@/lib/routeTelemetry';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import mongoose from 'mongoose';
@@ -37,11 +38,11 @@ async function sendInvites(id:mongoose.Types.ObjectId,origin:string){
     }));
   }
 }
-export async function GET(){
+async function handleGET(){
   const user=await current();if(!user?.id)return fail('Unauthorized',401);
   try{await dbConnect();const id=oid(user.id);const data=await Meeting.collection.find({$or:[{organizerId:id},{attendeeIds:id}],endTime:{$gte:new Date(Date.now()-30*86400000)}}).sort({startTime:1}).limit(100).toArray();return NextResponse.json({success:true,data:data.map(m=>({...m,invites:String(m.organizerId)===user.id?m.invites:undefined}))});}catch(e){console.error('Meeting list failed',e);return fail('Could not load meetings',500);}
 }
-export async function POST(req:Request){
+async function handlePOST(req:Request){
   const user=await current();if(!user?.id)return fail('Unauthorized',401);
   try{
     const body=await req.json();const title=String(body.title||'').trim(),description=String(body.description||'').trim(),meetingUrl=String(body.meetingUrl||'').trim();
@@ -61,7 +62,13 @@ export async function POST(req:Request){
     return NextResponse.json({success:true,data},{status:201});
   }catch(e){console.error('Meeting create failed',e);return fail('Could not create meeting. Retry with the same details.');}
 }
-export async function PATCH(req:Request){
+async function handlePATCH(req:Request){
   const user=await current();if(!user?.id)return fail('Unauthorized',401);
   try{const body=await req.json();if(!mongoose.isValidObjectId(body.id))return fail('Invalid meeting ID');await dbConnect();const id=oid(body.id);const event=await Meeting.collection.findOne({_id:id,organizerId:oid(user.id)});if(!event)return fail('Meeting not found',404);await sendInvites(id,new URL(req.url).origin);return NextResponse.json({success:true,data:await Meeting.collection.findOne({_id:id})});}catch(e){console.error('Meeting retry failed',e);return fail('Unable to retry invitations',500);}
 }
+
+export const GET=monitored('meetings.get',handleGET);
+
+export const POST=monitored('meetings.post',handlePOST);
+
+export const PATCH=monitored('meetings.patch',handlePATCH);

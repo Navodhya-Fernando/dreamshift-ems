@@ -1,3 +1,4 @@
+import { monitored } from '@/lib/routeTelemetry';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import mongoose from 'mongoose';
@@ -39,7 +40,7 @@ function normalizeAssigneeIds(value: unknown, fallbackUserId?: string) {
   return Array.from(new Set(normalized));
 }
 
-export async function GET(req: Request) {
+async function handleGET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -216,7 +217,7 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -281,3 +282,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: message }, { status: 400 });
   }
 }
+
+export const GET=monitored('tasks.get',handleGET);
+
+export const POST=monitored('tasks.post',handlePOST);

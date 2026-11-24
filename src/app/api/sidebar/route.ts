@@ -1,3 +1,4 @@
+import { monitored } from '@/lib/routeTelemetry';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -19,7 +20,7 @@ function buildTaskFilter(projectIds: Array<string | { toString(): string }>) {
   };
 }
 
-export async function GET() {
+async function handleGET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -68,3 +69,5 @@ export async function GET() {
     return NextResponse.json({ success: false, error: message }, { status: 400 });
   }
 }
+
+export const GET=monitored('sidebar.get',handleGET);

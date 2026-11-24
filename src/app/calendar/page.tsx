@@ -16,6 +16,8 @@ type CalendarEventItem = {
   title: string;
   date: string;
   dueDate?: string;
+  end?: string;
+  kind?: 'meeting';
   status: string;
   priority: string;
   projectName: string;
@@ -28,6 +30,7 @@ type CalendarResponse = {
     total: number;
     overdue: number;
     dueThisWeek: number;
+    meetings?: number;
   };
 };
 
@@ -103,8 +106,10 @@ export default function CalendarPage() {
     return payload.events.map((event) => ({
       id: event.id,
       title: event.title,
-      date: event.date,
-      backgroundColor: PRIORITY_COLORS[event.priority] || '#4361ee',
+      start: event.date,
+      end: event.end,
+      allDay: event.kind !== 'meeting',
+      backgroundColor: event.kind==='meeting'?'#7968bd':PRIORITY_COLORS[event.priority] || '#4361ee',
       borderColor: 'transparent',
       extendedProps: event,
     }));
@@ -116,7 +121,7 @@ export default function CalendarPage() {
         <div className="calendar-header-premium">
           <div>
             <h1 className="calendar-title">Calendar</h1>
-            <p className="text-muted text-sm">Your deadlines and scheduled work at a glance.</p>
+            <p className="text-muted text-sm">Your deadlines, scheduled tasks and meetings at a glance.</p>
           </div>
           <div className="calendar-kpi-row"><Link href="/calendar/meetings" className="btn btn-primary">Meetings</Link>
             <button className="btn btn-secondary" onClick={refresh} disabled={isRefreshing}>
@@ -182,19 +187,19 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <h3 className="section-title" style={{ marginBottom: 10 }}>Task Detail</h3>
+        <h3 className="section-title" style={{ marginBottom: 10 }}>Event details</h3>
         {!selectedEvent ? (
           <div className="calendar-side-card">
-            <div className="text-sm text-muted">Select a calendar event to inspect task details.</div>
+            <div className="text-sm text-muted">Select a calendar event to see details.</div>
           </div>
         ) : (
           <div className="calendar-side-card">
             <div className="calendar-side-title">{selectedEvent.title}</div>
-            <div className="calendar-side-row"><span>Project</span><strong>{selectedEvent.projectName}</strong></div>
+            {selectedEvent.kind==='meeting'?<><div className="calendar-side-row"><span>Starts</span><strong>{new Date(selectedEvent.date).toLocaleString()}</strong></div><div className="calendar-side-row"><span>Organizer</span><strong>{selectedEvent.assigneeName}</strong></div><Link href={`/calendar/meetings#${selectedEvent.id}`} className="btn btn-primary">Open meeting</Link></>:<><div className="calendar-side-row"><span>Project</span><strong>{selectedEvent.projectName}</strong></div>
             <div className="calendar-side-row"><span>Assignee</span><strong>{selectedEvent.assigneeName}</strong></div>
             <div className="calendar-side-row"><span>Status</span><strong>{selectedEvent.status.replace('_', ' ')}</strong></div>
             <div className="calendar-side-row"><span>Priority</span><strong style={{ color: PRIORITY_COLORS[selectedEvent.priority] || '#4361ee' }}>{selectedEvent.priority}</strong></div>
-            <div className="calendar-side-row"><span>Due</span><strong>{selectedEvent.dueDate ? new Date(selectedEvent.dueDate).toLocaleDateString() : '—'}</strong></div>
+            <div className="calendar-side-row"><span>Due</span><strong>{selectedEvent.dueDate ? new Date(selectedEvent.dueDate).toLocaleDateString() : '—'}</strong></div><Link href={`/tasks/${selectedEvent.id}`} className="btn btn-secondary">Open task</Link></>}
           </div>
         )}
       </aside>

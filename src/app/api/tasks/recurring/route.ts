@@ -1,3 +1,4 @@
+import { monitored } from '@/lib/routeTelemetry';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import mongoose from 'mongoose';
@@ -14,11 +15,11 @@ import User from '@/models/User';
 const oid=(id:string)=>new mongoose.Types.ObjectId(id);
 const fail=(error:string,status=400)=>NextResponse.json({success:false,error},{status});
 async function currentUser(){const s=await getServerSession(authOptions);return s?.user?.id && mongoose.isValidObjectId(s.user.id)?s.user.id:null;}
-export async function GET(){
+async function handleGET(){
   const userId=await currentUser();if(!userId)return fail('Unauthorized',401);
   try{await dbConnect();const data=await RecurringTask.collection.find({ownerId:oid(userId)}).sort({createdAt:-1}).limit(200).toArray();return NextResponse.json({success:true,data});}catch(e){console.error('Recurring list failed',e);return fail('Unable to load recurring tasks',500);}
 }
-export async function POST(req:Request){
+async function handlePOST(req:Request){
   const userId=await currentUser();if(!userId)return fail('Unauthorized',401);
   try{
     const body=await req.json();
@@ -40,7 +41,7 @@ export async function POST(req:Request){
     return NextResponse.json({success:true,data:{id:String(id),warning}},{status:201});
   }catch(e){console.error('Recurring creation failed',e);return fail('Unable to create schedule. Check inputs or retry.');}
 }
-export async function PATCH(req:Request){
+async function handlePATCH(req:Request){
   const userId=await currentUser();if(!userId)return fail('Unauthorized',401);
   try{
     const body=await req.json();if(!mongoose.isValidObjectId(body.id)||typeof body.active!=='boolean')return fail('Invalid schedule update.');
@@ -56,3 +57,9 @@ export async function PATCH(req:Request){
     return NextResponse.json({success:true});
   }catch(e){console.error('Recurring update failed',e);return fail('Unable to update schedule',500);}
 }
+
+export const GET=monitored('tasks/recurring.get',handleGET);
+
+export const POST=monitored('tasks/recurring.post',handlePOST);
+
+export const PATCH=monitored('tasks/recurring.patch',handlePATCH);

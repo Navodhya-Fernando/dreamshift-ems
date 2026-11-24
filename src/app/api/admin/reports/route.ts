@@ -1,6 +1,6 @@
+import { monitored } from '@/lib/routeTelemetry';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import mongoose from 'mongoose';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/mongoose';
 import { normalizePlatformRole } from '@/lib/roles';
@@ -12,49 +12,6 @@ import User from '@/models/User';
 import WorkspaceMember from '@/models/WorkspaceMember';
 
 type AnyRecord = Record<string, unknown>;
-
-function buildProjectWorkspaceFilter(workspaceId: string, workspaceObjectId: mongoose.Types.ObjectId | null) {
-  const objectIdString = workspaceObjectId ? String(workspaceObjectId) : '';
-  return {
-    $or: [
-      { workspaceId },
-      { workspace_id: workspaceId },
-      ...(objectIdString ? [{ workspaceId: objectIdString }, { workspace_id: objectIdString }] : []),
-      ...(workspaceObjectId ? [{ workspaceId: workspaceObjectId }, { workspace_id: workspaceObjectId }] : []),
-    ],
-  };
-}
-
-function buildTaskProjectFilter(projectIds: Array<string | { toString(): string }>) {
-  const stringIds = projectIds.map((value) => String(value));
-  return {
-    $or: [
-      { projectId: { $in: projectIds } },
-      { projectId: { $in: stringIds } },
-      { project_id: { $in: projectIds } },
-      { project_id: { $in: stringIds } },
-    ],
-  };
-}
-
-function buildAssigneeFilter(user: { _id: unknown; email?: string | null; name?: string | null }) {
-  const userId = String(user._id || '');
-  const matchers: Array<Record<string, unknown>> = [
-    { assigneeId: userId },
-    { assigneeId: user._id },
-    { assigneeId: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : user._id },
-    { assigneeIds: userId },
-    { assigneeIds: mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : user._id },
-  ];
-
-  if (user.email) {
-    matchers.push({ assignee: user.email });
-    matchers.push({ assignee: user.email.toLowerCase() });
-  }
-
-  if (user.name) matchers.push({ assignee: user.name });
-  return { $or: matchers };
-}
 
 function normalizeEmploymentStatus(value?: unknown) {
   return String(value || 'ACTIVE').trim().toUpperCase().replace(/[\s-]+/g, '_') === 'LEFT' ? 'LEFT' : 'ACTIVE';
@@ -128,7 +85,7 @@ function buildDailyCountTrend(tasks: AnyRecord[], predicate: (task: AnyRecord) =
   });
 }
 
-export async function GET(req: Request) {
+async function handleGET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -187,13 +144,31 @@ export async function GET(req: Request) {
       }
     });
 
+    // One narrow task scan, then hash joins; avoid per-workspace/per-user queries.
+    const [allProjects,allTasks]=await Promise.all([
+      Project.collection.find({}, {projection:{workspaceId:1,workspace_id:1}}).toArray(),
+      Task.collection.find({}, {projection:{status:1,projectId:1,project_id:1,assigneeId:1,assigneeIds:1,assignee:1,updatedAt:1,updated_at:1,createdAt:1,created_at:1,dueDate:1,due_date:1,timeSpent:1}}).toArray(),
+    ]);
+    const projectById=new Map(allProjects.map(p=>[String(p._id),p]));
+    const projectsByWorkspace=new Map<string,typeof allProjects>();
+    const tasksByWorkspace=new Map<string,typeof allTasks>(),tasksByUser=new Map<string,typeof allTasks>();
+    const add=<T>(map:Map<string,T[]>,key:string,value:T)=>{if(!key)return;const items=map.get(key);if(items)items.push(value);else map.set(key,[value]);};
+    for(const p of allProjects)for(const id of new Set([p.workspaceId,p.workspace_id].filter(Boolean).map(String)))add(projectsByWorkspace,id,p);
+    const legacyNames=new Map<string,Set<string>>();
+    for(const u of users)for(const key of [u.email,u.email?.toLowerCase(),u.name].filter(Boolean).map(String)){const ids=legacyNames.get(key)||new Set<string>();ids.add(String(u._id));legacyNames.set(key,ids);}
+    for(const task of allTasks){
+      const wsIds=new Set<string>();
+      for(const pid of [task.projectId,task.project_id].filter(Boolean).map(String)){const p=projectById.get(pid);if(p)for(const id of [p.workspaceId,p.workspace_id].filter(Boolean).map(String))wsIds.add(id);}
+      for(const id of wsIds)add(tasksByWorkspace,id,task);
+      const ids=new Set([task.assigneeId,...(Array.isArray(task.assigneeIds)?task.assigneeIds:[])].filter(Boolean).map(String));
+      for(const id of legacyNames.get(String(task.assignee||''))||[])ids.add(id);
+      for(const id of ids)if(usersById.has(id))add(tasksByUser,id,task);
+    }
     const workspaceReportsDetailed = await Promise.all(
       workspaces.map(async (workspace: AnyRecord) => {
         const workspaceId = String(workspace._id);
-        const workspaceObjectId = mongoose.isValidObjectId(workspaceId) ? new mongoose.Types.ObjectId(workspaceId) : null;
-        const projects = await Project.collection.find(buildProjectWorkspaceFilter(workspaceId, workspaceObjectId)).toArray();
-        const projectIds = projects.map((project) => project._id);
-        const tasks = await Task.collection.find(buildTaskProjectFilter(projectIds)).toArray();
+        const projects = projectsByWorkspace.get(workspaceId)||[];
+        const tasks = tasksByWorkspace.get(workspaceId)||[];
         const currentTasks = windowDays > 0
           ? tasks.filter((task) => inRange(getTaskActivityDate(task as Record<string, unknown>), currentStartMs, currentEndMs))
           : tasks;
@@ -247,7 +222,7 @@ export async function GET(req: Request) {
 
     const employeeReportsDetailed = await Promise.all(
       users.map(async (user) => {
-        const assignedTasks = await Task.collection.find(buildAssigneeFilter(user)).toArray();
+        const assignedTasks = tasksByUser.get(String(user._id))||[];
         const currentTasks = windowDays > 0
           ? assignedTasks.filter((task) => inRange(getTaskActivityDate(task as Record<string, unknown>), currentStartMs, currentEndMs))
           : assignedTasks;
@@ -273,11 +248,7 @@ export async function GET(req: Request) {
               .filter(Boolean)
           )
         );
-        const taskProjects = projectIdsFromTasks.length > 0
-          ? await Project.find({ _id: { $in: projectIdsFromTasks } })
-            .select('_id workspaceId workspace_id')
-            .lean<AnyRecord[]>()
-          : [];
+        const taskProjects = projectIdsFromTasks.flatMap(id=>{const p=projectById.get(id);return p?[p]:[];});
         const taskWorkspaceNames = taskProjects
           .map((project) => workspaceById.get(String(project.workspaceId || project.workspace_id || ''))?.name)
           .filter((name): name is string => Boolean(name));
@@ -450,3 +421,5 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: false, error: message }, { status: 400 });
   }
 }
+
+export const GET=monitored('admin/reports.get',handleGET);
