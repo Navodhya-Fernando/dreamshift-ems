@@ -5,19 +5,19 @@
   gap: 2rem;
 }
 
-.tasks-header {
+.tasks-page .tasks-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.tasks-header-left {
+.tasks-page .tasks-header-left {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.tasks-header h1 {
+.tasks-page .tasks-header h1 {
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -33,7 +33,7 @@
   gap: 0.5rem;
 }
 
-.kanban-board {
+.tasks-page .kanban-board {
   display: flex;
   gap: 1.5rem;
   overflow-x: auto;

@@ -1,6 +1,6 @@
 /* ─── Tasks Hub ──────────────────────────────────── */
 
-.tasks-header {
+.tasks-page .tasks-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -9,7 +9,7 @@
   gap: 16px;
 }
 
-.tasks-header-actions { display: flex; align-items: center; gap: 10px; }
+.tasks-page .tasks-header-actions { display: flex; align-items: center; gap: 10px; }
 
 /* View Toggle */
 .view-toggle {
@@ -57,11 +57,11 @@
 }
 
 /* Task Table  */
-.task-table { overflow: hidden; }
+.tasks-page .task-table { overflow: hidden; }
 
-.task-table-header {
+.tasks-page .task-table-header {
   display: grid;
-  grid-template-columns: 2.5fr 1fr 90px 80px 110px;
+  grid-template-columns: minmax(140px,2.5fr) minmax(100px,1fr) 84px 80px 100px 54px;
   padding: 8px 16px;
   font-size: 11px;
   font-weight: 600;
@@ -71,9 +71,9 @@
   border-bottom: 1px solid var(--border);
 }
 
-.task-row {
+.tasks-page .task-row {
   display: grid;
-  grid-template-columns: 2.5fr 1fr 90px 80px 110px;
+  grid-template-columns: minmax(140px,2.5fr) minmax(100px,1fr) 84px 80px 100px 54px;
   padding: 11px 16px;
   border-bottom: 1px solid var(--border);
   border-left: 3px solid transparent;
@@ -81,10 +81,10 @@
   transition: background var(--t);
   cursor: pointer;
 }
-.task-row:last-child { border-bottom: none; }
-.task-row:hover { background: var(--bg-hover); }
+.tasks-page .task-row:last-child { border-bottom: none; }
+.tasks-page .task-row:hover { background: var(--bg-hover); }
 
-.task-row-title {
+.tasks-page .task-row-title {
   font-size: 13px;
   color: var(--text-primary);
   font-weight: 450;
@@ -97,7 +97,7 @@
 .tasks-skeleton { display: flex; flex-direction: column; gap: 4px; }
 
 /* ── Kanban Board ── */
-.kanban-board {
+.tasks-page .kanban-board {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
@@ -301,3 +301,6 @@
 .activity-log { display: flex; flex-direction: column; gap: 10px; }
 .log-item { display: flex; align-items: center; gap: 10px; }
 .log-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+.tasks-queue-summary{font-size:13px;color:var(--text-secondary);margin-bottom:12px}.tasks-project-summary{cursor:pointer;font-weight:600;font-size:14px;padding:8px}.tasks-page .my-projects-block{margin-top:20px}.tasks-page .task-table{overflow-x:auto}.tasks-page .tasks-header-actions{flex-wrap:wrap}.tasks-page .task-row-title{overflow-wrap:anywhere}.tasks-page .task-row,.tasks-page .task-table-header{min-width:650px}
+@media(max-width:760px){.tasks-page .tasks-header{flex-wrap:wrap;gap:10px}}

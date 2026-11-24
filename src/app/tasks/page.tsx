@@ -2,7 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CheckSquare, ChevronRight, FolderOpen, Plus, RefreshCw, Search, Sparkles, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { CheckSquare, ChevronRight, FolderOpen, Plus, Search, Trash2 } from 'lucide-react';
 import DataStatusBanner from '@/components/ui/DataStatusBanner';
 import { useCachedApi } from '@/lib/useCachedApi';
 import { toastError, toastSuccess } from '@/lib/toast';
@@ -124,6 +125,7 @@ const EMPTY_FORM: TaskForm = {
 };
 
 export default function TasksPage() {
+  const router = useRouter();
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
 
@@ -177,7 +179,6 @@ export default function TasksPage() {
   const projects = data.projects;
   const users = data.users;
   const workspaces = data.workspaces;
-  const scopeLabel = data.scopeLabel;
 
   useEffect(() => {
     if (!showModal) {
@@ -431,7 +432,7 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="page-wrapper animate-in">
+    <div className="page-wrapper tasks-page animate-in">
       {showModal && (
         <div className="blade-overlay" onClick={() => setShowModal(false)}>
           <form
@@ -442,8 +443,8 @@ export default function TasksPage() {
           >
             <h2 style={{ marginBottom: 12, fontSize: 18 }}>{editingTaskId ? 'Edit Task' : 'Create Task'}</h2>
             <div style={{ display: 'grid', gap: 10 }}>
-              <input className="input" placeholder="Task Name" value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} required />
-              <textarea className="input" placeholder="Description" value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} style={{ minHeight: 90 }} />
+              <input className="input" aria-label="Task name" placeholder="Task Name" value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} required />
+              <textarea className="input" aria-label="Description" placeholder="Description" value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} style={{ minHeight: 90 }} />
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <select
@@ -551,7 +552,7 @@ export default function TasksPage() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                <input className="input" type="date" value={form.dueDate} onChange={(e) => setForm((prev) => ({ ...prev, dueDate: e.target.value }))} />
+                <input className="input" aria-label="Due date" type="date" value={form.dueDate} onChange={(e) => setForm((prev) => ({ ...prev, dueDate: e.target.value }))} />
                 <select className="input" value={form.priority} onChange={(e) => setForm((prev) => ({ ...prev, priority: e.target.value }))}>
                   {Object.entries(PRIORITY_CONFIG).map(([key, item]) => <option key={key} value={key}>{item.label}</option>)}
                 </select>
@@ -561,8 +562,8 @@ export default function TasksPage() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <input className="input" type="datetime-local" value={form.startDate} onChange={(e) => setForm((prev) => ({ ...prev, startDate: e.target.value }))} />
-                <input className="input" type="datetime-local" value={form.endDate} onChange={(e) => setForm((prev) => ({ ...prev, endDate: e.target.value }))} />
+                <input className="input" aria-label="Start date and time" type="datetime-local" value={form.startDate} onChange={(e) => setForm((prev) => ({ ...prev, startDate: e.target.value }))} />
+                <input className="input" aria-label="End date and time" type="datetime-local" value={form.endDate} onChange={(e) => setForm((prev) => ({ ...prev, endDate: e.target.value }))} />
               </div>
 
               <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
@@ -590,12 +591,11 @@ export default function TasksPage() {
             <ChevronRight size={13} />
             <span className="breadcrumb-active">Assigned Tasks</span>
           </nav>
-          <h1 className="page-title" style={{ marginTop: 6 }}>My Assigned Tasks</h1>
+          <h1 className="page-title" style={{ marginTop: 6 }}>My Tasks</h1>
         </div>
         <div className="tasks-header-actions">
-          <button className="btn btn-secondary" onClick={refresh} disabled={isRefreshing}>
-            <RefreshCw size={14} /> Refresh
-          </button>
+          <Link href="/tasks/recurring" className="btn btn-secondary">Recurring</Link>
+          <Link href="/tasks/bulk" className="btn btn-secondary">Import CSV</Link>
           <button className="btn btn-primary" onClick={openCreateModal}><Plus size={14} /> New Task</button>
         </div>
       </div>
@@ -609,22 +609,59 @@ export default function TasksPage() {
         onRefresh={refresh}
       />
 
-      <div className="text-xs text-muted" style={{ marginBottom: 10 }}>
-        Showing {scopeLabel.toLowerCase()} tasks loaded from database.
-      </div>
-
-      <div className="ai-suggestor" style={{ marginBottom: 14 }}>
-        <div className="ai-suggestor-icon">✦</div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>Data Science Assist</div>
-          <div className="text-xs text-muted">
-            Predicted overload: {aiSummary.urgent} urgent and {aiSummary.overdue} overdue tasks in your queue.
-          </div>
+      <div className="tasks-queue-summary" aria-live="polite">{filtered.length} tasks · {aiSummary.overdue} overdue · {aiSummary.urgent} urgent</div>
+      <div className="tasks-filters">
+        <div className="search-wrap">
+          <Search size={14} className="search-icon" />
+          <input className="input search-input" placeholder="Search assigned tasks..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <span className="badge" style={{ marginLeft: 'auto' }}><Sparkles size={10} /> AI</span>
+        <div className="filter-pills">
+          {statusFilters.map((f) => (
+            <button key={f} className={`filter-pill ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
+              {f === 'all' ? 'All' : toStatusLabel(f)}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="my-projects-block card">
+      <div className="task-table card">
+        <div className="task-table-header">
+          <span>Task</span><span>Project</span><span>Priority</span><span>Due</span><span>Status</span><span>Actions</span>
+        </div>
+
+        {loading ? (
+          <div className="empty-state" style={{ padding: 40 }}>
+            <p className="text-muted text-sm">Loading tasks...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="empty-state" style={{ padding: 40 }}>
+            <CheckSquare size={28} color="var(--text-disabled)" />
+            <p className="text-muted text-sm" style={{ marginTop: 8 }}>No assigned tasks match this filter.</p>
+          </div>
+        ) : filtered.map((task) => {
+          const status = STATUS_CONFIG[String(task.status || '').toLowerCase()] || STATUS_CONFIG.todo;
+          const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
+          return (
+            <div key={task._id} className="task-row" onClick={() => router.push(`/tasks/${task._id}`)}>
+              <span className="task-row-title">
+                <Link href={`/tasks/${task._id}`} onClick={(e) => e.stopPropagation()}>
+                  {task.title}
+                </Link>
+              </span>
+              <span className="text-sm text-muted">{task.projectId?.name || '—'}</span>
+              <span>
+                <span className="badge" style={{ background: `${priority.color}1A`, color: priority.color }}>
+                  {priority.label}
+                </span>
+              </span>
+              <span className="text-sm text-muted">{formatDate(task.dueDate)}</span>
+              <span className={`badge ${status.badge || 'badge-todo'}`}>{toStatusLabel(task.status)}</span>
+              <button className="btn btn-ghost" type="button" onClick={(e) => { e.stopPropagation(); openEditModal(task); }} aria-label={`Edit ${task.title}`}>Edit</button>
+            </div>
+          );
+        })}
+      </div>
+      <details className="my-projects-block card"><summary className="tasks-project-summary">My projects ({myProjects.length})</summary>
         <div className="my-projects-header">
           <div className="my-projects-title"><FolderOpen size={14} /> My Projects</div>
           <span className="text-xs text-muted">Projects with tasks assigned to you</span>
@@ -656,58 +693,7 @@ export default function TasksPage() {
             })}
           </div>
         )}
-      </div>
-
-      <div className="tasks-filters">
-        <div className="search-wrap">
-          <Search size={14} className="search-icon" />
-          <input className="input search-input" placeholder="Search assigned tasks..." value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
-        <div className="filter-pills">
-          {statusFilters.map((f) => (
-            <button key={f} className={`filter-pill ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-              {f === 'all' ? 'All' : toStatusLabel(f)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="task-table card">
-        <div className="task-table-header">
-          <span>Task</span><span>Project</span><span>Priority</span><span>Due</span><span>Status</span>
-        </div>
-
-        {loading ? (
-          <div className="empty-state" style={{ padding: 40 }}>
-            <p className="text-muted text-sm">Loading tasks...</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="empty-state" style={{ padding: 40 }}>
-            <CheckSquare size={28} color="var(--text-disabled)" />
-            <p className="text-muted text-sm" style={{ marginTop: 8 }}>No assigned tasks match this filter.</p>
-          </div>
-        ) : filtered.map((task) => {
-          const status = STATUS_CONFIG[String(task.status || '').toLowerCase()] || STATUS_CONFIG.todo;
-          const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
-          return (
-            <div key={task._id} className="task-row" onClick={() => openEditModal(task)}>
-              <span className="task-row-title">
-                <Link href={`/tasks/${task._id}`} onClick={(e) => e.stopPropagation()}>
-                  {task.title}
-                </Link>
-              </span>
-              <span className="text-sm text-muted">{task.projectId?.name || '—'}</span>
-              <span>
-                <span className="badge" style={{ background: `${priority.color}1A`, color: priority.color }}>
-                  {priority.label}
-                </span>
-              </span>
-              <span className="text-sm text-muted">{formatDate(task.dueDate)}</span>
-              <span className={`badge ${status.badge || 'badge-todo'}`}>{toStatusLabel(task.status)}</span>
-            </div>
-          );
-        })}
-      </div>
+      </details>
     </div>
   );
 }

@@ -43,6 +43,7 @@ export async function sendBrevoEmail(input: BrevoMailInput): Promise<boolean> {
         ...(input.scheduledAt ? { scheduledAt: input.scheduledAt } : {}),
       }),
       cache: 'no-store',
+      signal: AbortSignal.timeout(10000),
     });
 
     return response.ok;

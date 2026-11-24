@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -114,10 +115,10 @@ export default function CalendarPage() {
       <div className="calendar-panel-main">
         <div className="calendar-header-premium">
           <div>
-            <h1 className="calendar-title">Delivery Calendar</h1>
-            <p className="text-muted text-sm">Your assigned tasks are shown here, including items without deadlines, with live updates from MongoDB.</p>
+            <h1 className="calendar-title">Calendar</h1>
+            <p className="text-muted text-sm">Your deadlines and scheduled work at a glance.</p>
           </div>
-          <div className="calendar-kpi-row">
+          <div className="calendar-kpi-row"><Link href="/calendar/meetings" className="btn btn-primary">Meetings</Link>
             <button className="btn btn-secondary" onClick={refresh} disabled={isRefreshing}>
               <RefreshCw size={13} /> Refresh
             </button>

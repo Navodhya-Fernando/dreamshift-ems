@@ -227,7 +227,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const project = await Project.collection.findOne(
       { _id: mongoose.isValidObjectId(String(body.projectId)) ? new mongoose.Types.ObjectId(String(body.projectId)) : body.projectId },
-      { projection: { workspaceId: 1, workspace_id: 1 } }
+      { projection: { workspaceId: 1, workspace_id: 1, taskStatuses: 1 } }
     );
     if (!project) {
       return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
