@@ -1,6 +1,10 @@
-export type Cadence = 'DAILY' | 'WEEKLY' | 'MONTHLY';
+export type Cadence = 'DAILY' | 'WEEKDAYS' | 'WEEKLY' | 'MONTHLY';
 export function nextOccurrence(date: Date, cadence: Cadence, anchorDay: number): Date {
   const next = new Date(date);
+  if (cadence === 'WEEKDAYS') {
+    do { next.setUTCDate(next.getUTCDate()+1); } while ([0,6].includes(next.getUTCDay()));
+    return next;
+  }
   if (cadence === 'DAILY' || cadence === 'WEEKLY') {
     next.setUTCDate(next.getUTCDate() + (cadence === 'DAILY' ? 1 : 7));
     return next;

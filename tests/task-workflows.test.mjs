@@ -63,3 +63,5 @@ test('calendar search handles tomorrow and escapes regex literals',()=>{const q=
 
 import {elapsedAt} from '../src/lib/timerMath.ts';
 test('server timer counts only running segments, ignores paused wall time',()=>{assert.equal(elapsedAt(60,null,Date.parse('2026-11-24T12:00:00Z')),60);assert.equal(elapsedAt(60,'2026-11-24T12:00:00Z',Date.parse('2026-11-24T12:01:30Z')),150);assert.equal(elapsedAt(60,'2026-11-24T12:00:00Z',Date.parse('2026-11-24T11:59:59Z')),60);});
+
+test('weekday recurrence skips weekends',()=>{const friday=new Date('2026-11-27T00:00:00Z');assert.equal(nextOccurrence(friday,'WEEKDAYS',27).toISOString().slice(0,10),'2026-11-30');});

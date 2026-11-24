@@ -24,11 +24,12 @@ async function handlePOST(req:Request){
   try{
     const body=await req.json();
     const title=String(body.title||'').trim(),description=String(body.description||'').trim(),cadence=String(body.cadence||'').toUpperCase() as Cadence,priority=String(body.priority||'MEDIUM').toUpperCase();
-    if(!title||title.length>200||description.length>10000||!['DAILY','WEEKLY','MONTHLY'].includes(cadence)||!['LOW','MEDIUM','HIGH','URGENT'].includes(priority))return fail('Check title, frequency and priority.');
+    if(!title||title.length>200||description.length>10000||!['DAILY','WEEKDAYS','WEEKLY','MONTHLY'].includes(cadence)||!['LOW','MEDIUM','HIGH','URGENT'].includes(priority))return fail('Check title, frequency and priority.');
     if(!mongoose.isValidObjectId(body.projectId)||!mongoose.isValidObjectId(body.assigneeId||userId))return fail('Select a project and assignee.');
     if(typeof body.requestId!=='string'||!/^[a-f0-9-]{36}$/i.test(body.requestId))return fail('Invalid request ID.');
     const start=parseTaskDate(String(body.startDate||''));
     if(!start||start<utcDay(new Date()))return fail('Choose today or a future UTC date.');
+    if(cadence==='WEEKDAYS'&&[0,6].includes(start.getUTCDay()))return fail('Choose a weekday for the first due date.');
     await dbConnect();
     const [project,assignee]=await Promise.all([Project.collection.findOne({_id:oid(body.projectId)}),User.collection.findOne({_id:oid(body.assigneeId||userId)},{projection:{_id:1}})]);
     if(!project||!(await hasWorkspaceAccess(userId,String(project.workspaceId||project.workspace_id))))return fail('Project unavailable',403);

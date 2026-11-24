@@ -6,7 +6,7 @@ const schema = new Schema({
   title:{type:String,required:true,trim:true,maxlength:200},
   description:{type:String,default:''},
   priority:{type:String,enum:['LOW','MEDIUM','HIGH','URGENT'],default:'MEDIUM'},
-  cadence:{type:String,enum:['DAILY','WEEKLY','MONTHLY'],required:true},
+  cadence:{type:String,enum:['DAILY','WEEKDAYS','WEEKLY','MONTHLY'],required:true},
   anchorDay:{type:Number,required:true,min:1,max:31},
   nextRunAt:{type:Date,required:true},
   lastRunAt:Date,

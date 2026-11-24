@@ -24,7 +24,7 @@ async function search(req:Request){
     const ids=await getAccessibleWorkspaceIds(userId);
     const keys=ids.flatMap(id=>mongoose.isValidObjectId(id)?[id,new mongoose.Types.ObjectId(id)]:[id]);
     const [workspaces,projects,actor]=await Promise.all([
-      Workspace.collection.find({_id:{$in:keys}},{projection:{name:1}}).toArray(),
+      Workspace.collection.find({_id:{$in:ids.filter(id=>mongoose.isValidObjectId(id)).map(id=>new mongoose.Types.ObjectId(id))}},{projection:{name:1}}).toArray(),
       Project.collection.find({$or:[{workspaceId:{$in:keys}},{workspace_id:{$in:keys}}]},{projection:{name:1,workspaceId:1,workspace_id:1,ownerId:1,status:1}}).toArray(),
       User.collection.findOne({_id:uid},{projection:{name:1,email:1}})
     ]);
