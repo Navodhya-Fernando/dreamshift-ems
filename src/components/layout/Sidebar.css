@@ -1,7 +1,7 @@
 /* ─── Sidebar Shell ──────────────────────────────── */
 .sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 220px;
+  min-width: 220px;
   height: 100vh;
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
@@ -111,7 +111,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 7px 10px;
+  padding: 9px 10px;
   border-radius: var(--r-md);
   color: var(--text-secondary);
   font-size: 13px;
@@ -232,3 +232,9 @@
 .user-menu-item.danger { color: #EF4444; }
 .user-menu-item.danger:hover { background: rgba(239,68,68,0.08); }
 .user-menu-divider { height: 1px; background: var(--border); }
+
+.sidebar { background: rgba(26,30,38,.95); }
+.nav-group { display:flex; flex-direction:column; gap:3px; margin-bottom:12px; }
+.nav-section-label {font-size:11px;color:var(--text-secondary);}
+.nav-link {font-size:14px;}
+.nav-link.active {background:rgba(113,152,255,.15);}

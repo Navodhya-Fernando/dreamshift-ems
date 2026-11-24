@@ -3,9 +3,9 @@
 /* ─── Design Tokens ──────────────────────────────── */
 :root {
   /* Backgrounds */
-  --bg-base:    #0A0A0F;
-  --bg-surface: #111117;
-  --bg-elevated:#18181F;
+  --bg-base:    #101319;
+  --bg-surface: #1a1e26;
+  --bg-elevated:#252a34;
   --bg-hover:   #1E1E28;
 
   /* Borders */
@@ -14,11 +14,11 @@
 
   /* Text */
   --text-primary:  #F0F0F5;
-  --text-secondary:#9898A8;
-  --text-disabled: #4A4A5A;
+  --text-secondary:#b5bdca;
+  --text-disabled: #939dab;
 
   /* Accent */
-  --accent:        #5B6BF8;
+  --accent:        #7198ff;
   --accent-hover:  #4A59E0;
   --accent-subtle: rgba(91,107,248,0.12);
 
@@ -210,7 +210,7 @@ input[type='time']::-webkit-calendar-picker-indicator {
 
 .shell-timer-value {
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.03em;
   color: var(--text-primary);
@@ -218,8 +218,8 @@ input[type='time']::-webkit-calendar-picker-indicator {
 }
 
 .shell-timer-btn {
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.02);
@@ -257,15 +257,15 @@ input[type='time']::-webkit-calendar-picker-indicator {
 }
 
 .page-wrapper {
-  padding: 32px 40px;
+  padding: 24px 28px;
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
 }
 
 /* ─── Typography ─────────────────────────────────── */
-.page-title { font-size: 20px; font-weight: 600; color: var(--text-primary); }
-.section-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+.page-title { font-size: 24px; font-weight: 600; color: var(--text-primary); }
+.section-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
 .text-muted { color: var(--text-secondary); }
 .text-sm { font-size: 12px; }
 .text-xs { font-size: 11px; }
@@ -451,3 +451,31 @@ input[type='time']::-webkit-calendar-picker-indicator {
 .urgency-medium   { border-left: 3px solid var(--urgency-medium); }
 .urgency-high     { border-left: 3px solid var(--urgency-high); }
 .urgency-critical { border-left: 3px solid var(--urgency-critical); }
+
+/* Calm, translucent chrome; content stays opaque for readability and performance. */
+html, body { font-family: -apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif; }
+.app-container { height: 100dvh; background: radial-gradient(ellipse at 10% 0%, #202b40 0%, var(--bg-base) 55%); }
+.main-content { min-width: 0; background: transparent; }
+.shell-topbar { background: rgba(26,30,38,.92); min-height: 56px; padding: 8px 20px; }
+.shell-topbar-title { font-size: 14px; text-transform: none; letter-spacing: 0; color: var(--text-primary); }
+.shell-topbar-leading { display:flex; align-items:center; gap:10px; min-width:0; }
+.shell-nav-toggle, .shell-overlay { display:none; }
+.card { border-color: rgba(255,255,255,.10); }
+.btn { min-height: 34px; }
+.input { min-height: 36px; }
+.text-sm { font-size: 13px; }
+.text-xs { font-size: 12px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@supports (backdrop-filter: blur(12px)) { .shell-topbar { background: rgba(26,30,38,.76); backdrop-filter: blur(12px); } }
+@media (max-width: 900px) {
+  .shell-nav-toggle { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; color:var(--text-primary); }
+  .app-container > .sidebar { display:none; }
+  .app-container.nav-open > .sidebar { display:flex; position:fixed; z-index:101; top:0; left:0; bottom:0; height:100dvh; width:min(280px,85vw); min-width:0; }
+  .shell-overlay { display:block; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.6); }
+  .page-wrapper { padding:20px 16px; }
+  .shell-topbar { padding:8px 12px; flex-wrap:wrap; }
+  .shell-topbar-actions { gap:6px; }
+  .shell-refresh-label { display:none; }
+}
+@media (max-width:480px) { .shell-topbar-title {font-size:13px;} .shell-topbar-actions {margin-left:auto;} .shell-timer-shortcuts {gap:4px;} .shell-timer-btn {width:28px;height:28px;} }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }

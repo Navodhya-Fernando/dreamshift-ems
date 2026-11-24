@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Bell, RefreshCw } from 'lucide-react';
+import { Bell, RefreshCw, Menu } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { toastInfo } from '@/lib/toast';
 import { dispatchTimerCommand, persistElapsedToTask, readTimerSnapshot, subscribeTimerState, writeTimerSnapshot } from '@/lib/timerShortcuts';
@@ -16,11 +17,13 @@ const INITIAL_TIMER_STATE = {
   lastTickAt: null as number | null,
 };
 
-export default function ShellTopbar() {
+export default function ShellTopbar({ onToggleNav, navOpen }: { onToggleNav: () => void; navOpen: boolean }) {
+  const pathname = usePathname();
+  const title = ({ '/': 'Home', '/tasks': 'My Tasks', '/projects': 'Workspaces', '/time': 'Time Tracking', '/calendar': 'Calendar', '/messages': 'Messages', '/admin': 'Administration', '/analytics': 'Analytics', '/settings': 'Settings', '/profile': 'Profile', '/notifications': 'Notifications', '/task-templates': 'Templates' } as Record<string, string>)[pathname === '/' ? '/' : '/' + pathname.split('/')[1]] || 'Workspace';
   const router = useRouter();
   const [timer, setTimer] = useState(INITIAL_TIMER_STATE);
   const [showNotifications, setShowNotifications] = useState(false);
-  const { data: notificationData } = useCachedApi<{ unreadCount: number; items: unknown[] }>({
+  const { data: notificationData, refresh: refreshNotifications } = useCachedApi<{ unreadCount: number; items: unknown[] }>({
     cacheKey: 'notifications:topbar',
     initialData: { unreadCount: 0, items: [] },
     fetcher: async () => {
@@ -29,8 +32,9 @@ export default function ShellTopbar() {
       if (!response.ok || !payload.success) throw new Error(payload.error || 'Failed to load notifications');
       return payload.data as { unreadCount: number; items: unknown[] };
     },
-    ttlMs: 20_000,
+    ttlMs: 30_000,
   });
+  useEffect(() => { const update = () => { if (!document.hidden) void refreshNotifications(); }; const id = window.setInterval(update, 30000); document.addEventListener('visibilitychange', update); return () => { window.clearInterval(id); document.removeEventListener('visibilitychange', update); }; }, [refreshNotifications]);
 
   useEffect(() => {
     const hydrateFrame = window.requestAnimationFrame(() => {
@@ -42,8 +46,7 @@ export default function ShellTopbar() {
     });
 
     const tick = window.setInterval(() => {
-      const snapshot = readTimerSnapshot();
-      setTimer(snapshot);
+      if (!document.hidden) setTimer(previous => previous.isRunning ? readTimerSnapshot() : previous);
     }, 1000);
 
     return () => {
@@ -114,7 +117,7 @@ export default function ShellTopbar() {
 
   return (
     <div className="shell-topbar">
-      <div className="shell-topbar-title">DreamShift Live Workspace</div>
+      <div className="shell-topbar-leading"><button className="shell-nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded={navOpen} aria-controls="ems-navigation" onClick={onToggleNav}><Menu size={20}/></button><div className="shell-topbar-title">{title}</div></div>
 
       <div className="shell-topbar-actions">
         <div className="shell-notifications-wrap">
@@ -145,8 +148,8 @@ export default function ShellTopbar() {
           </button>
         </div>
 
-        <button className="btn btn-secondary" onClick={refreshAll}>
-          <RefreshCw size={13} /> Refresh All
+        <button className="btn btn-ghost" onClick={refreshAll} aria-label="Refresh all panels">
+          <RefreshCw size={15}/><span className="shell-refresh-label">Refresh</span>
         </button>
       </div>
     </div>
