@@ -29,7 +29,7 @@ async function getMonitoring(){
     if(!(await hasAdminAccess(session.user.id)))return NextResponse.json({success:false,error:'Admin access required'},{status:403});
     const pingStart=performance.now();await db.connection.db?.command({ping:1});const dbPingMs=Math.round(performance.now()-pingStart);
     const now=new Date(),week=new Date(now.getTime()-7*86400000),soon=new Date(now.getTime()+7*86400000);
-    const [users,workspaces,projects,jobs,recurringDue,recurringActive,inviteFailures,timeTotals,calendarConnections,calendarErrors,pushDevices,pushErrors,runningTimers]=await Promise.all([
+    const [users,workspaces,projects,jobs,recurringDue,recurringActive,inviteFailures,timeTotals,calendarConnections,calendarErrors,pushDevices,pushErrors,runningTimers,taskConnections,taskSyncErrors]=await Promise.all([
       User.find({},{_id:1,name:1,email:1,designation:1,employmentStatus:1}).lean(),
       Workspace.collection.find({},{projection:{name:1}}).toArray(),
       Project.collection.find({},{projection:{name:1,workspaceId:1,workspace_id:1,status:1}}).toArray(),
@@ -38,7 +38,7 @@ async function getMonitoring(){
       RecurringTask.countDocuments({active:true}),
       Meeting.countDocuments({endTime:{$gte:now},'invites.status':{$in:['FAILED','PENDING','SENDING']}}),
       TimeEntry.collection.aggregate<{_id:string;seconds:number}>([{$match:{startTime:{$gte:week,$lte:now}}},{$group:{_id:{$toString:'$userId'},seconds:{$sum:'$durationSeconds'}}}]).toArray(),
-      GoogleCalendarConnection.countDocuments({}),GoogleCalendarConnection.countDocuments({lastSyncError:{$exists:true,$ne:''}}),PushDevice.countDocuments({}),PushDevice.countDocuments({lastError:{$exists:true,$ne:''}}),ActiveTimer.countDocuments({runningSince:{$ne:null}}),
+      GoogleCalendarConnection.countDocuments({}),GoogleCalendarConnection.countDocuments({lastSyncError:{$exists:true,$ne:''}}),PushDevice.countDocuments({}),PushDevice.countDocuments({lastError:{$exists:true,$ne:''}}),ActiveTimer.countDocuments({runningSince:{$ne:null}}),GoogleCalendarConnection.countDocuments({tasksGranted:true,taskListId:{$exists:true,$ne:''}}),GoogleCalendarConnection.countDocuments({tasksLastError:{$exists:true,$ne:''}}),
     ]);
     const totals=empty(),unassigned=empty(),personCounts=new Map<string,Counts>(),workspaceCounts=new Map<string,Counts>();
     const projectWorkspace=new Map(projects.map(p=>[String(p._id),String(p.workspaceId||p.workspace_id||'')]));
@@ -64,7 +64,7 @@ async function getMonitoring(){
     const people=users.filter(u=>String(u.employmentStatus||'ACTIVE').toUpperCase()!=='LEFT').map(u=>({id:String(u._id),name:String(u.name||'Team member'),designation:String(u.designation||''),...personCounts.get(String(u._id))||empty(),hours7d:Math.round((timeMap.get(String(u._id))||0)/360)/10})).sort((a,b)=>b.overdue-a.overdue||b.blocked-a.blocked||b.open-a.open);
     const workspaceRows=workspaces.map(w=>({id:String(w._id),name:String(w.name||'Workspace'),...workspaceCounts.get(String(w._id))||empty()})).sort((a,b)=>b.overdue-a.overdue||b.open-a.open);
     if(workspaceCounts.has('unmapped'))workspaceRows.push({id:'unmapped',name:'Unmapped project records',...workspaceCounts.get('unmapped')!});
-    return NextResponse.json({success:true,data:{generatedAt:now.toISOString(),totals,unassigned,ambiguousLegacy,people,workspaces:workspaceRows,health:{dbPingMs,requestMs:Math.round(performance.now()-start),recurringDue,recurringActive,inviteFailures,calendarConnections,calendarErrors,pushDevices,pushErrors,runningTimers},jobs:jobs.map(j=>({id:String(j._id),name:j.name,startedAt:j.startedAt,finishedAt:j.finishedAt,status:j.status,durationMs:j.durationMs,details:j.details}))}},{headers:{'Cache-Control':'no-store'}});
+    return NextResponse.json({success:true,data:{generatedAt:now.toISOString(),totals,unassigned,ambiguousLegacy,people,workspaces:workspaceRows,health:{dbPingMs,requestMs:Math.round(performance.now()-start),recurringDue,recurringActive,inviteFailures,calendarConnections,calendarErrors,pushDevices,pushErrors,runningTimers,taskConnections,taskSyncErrors},jobs:jobs.map(j=>({id:String(j._id),name:j.name,startedAt:j.startedAt,finishedAt:j.finishedAt,status:j.status,durationMs:j.durationMs,details:j.details}))}},{headers:{'Cache-Control':'no-store'}});
   }catch(e){console.error('Operational monitoring failed',e);return NextResponse.json({success:false,error:'Monitoring is temporarily unavailable'},{status:503});}
 }
 export const GET=monitored('admin.monitoring',getMonitoring);

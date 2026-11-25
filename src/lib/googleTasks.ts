@@ -7,6 +7,7 @@ import Connection from '@/models/GoogleCalendarConnection';
 import Link from '@/models/GoogleTaskLink';
 import Project from '@/models/Project';
 import Task from '@/models/Task';
+import User from '@/models/User';
 const oid=(id:string)=>new mongoose.Types.ObjectId(id);
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 const linkKey=(uid:string,list:string,remote:string)=>hash(JSON.stringify([uid,list,remote]));
@@ -32,6 +33,7 @@ export async function syncGoogleTasks(uid:string,listId:string,projectId:string,
  if(!conn)throw Error('Connect Google Tasks or wait for the current sync.');
  const guard={_id:userId,revision:conn.revision,syncLeaseId:leaseId};
  try{
+ if(!await User.exists({_id:userId,employmentStatus:{$ne:'LEFT'}}))throw Error('Employee account is inactive.');
  const project=await Project.collection.findOne({_id:pid},{projection:{workspaceId:1,workspace_id:1,status:1}});
  if(!project||String(project.status||'ACTIVE').toUpperCase()==='CLOSED'||!await hasWorkspaceAccess(uid,String(project.workspaceId||project.workspace_id)))throw Error('Choose an accessible active project.');
  const token=await getAccess(config,uid,conn.refreshToken);
@@ -65,6 +67,15 @@ export async function syncGoogleTasks(uid:string,listId:string,projectId:string,
    if(!r.etag){conflicts++;continue;}try{const updated=await request<Remote>(token,'lists/'+encodeURIComponent(listId)+'/tasks/'+encodeURIComponent(r.id),{},'PATCH',writable(a),r.etag);if(taskFingerprint(remoteSnapshot(updated))!==taskFingerprint(a)){conflicts++;continue;}pushed++;await Link.updateOne({_id:l._id},{$set:{base:taskFingerprint(a)}});}catch{conflicts++;}
   }else await Link.updateOne({_id:l._id},{$set:{base:taskFingerprint(a)}});
  }
+ // Recover an imported task if the previous run created it before its link was stored.
+ for(const r of remote){
+   if(mappedRemote.has(r.id))continue;
+   const localId=linkKey(uid,listId,r.id).slice(0,24),t=localById.get(localId);
+   if(!t)continue;
+   mappedLocal.add(localId);mappedRemote.add(r.id);
+   if(r.deleted||r.parent||r.assignmentInfo||taskFingerprint(snapshot(t))!==taskFingerprint(remoteSnapshot(r))){conflicts++;continue;}
+   if(await allow())await addLink(t._id,r,taskFingerprint(remoteSnapshot(r)));
+ }
  // Reconcile ambiguous insert attempts using a signed marker; never blindly repeat a POST.
  for(const t of local){
   const id=String(t._id),a=snapshot(t);if(mappedLocal.has(id)||a.completed)continue;
@@ -80,7 +91,8 @@ export async function syncGoogleTasks(uid:string,listId:string,projectId:string,
   if(!await allow())continue;
   const localId=oid(linkKey(uid,listId,r.id).slice(0,24));
   // The deterministic ID prevents a duplicate import even if the link write was interrupted.
-  await Task.collection.updateOne({_id:localId},{$setOnInsert:{title:b.title,description:'Imported from Google Tasks',status:'TODO',priority:'MEDIUM',projectId:pid,assigneeId:userId,assigneeIds:[userId],...(b.due?{dueDate:new Date(b.due+'T00:00:00.000Z')}:{}),timeSpent:0,subtasks:[],attachments:[],createdAt:now,updatedAt:now}},{upsert:true});
+  const result=await Task.collection.updateOne({_id:localId},{$setOnInsert:{title:b.title,description:'Imported from Google Tasks',status:'TODO',priority:'MEDIUM',projectId:pid,assigneeId:userId,assigneeIds:[userId],...(b.due?{dueDate:new Date(b.due+'T00:00:00.000Z')}:{}),timeSpent:0,subtasks:[],attachments:[],createdAt:now,updatedAt:now}},{upsert:true});
+  if(!result.upsertedCount){conflicts++;continue;}
   await addLink(localId,r,taskFingerprint(b));imported++;
  }
  const updated=await Connection.updateOne(guard,{$set:{taskListId:listId,taskProjectId:projectId,taskAutoSync:auto,lastTasksSyncedAt:new Date(),tasksLastError:conflicts?conflicts+' linked tasks need review.':''},$unset:{syncLeaseId:1,syncLeaseUntil:1}});

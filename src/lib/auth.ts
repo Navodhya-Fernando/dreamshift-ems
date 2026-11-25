@@ -29,8 +29,8 @@ export const authOptions: NextAuthOptions = {
         await dbConnect();
         const user = await User.findOne({ email: credentials.email }).select("+password");
 
-        if (!user) {
-          throw new Error("No user found with this email in the database.");
+        if (!user || user.employmentStatus === "LEFT") {
+          throw new Error("Invalid credentials or inactive account.");
         }
 
         // Ideally checking bcrypt against user.password from legacy Streamlit system logic

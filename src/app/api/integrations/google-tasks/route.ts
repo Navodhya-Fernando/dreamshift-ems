@@ -18,7 +18,7 @@ export async function POST(req:Request){
  const config=googleConfig();if(!config)return fail('Google integration not configured.',503);
  if(req.headers.get('origin')!==config.origin)return fail('Invalid request origin.',403);
  try{const body=await req.json();await dbConnect();const c=await Connection.findById(uid).select('+refreshToken').lean();if(!c?.tasksGranted)return fail('Authorize Google Tasks first.',409);
- if(body.action==='pause'){await Connection.updateOne({_id:c._id,revision:c.revision},{$set:{taskAutoSync:false}});return NextResponse.json({success:true});}
+ if(body.action==='pause'){const r=await Connection.updateOne({_id:c._id,revision:c.revision,$or:[{syncLeaseUntil:{$exists:false}},{syncLeaseUntil:{$lt:new Date()}}]},{$set:{taskAutoSync:false}});if(!r.matchedCount)return fail('Wait for the current sync to finish, then pause.',409);return NextResponse.json({success:true});}
  if(body.action==='lists')return NextResponse.json({success:true,data:await taskLists(await getAccess(config,uid,c.refreshToken))});
  if(body.action!=='sync'||body.confirm!==true)return fail('Confirm the task list and shared EMS project.');
  return NextResponse.json({success:true,data:await syncGoogleTasks(uid,String(body.listId||''),String(body.projectId||''),body.auto===true)});

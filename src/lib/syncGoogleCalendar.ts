@@ -4,6 +4,7 @@ import Connection from '@/models/GoogleCalendarConnection';
 import Project from '@/models/Project';
 import Task from '@/models/Task';
 import Meeting from '@/models/Meeting';
+import User from '@/models/User';
 import {getAccessibleWorkspaceIds} from '@/lib/tenancy';
 import {googleConfig,getAccess,calendars,importEvents,managedEvents,writeEvent,type RemoteEvent} from '@/lib/googleCalendar';
 import {fingerprint,syncDecision,dayAfter,type Schedule} from '@/lib/calendarSyncPolicy';
@@ -47,6 +48,7 @@ export async function syncGoogle(uid:string,calendarId:string,writeEnabled:boole
  if(!connection)throw Error('Calendar is disconnected or another sync is in progress.');
  const guard={_id:id,syncLeaseId:leaseId,revision:connection.revision};
  try{
+ if(!await User.exists({_id:id,employmentStatus:{$ne:'LEFT'}}))throw Error('Employee account is inactive.');
  const token=await getAccess(config,uid,connection.refreshToken),available=await calendars(token),selected=available.find(a=>a.id===calendarId);
  if(!selected)throw Error('Calendar access is unavailable.');
  if(writeEnabled&&selected.accessRole!=='owner')throw Error('For two-way sync, select a work calendar you own.');
