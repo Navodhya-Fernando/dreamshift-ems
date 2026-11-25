@@ -10,9 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      MONGODB_URI: mongodb://127.0.0.1:27017/ems_test
+      MONGODB_URI: mongodb://127.0.0.1:27017/ems_test?replicaSet=rs0
+      DB_NAME: ems_test
+      EMS_INTEGRATION_TEST: '1'
       APP_SECRET_KEY: ci-only-not-a-production-secret
-      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_URL: http://127.0.0.1:3000
+      NEXTAUTH_SECRET: ci-only-not-a-production-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,3 +26,32 @@ jobs:
       - run: npm test
       - run: npx tsc --noEmit
       - run: npm run build
+      - name: Start disposable MongoDB replica set
+        run: |
+          docker run -d --name ems-mongo -p 127.0.0.1:27017:27017 mongo:7 --replSet rs0 --bind_ip_all
+          for i in $(seq 1 60); do
+            if docker exec ems-mongo mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          docker exec ems-mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
+          for i in $(seq 1 60); do
+            if docker exec ems-mongo mongosh --quiet --eval 'if (!db.hello().isWritablePrimary) quit(1)' >/dev/null 2>&1; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - name: Authenticated API integration smoke test
+        run: |
+          npm run start -- --hostname 127.0.0.1 > /tmp/ems-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:3000/api/auth/csrf >/dev/null; then break; fi
+            sleep 1
+          done
+          if ! node tests/integration/ems-smoke.mjs; then
+            tail -100 /tmp/ems-server.log
+            exit 1
+          fi
+      - name: Remove test database
+        if: always()
+        run: docker rm -f ems-mongo || true
