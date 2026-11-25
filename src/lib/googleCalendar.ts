@@ -1,5 +1,5 @@
 import {createCipheriv,createDecipheriv,randomBytes,createHash} from 'node:crypto';
-const scopes=['https://www.googleapis.com/auth/calendar.calendarlist.readonly','https://www.googleapis.com/auth/calendar.events.readonly'];
+const scopes=['https://www.googleapis.com/auth/calendar.calendarlist.readonly','https://www.googleapis.com/auth/calendar.events'];
 export function googleConfig(){
  const clientId=process.env.GOOGLE_CALENDAR_CLIENT_ID,clientSecret=process.env.GOOGLE_CALENDAR_CLIENT_SECRET,redirectUri=process.env.GOOGLE_CALENDAR_REDIRECT_URI,key=Buffer.from(process.env.GOOGLE_CALENDAR_TOKEN_KEY||'','base64');
  if(!clientId||!clientSecret||!redirectUri||key.length!==32)return null;
@@ -29,7 +29,7 @@ export async function getAccess(config:Config,uid:string,encryptedRefresh:string
  return (await exchange(config,{grant_type:'refresh_token',refresh_token:unseal(encryptedRefresh,uid+':refresh',config.key)})).access_token!;
 }
 export type GoogleCalendarChoice={id:string;name:string;primary:boolean;accessRole:string};
-export type ImportedCalendarEvent={id:string;title:string;date:string;end:string;allDay:boolean;url?:string;};
+export type ImportedCalendarEvent={id:string;managedId?:string;title:string;date:string;end:string;allDay:boolean;url?:string;};
 async function googleGet<T>(path:string,params:Record<string,string>,token:string):Promise<T>{
  const url=new URL('https://www.googleapis.com/calendar/v3/'+path);url.search=new URLSearchParams(params).toString();
  const r=await fetch(url,{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:AbortSignal.timeout(12000)});
@@ -49,16 +49,30 @@ export async function importEvents(token:string,calendarId:string,now=new Date()
  const timeMin=new Date(now.getTime()-30*86400000).toISOString(),timeMax=new Date(now.getTime()+90*86400000).toISOString();
  const items:ImportedCalendarEvent[]=[];let pageToken='';
  for(let i=0;i<4;i++){
-  const page=await googleGet<{items?:Array<{id?:string;summary?:string;start?:{date?:string;dateTime?:string};end?:{date?:string;dateTime?:string};status?:string;visibility?:string;htmlLink?:string}>;nextPageToken?:string}>('calendars/'+encodeURIComponent(calendarId)+'/events',{timeMin,timeMax,singleEvents:'true',orderBy:'startTime',showDeleted:'false',maxResults:'250',fields:'nextPageToken,items(id,summary,start,end,status,visibility,htmlLink)',...(pageToken?{pageToken}:{})},token);
+  const page=await googleGet<{items?:Array<{id?:string;summary?:string;start?:{date?:string;dateTime?:string};end?:{date?:string;dateTime?:string};status?:string;visibility?:string;htmlLink?:string;extendedProperties?:{private?:Record<string,string>}}>;nextPageToken?:string}>('calendars/'+encodeURIComponent(calendarId)+'/events',{timeMin,timeMax,singleEvents:'true',orderBy:'startTime',showDeleted:'false',maxResults:'250',fields:'nextPageToken,items(id,summary,start,end,status,visibility,htmlLink,extendedProperties)',...(pageToken?{pageToken}:{})},token);
   for(const event of page.items||[]){
    if(event.status==='cancelled'||!event.id||!event.start||!event.end)continue;
    const date=event.start.dateTime||event.start.date,end=event.end.dateTime||event.end.date;
    if(!date||!end||!Number.isFinite(Date.parse(date))||!Number.isFinite(Date.parse(end)))continue;
    const url=event.htmlLink?.startsWith('https://calendar.google.com/')?event.htmlLink:undefined;
-   items.push({id:'google-'+createHash('sha256').update(calendarId+':'+event.id).digest('hex').slice(0,24),title:event.visibility==='private'||event.visibility==='confidential'?'Busy':String(event.summary||'Calendar event').slice(0,200),date,end,allDay:Boolean(event.start.date),url});
+   items.push({managedId:event.extendedProperties?.private?.emsEntity,id:'google-'+createHash('sha256').update(calendarId+':'+event.id).digest('hex').slice(0,24),title:event.visibility==='private'||event.visibility==='confidential'?'Busy':String(event.summary||'Calendar event').slice(0,200),date,end,allDay:Boolean(event.start.date),url});
    if(items.length>500)throw Error('This calendar exceeds the 500-event sync limit. Select a dedicated work calendar.');
   }
   if(!page.nextPageToken)return items;pageToken=page.nextPageToken;
  }
  throw Error('Calendar is too large to import safely.');
+}
+
+export type RemoteEvent={id:string;etag?:string;summary?:string;start?:{date?:string;dateTime?:string};end?:{date?:string;dateTime?:string};status?:string;extendedProperties?:{private?:Record<string,string>}};
+export async function managedEvents(token:string,calendarId:string,uid:string){
+ const out:RemoteEvent[]=[];let pageToken='';
+ for(let i=0;i<4;i++){const p=await googleGet<{items?:RemoteEvent[];nextPageToken?:string}>('calendars/'+encodeURIComponent(calendarId)+'/events',{privateExtendedProperty:'emsOwner='+uid,maxResults:'250',showDeleted:'true',...(pageToken?{pageToken}:{})},token);out.push(...p.items||[]);if(!p.nextPageToken)return out;pageToken=p.nextPageToken;}
+ throw Error('Too many linked events. Use a smaller dedicated calendar.');
+}
+export async function writeEvent(token:string,calendarId:string,method:'POST'|'PATCH',body:Record<string,unknown>,event?:RemoteEvent){
+ const url=new URL('https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(calendarId)+'/events'+(event?'/'+encodeURIComponent(event.id):''));url.searchParams.set('sendUpdates','none');
+ const r=await fetch(url,{method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(event?.etag?{'If-Match':event.etag}:{})},body:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(10000)});
+ if(r.status===409||r.status===412)return false;
+ if(!r.ok)throw Error('Google event write failed. Verify calendar write permission or reconnect.');
+ return true;
 }

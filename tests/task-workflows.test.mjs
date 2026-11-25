@@ -65,3 +65,6 @@ import {elapsedAt} from '../src/lib/timerMath.ts';
 test('server timer counts only running segments, ignores paused wall time',()=>{assert.equal(elapsedAt(60,null,Date.parse('2026-11-24T12:00:00Z')),60);assert.equal(elapsedAt(60,'2026-11-24T12:00:00Z',Date.parse('2026-11-24T12:01:30Z')),150);assert.equal(elapsedAt(60,'2026-11-24T12:00:00Z',Date.parse('2026-11-24T11:59:59Z')),60);});
 
 test('weekday recurrence skips weekends',()=>{const friday=new Date('2026-11-27T00:00:00Z');assert.equal(nextOccurrence(friday,'WEEKDAYS',27).toISOString().slice(0,10),'2026-11-30');});
+
+import {fingerprint,syncDecision,dayAfter} from '../src/lib/calendarSyncPolicy.ts';
+test('calendar reconciliation distinguishes local, remote and conflicting edits',()=>{const a={title:'Task',start:'2026-11-25',end:'2026-11-26',allDay:true},b={...a,start:'2026-11-26',end:'2026-11-27'},d={...a,title:'Changed'};assert.equal(syncDecision(fingerprint(a),a,b),'pull');assert.equal(syncDecision(fingerprint(a),b,a),'push');assert.equal(syncDecision(fingerprint(a),b,d),'conflict');assert.equal(syncDecision(fingerprint(a),a,a),'unchanged');assert.equal(dayAfter('2026-12-31'),'2027-01-01');});

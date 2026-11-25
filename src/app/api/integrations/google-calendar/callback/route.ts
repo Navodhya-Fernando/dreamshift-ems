@@ -17,8 +17,8 @@ export async function GET(req:NextRequest){
  const code=req.nextUrl.searchParams.get('code');if(!code)return back('denied');
  const token=await exchange(config,{code,grant_type:'authorization_code',redirect_uri:config.redirectUri,code_verifier:state.verifier});
  const granted=new Set((token.scope||'').split(' '));
- if(!token.refresh_token||!granted.has('https://www.googleapis.com/auth/calendar.calendarlist.readonly')||!granted.has('https://www.googleapis.com/auth/calendar.events.readonly'))return back('permissions');
- await dbConnect();await Connection.replaceOne({_id:new mongoose.Types.ObjectId(uid)},{_id:new mongoose.Types.ObjectId(uid),refreshToken:seal(token.refresh_token,uid+':refresh',config.key),events:[],connectedAt:new Date(),revision:randomUUID()},{upsert:true});
+ if(!token.refresh_token||!granted.has('https://www.googleapis.com/auth/calendar.calendarlist.readonly')||!granted.has('https://www.googleapis.com/auth/calendar.events'))return back('permissions');
+ await dbConnect();await Connection.replaceOne({_id:new mongoose.Types.ObjectId(uid)},{_id:new mongoose.Types.ObjectId(uid),refreshToken:seal(token.refresh_token,uid+':refresh',config.key),events:[],connectedAt:new Date(),revision:randomUUID(),writeEnabled:false,autoSync:false},{upsert:true});
  return back('connected');
  }catch{console.warn('Google calendar connection did not complete');return back('failed');}
 }
