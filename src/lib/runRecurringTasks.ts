@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import {after} from 'next/server';
+import {dispatchUserPush,pushConfig} from '@/lib/devicePush';
 import { createHash } from 'node:crypto';
 import RecurringTask from '@/models/RecurringTask';
 import Project from '@/models/Project';
@@ -35,6 +37,7 @@ export async function runDueRecurringTasks(now = new Date(), ruleId?: string) {
     const result=await Task.collection.bulkWrite(occurrences.map(doc=>({updateOne:{filter:{_id:doc._id},update:{$setOnInsert:doc},upsert:true}})),{ordered:false});
     created=result.upsertedCount;
     await Notification.collection.bulkWrite(occurrences.map(doc=>({updateOne:{filter:{_id:derived(`assignment:${doc._id}:${doc.assigneeId}`)},update:{$setOnInsert:{userId:doc.assigneeId,type:'assignment',title:'Recurring task assigned',message:`You were assigned to "${doc.title}".`,link:`/tasks/${doc._id}`,isRead:false,createdAt:now,updatedAt:now}},upsert:true}})),{ordered:false});
+    if(pushConfig())after(async()=>{await Promise.allSettled([...new Set(occurrences.map(d=>String(d.assigneeId)))].slice(0,20).map(dispatchUserPush));});
     await RecurringTask.collection.bulkWrite(plans.map(p=>({updateOne:{filter:{_id:p.rule._id,active:true,nextRunAt:p.rule.nextRunAt},update:{$set:{nextRunAt:p.next,lastRunAt:now,updatedAt:now},$unset:{lastError:''}}}})),{ordered:false});
   }
   return {scanned:rules.length,created,paused:invalid.length};

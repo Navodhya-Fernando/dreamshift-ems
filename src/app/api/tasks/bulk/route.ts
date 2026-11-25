@@ -1,5 +1,6 @@
 import { monitored } from '@/lib/routeTelemetry';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
+import {dispatchUserPush,pushConfig} from '@/lib/devicePush';
 import { getServerSession } from 'next-auth';
 import mongoose from 'mongoose';
 import { createHash } from 'node:crypto';
@@ -57,6 +58,7 @@ async function handlePOST(req: Request) {
     const result = await Task.collection.bulkWrite(docs.map(doc=>({updateOne:{filter:{_id:doc._id},update:{$setOnInsert:doc},upsert:true}})),{ordered:false});
     // Stable notification IDs make retries safe without per-task lookup round trips.
     await Notification.collection.bulkWrite(docs.map(doc=>({updateOne:{filter:{_id:derivedId(`assignment:${doc._id}:${doc.assigneeId}`)},update:{$setOnInsert:{userId:doc.assigneeId,type:'assignment',title:'New task assigned',message:`You were assigned to "${doc.title}".`,link:`/tasks/${doc._id}`,isRead:false,createdAt:now,updatedAt:now}},upsert:true}})),{ordered:false});
+    if(pushConfig())after(async()=>{await Promise.allSettled([...new Set(docs.map(d=>String(d.assigneeId)))].slice(0,20).map(dispatchUserPush));});
     return NextResponse.json({success:true,data:{count:docs.length,created:result.upsertedCount}},{status:201});
   } catch(e) { console.error('Bulk task import failed',e); return fail('Import failed. Check your CSV or retry the same import.'); }
 }

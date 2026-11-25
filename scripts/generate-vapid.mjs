@@ -1,0 +1,1 @@
+import {createECDH} from 'node:crypto';const e=createECDH('prime256v1');e.generateKeys();const d=e.getPrivateKey();console.log('EMS_VAPID_PRIVATE_KEY='+Buffer.concat([Buffer.alloc(32-d.length),d]).toString('base64url'));console.log('EMS_VAPID_SUBJECT=mailto:YOUR_ADMIN_EMAIL');

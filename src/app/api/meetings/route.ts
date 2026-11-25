@@ -1,5 +1,6 @@
 import { monitored } from '@/lib/routeTelemetry';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
+import {dispatchUserPush,pushConfig} from '@/lib/devicePush';
 import { getServerSession } from 'next-auth';
 import mongoose from 'mongoose';
 import { createHash } from 'node:crypto';
@@ -24,6 +25,7 @@ async function sendInvites(id:mongoose.Types.ObjectId,origin:string){
   const link=`${origin}/calendar/meetings?meeting=${id}`;
   const now=new Date();
   await Notification.collection.bulkWrite(pending.map(i=>({updateOne:{filter:{_id:derived(`meeting-invite:${id}:${i.userId}`)},update:{$setOnInsert:{userId:i.userId,type:'system',title:'Meeting invitation',message:String(event.title),link:`/calendar/meetings?meeting=${id}`,isRead:false,createdAt:now,updatedAt:now}},upsert:true}})),{ordered:false});
+  if(pushConfig())after(async()=>{await Promise.allSettled(pending.map(i=>dispatchUserPush(String(i.userId))));});
   for(let offset=0;offset<pending.length;offset+=5){
     await Promise.all(pending.slice(offset,offset+5).map(async i=>{
       const claimed=await Meeting.collection.updateOne({_id:id,invites:{$elemMatch:{userId:i.userId,status:{$in:['PENDING','FAILED']}}}},{$set:{'invites.$.status':'SENDING'}});

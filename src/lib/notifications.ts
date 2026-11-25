@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import {after} from 'next/server';
+import {dispatchUserPush,pushConfig} from '@/lib/devicePush';
 import dbConnect from '@/lib/mongoose';
 import Notification, { type NotificationType } from '@/models/Notification';
 import User from '@/models/User';
@@ -33,6 +35,8 @@ export async function notifyUser(input: NotifyUserInput): Promise<void> {
     metadata: input.metadata,
     isRead: false,
   });
+
+  if(pushConfig())after(async()=>{try{await dispatchUserPush(input.userId);}catch{console.warn('Push delivery failed');}});
 
   const targetUser = await User.findById(userObjectId, {
     email: 1,
