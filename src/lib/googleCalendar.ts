@@ -13,11 +13,11 @@ export function unseal(value:string,aad:string,key:Buffer){
  const decipher=createDecipheriv('aes-256-gcm',key,parts[0]);decipher.setAAD(Buffer.from(aad));decipher.setAuthTag(parts[1]);return Buffer.concat([decipher.update(parts[2]),decipher.final()]).toString('utf8');
 }
 type Config=NonNullable<ReturnType<typeof googleConfig>>;
-export function oauthStart(config:Config,uid:string){
+export function oauthStart(config:Config,uid:string,includeTasks=false){
  const state=randomBytes(32).toString('base64url'),verifier=randomBytes(48).toString('base64url');
  const url=new URL('https://accounts.google.com/o/oauth2/v2/auth');
- url.search=new URLSearchParams({client_id:config.clientId,redirect_uri:config.redirectUri,response_type:'code',scope:scopes.join(' '),access_type:'offline',prompt:'consent select_account',state,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'}).toString();
- return {url:url.toString(),cookie:seal(JSON.stringify({state,verifier,expires:Date.now()+600000}),uid+':oauth',config.key)};
+ url.search=new URLSearchParams({client_id:config.clientId,redirect_uri:config.redirectUri,response_type:'code',scope:[...scopes,...(includeTasks?['https://www.googleapis.com/auth/tasks']:[])].join(' '),access_type:'offline',prompt:'consent select_account',state,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'}).toString();
+ return {url:url.toString(),cookie:seal(JSON.stringify({state,verifier,includeTasks,expires:Date.now()+600000}),uid+':oauth',config.key)};
 }
 export async function exchange(config:Config,fields:Record<string,string>){
  const response=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:config.clientId,client_secret:config.clientSecret,...fields}),cache:'no-store',signal:AbortSignal.timeout(12000)});

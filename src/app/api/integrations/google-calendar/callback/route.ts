@@ -8,17 +8,20 @@ import {googleConfig,unseal,seal,exchange} from '@/lib/googleCalendar';
 import Connection from '@/models/GoogleCalendarConnection';
 export async function GET(req:NextRequest){
  const config=googleConfig();if(!config)return new NextResponse('Integration not configured',{status:503});
- const back=(status:string)=>{const r=NextResponse.redirect(config.origin+'/settings/google-calendar?connection='+status);r.cookies.set('ems_google_oauth','',{httpOnly:true,secure:config.origin.startsWith('https:'),sameSite:'lax',path:'/api/integrations/google-calendar/callback',maxAge:0});return r;};
+ let destination='/settings/google-calendar';
+ const back=(status:string)=>{const r=NextResponse.redirect(config.origin+destination+'?connection='+status);r.cookies.set('ems_google_oauth','',{httpOnly:true,secure:config.origin.startsWith('https:'),sameSite:'lax',path:'/api/integrations/google-calendar/callback',maxAge:0});return r;};
  try{
  const session=await getServerSession(authOptions);const uid=session?.user?.id;if(!uid||!mongoose.isValidObjectId(uid))return back('unauthorized');
  const sealed=req.cookies.get('ems_google_oauth')?.value;if(!sealed)return back('expired');
- const state=JSON.parse(unseal(sealed,uid+':oauth',config.key)) as {state:string;verifier:string;expires:number};
+ const state=JSON.parse(unseal(sealed,uid+':oauth',config.key)) as {state:string;verifier:string;expires:number;includeTasks?:boolean};
  if(state.expires<Date.now()||state.state!==req.nextUrl.searchParams.get('state'))return back('expired');
+ if(state.includeTasks)destination='/settings/google-tasks';
  const code=req.nextUrl.searchParams.get('code');if(!code)return back('denied');
  const token=await exchange(config,{code,grant_type:'authorization_code',redirect_uri:config.redirectUri,code_verifier:state.verifier});
  const granted=new Set((token.scope||'').split(' '));
  if(!token.refresh_token||!granted.has('https://www.googleapis.com/auth/calendar.calendarlist.readonly')||!granted.has('https://www.googleapis.com/auth/calendar.events'))return back('permissions');
- await dbConnect();await Connection.replaceOne({_id:new mongoose.Types.ObjectId(uid)},{_id:new mongoose.Types.ObjectId(uid),refreshToken:seal(token.refresh_token,uid+':refresh',config.key),events:[],connectedAt:new Date(),revision:randomUUID(),writeEnabled:false,autoSync:false},{upsert:true});
+ if(state.includeTasks&&!granted.has('https://www.googleapis.com/auth/tasks'))return back('permissions');
+ await dbConnect();await Connection.replaceOne({_id:new mongoose.Types.ObjectId(uid)},{_id:new mongoose.Types.ObjectId(uid),refreshToken:seal(token.refresh_token,uid+':refresh',config.key),events:[],connectedAt:new Date(),revision:randomUUID(),writeEnabled:false,autoSync:false,tasksGranted:granted.has('https://www.googleapis.com/auth/tasks')},{upsert:true});
  return back('connected');
  }catch{console.warn('Google calendar connection did not complete');return back('failed');}
 }
