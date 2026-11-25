@@ -6,6 +6,7 @@ import {authOptions} from '@/lib/auth';
 import dbConnect from '@/lib/mongoose';
 import {googleConfig,getAccess,calendars,unseal} from '@/lib/googleCalendar';
 import Connection from '@/models/GoogleCalendarConnection';
+export const maxDuration=300;
 const fail=(error:string,status=400)=>NextResponse.json({success:false,error},{status});
 async function current(){const s=await getServerSession(authOptions);return s?.user?.id&&mongoose.isValidObjectId(s.user.id)?s.user.id:null;}
 export async function GET(){

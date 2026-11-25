@@ -14,7 +14,7 @@ const stamp=(v:unknown)=>new Date(String(v)).toISOString();
 function remoteSchedule(r:RemoteEvent):Schedule|null{
  try{const allDay=Boolean(r.start?.date);if(!r.start||!r.end)return null;const start=allDay?dateOnly(r.start.date):stamp(r.start.dateTime),end=allDay?dateOnly(r.end.date):stamp(r.end.dateTime);if(end<=start)return null;return {title:String(r.summary||''),start,end,allDay};}catch{return null;}
 }
-const eventId=(uid:string,id:string)=>'ems'+createHash('sha256').update(uid+':'+id).digest('hex').slice(0,40);
+export const eventId=(uid:string,id:string)=>'ems'+createHash('sha256').update(uid+':'+id).digest('hex').slice(0,40);
 async function entities(uid:string){
  const id=oid(uid),now=Date.now(),min=new Date(now-30*86400000),max=new Date(now+90*86400000);
  const workspaces=await getAccessibleWorkspaceIds(uid),keys=workspaces.flatMap(w=>mongoose.isValidObjectId(w)?[w,oid(w)]:[w]);
@@ -43,7 +43,7 @@ async function entities(uid:string){
 export async function syncGoogle(uid:string,calendarId:string,writeEnabled:boolean,autoSync:boolean){
  const config=googleConfig();if(!config)throw Error('Google Calendar is not configured.');
  const leaseId=randomUUID(),now=new Date(),id=oid(uid);
- const connection=await Connection.findOneAndUpdate({_id:id,$or:[{syncLeaseUntil:{$exists:false}},{syncLeaseUntil:{$lt:now}}]},{$set:{syncLeaseUntil:new Date(Date.now()+180000),syncLeaseId:leaseId,lastAttemptAt:now}},{new:true}).select('+refreshToken').lean();
+ const connection=await Connection.findOneAndUpdate({_id:id,$or:[{syncLeaseUntil:{$exists:false}},{syncLeaseUntil:{$lt:now}}]},{$set:{syncLeaseUntil:new Date(Date.now()+360000),syncLeaseId:leaseId,lastAttemptAt:now}},{new:true}).select('+refreshToken').lean();
  if(!connection)throw Error('Calendar is disconnected or another sync is in progress.');
  const guard={_id:id,syncLeaseId:leaseId,revision:connection.revision};
  try{

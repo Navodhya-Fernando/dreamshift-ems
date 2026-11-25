@@ -63,16 +63,33 @@ export async function importEvents(token:string,calendarId:string,now=new Date()
  throw Error('Calendar is too large to import safely.');
 }
 
-export type RemoteEvent={id:string;etag?:string;summary?:string;start?:{date?:string;dateTime?:string};end?:{date?:string;dateTime?:string};status?:string;extendedProperties?:{private?:Record<string,string>}};
+export type RemoteEvent={id:string;etag?:string;summary?:string;start?:{date?:string;dateTime?:string};end?:{date?:string;dateTime?:string};status?:string;attendees?:Array<{email?:string}>;hangoutLink?:string;conferenceData?:{createRequest?:{status?:{statusCode?:string}}};extendedProperties?:{private?:Record<string,string>}};
 export async function managedEvents(token:string,calendarId:string,uid:string){
  const out:RemoteEvent[]=[];let pageToken='';
  for(let i=0;i<4;i++){const p=await googleGet<{items?:RemoteEvent[];nextPageToken?:string}>('calendars/'+encodeURIComponent(calendarId)+'/events',{privateExtendedProperty:'emsOwner='+uid,maxResults:'250',showDeleted:'true',...(pageToken?{pageToken}:{})},token);out.push(...p.items||[]);if(!p.nextPageToken)return out;pageToken=p.nextPageToken;}
  throw Error('Too many linked events. Use a smaller dedicated calendar.');
 }
 export async function writeEvent(token:string,calendarId:string,method:'POST'|'PATCH',body:Record<string,unknown>,event?:RemoteEvent){
- const url=new URL('https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(calendarId)+'/events'+(event?'/'+encodeURIComponent(event.id):''));url.searchParams.set('sendUpdates','none');
+ const url=new URL('https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(calendarId)+'/events'+(event?'/'+encodeURIComponent(event.id):''));url.searchParams.set('sendUpdates',event?.attendees?.length?'all':'none');
+ url.searchParams.set('conferenceDataVersion','1');
  const r=await fetch(url,{method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(event?.etag?{'If-Match':event.etag}:{})},body:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(10000)});
  if(r.status===409||r.status===412)return false;
  if(!r.ok)throw Error('Google event write failed. Verify calendar write permission or reconnect.');
  return true;
+}
+
+export async function getGoogleEvent(token:string,calendarId:string,id:string):Promise<RemoteEvent|null>{
+ const url='https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(calendarId)+'/events/'+encodeURIComponent(id);
+ const r=await fetch(url,{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:AbortSignal.timeout(12000)});
+ if(r.status===404||r.status===410)return null;
+ if(!r.ok)throw Error('Could not read the linked Google event.');
+ return await r.json() as RemoteEvent;
+}
+export async function publishGoogleEvent(token:string,calendarId:string,body:Record<string,unknown>,existing?:RemoteEvent){
+ const url=new URL('https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(calendarId)+'/events'+(existing?'/'+encodeURIComponent(existing.id):''));
+ url.searchParams.set('sendUpdates','all');url.searchParams.set('conferenceDataVersion','1');
+ const r=await fetch(url,{method:existing?'PATCH':'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(existing?.etag?{'If-Match':existing.etag}:{})},body:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(15000)});
+ if(r.status===409||r.status===412)throw Error('Calendar event changed. Sync and retry.');
+ if(!r.ok)throw Error('Google could not publish the meeting. Verify calendar permissions and Google Meet availability.');
+ return await r.json() as RemoteEvent;
 }

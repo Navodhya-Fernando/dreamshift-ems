@@ -1,5 +1,6 @@
 import { monitored } from '@/lib/routeTelemetry';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
+import {syncGoogle} from '@/lib/syncGoogleCalendar';
 import { getServerSession } from 'next-auth';
 import mongoose from 'mongoose';
 import { authOptions } from '@/lib/auth';
@@ -115,7 +116,8 @@ async function handleGET() {
     const uid=new mongoose.Types.ObjectId(userId);
     const meetings=await Meeting.collection.find({$or:[{organizerId:uid},{attendeeIds:uid}],endTime:{$gte:new Date(Date.now()-90*86400000)},startTime:{$lte:new Date(Date.now()+365*86400000)}},{projection:{title:1,startTime:1,endTime:1,organizerId:1}}).sort({startTime:1}).limit(300).toArray();
     const meetingEvents=meetings.map(m=>({id:String(m._id),title:String(m.title),date:new Date(m.startTime).toISOString(),end:new Date(m.endTime).toISOString(),kind:'meeting',status:'scheduled',priority:'meeting',projectName:'Meeting',assigneeName:userById.get(String(m.organizerId))?.name||'Organizer'}));
-    const connection=await GoogleCalendarConnection.findById(uid).select('events').lean();
+    const connection=await GoogleCalendarConnection.findById(uid).select('events calendarId autoSync writeEnabled lastAttemptAt').lean();
+    if(connection?.autoSync&&connection.calendarId&&(!connection.lastAttemptAt||Date.now()-connection.lastAttemptAt.getTime()>300000)){const calendarId=connection.calendarId;after(async()=>{try{await syncGoogle(userId,calendarId,Boolean(connection.writeEnabled),true);}catch{console.warn('Calendar background refresh failed');}});}
     const managedIds=new Set([...events.map(e=>'task:'+e.id),...meetingEvents.map(e=>'meeting:'+e.id)]);
     const googleEvents=(connection?.events||[]).filter(e=>!e.managedId||!managedIds.has(e.managedId)).map(e=>({...e,kind:'google',status:'scheduled',priority:'google',projectName:'Google Calendar',assigneeName:'You'}));
     return NextResponse.json({ success: true, data: { events:[...events,...meetingEvents,...googleEvents], summary:{...summary,meetings:meetingEvents.length,googleEvents:googleEvents.length} } }, { status: 200 });

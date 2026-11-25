@@ -1,11 +1,15 @@
-# Google Calendar integration (phase one)
-This release imports events from one explicitly selected calendar into the authenticated employee's calendar. No Google account is connected by deployment alone. Google API access is read-only; existing ICS outbound subscription remains separate. Automatic sync, event writes, conflict resolution, Google Tasks, and meeting invitation creation via Google are not implemented in this release.
-
-## Configure
-1. In Google Cloud, enable Google Calendar API and configure the OAuth consent screen. Use Internal audience if all eligible employees are within your Google Workspace organization.
-2. Create a Web application OAuth client. Add the exact redirect URI https://dreamshift-ems.vercel.app/api/integrations/google-calendar/callback (or your actual production origin).
-3. Set server-only Vercel variables GOOGLE_CALENDAR_CLIENT_ID, GOOGLE_CALENDAR_CLIENT_SECRET, GOOGLE_CALENDAR_REDIRECT_URI and GOOGLE_CALENDAR_TOKEN_KEY. Generate the last with openssl rand -base64 32. Never commit or paste secret values into chat.
-4. Redeploy and connect through Settings > Google Calendar. Select a dedicated work calendar; import events and open Calendar. Disconnect removes the stored snapshot and attempts Google token revocation.
-5. Test a second employee account: it must not see the first employee's Google events. Test consent denial, expired state, revoked permission, calendar switching and disconnect.
-
-OAuth authorization code exchange uses PKCE, a short-lived encrypted state cookie, offline refresh access, and AES-256-GCM encrypted refresh tokens bound to the EMS user ID. Calendar contents are limited to event title (private events display Busy), time and Google event link. No attendees or descriptions are imported. A bounded 30-day past/90-day future snapshot is replaced only after a successful import. If the 500-event limit is exceeded, previous data remains intact.
+# Google Calendar setup
+## Configure once
+1. Enable Google Calendar API in Google Cloud; configure OAuth consent (Internal if eligible).
+2. Create a Web application OAuth client with exact redirect URI https://dreamshift-ems.vercel.app/api/integrations/google-calendar/callback.
+3. Set server-only variables GOOGLE_CALENDAR_CLIENT_ID, GOOGLE_CALENDAR_CLIENT_SECRET, GOOGLE_CALENDAR_REDIRECT_URI and GOOGLE_CALENDAR_TOKEN_KEY (generate with openssl rand -base64 32). Never commit credentials.
+4. Redeploy; each employee connects in Settings > Google Calendar, selects a dedicated work calendar and chooses whether to enable writing and automatic sync. Previously connected read-only users must reconnect.
+## Behavior
+- Snapshot of Google events: 30 days past to 90 days ahead, 500 maximum. Private/confidential Google events appear as Busy.
+- Write sync: owned calendar only, exports open explicitly assigned tasks with deadlines and meetings organized by that user. Deadlines appear as all-day events. Up to 12 mutations per run; repeat sync to finish. Existing events outside the window or no longer eligible are not automatically deleted.
+- Remote date changes can update a single-assignee task when the EMS title is unchanged; shared assignments cannot be rescheduled from Google. Organizer-owned meetings can accept time/title changes. Conflicting edits, cancellations and unsupported edits require review; never silently delete an EMS task. Google-only events remain private calendar entries, not company tasks.
+- In Meetings, the organizer can explicitly publish to Google and send invitations to selected employee emails. This may be in addition to the original EMS email. A Meet link is requested if one is missing; Google may return a pending status. Use Refresh Google meeting to retrieve the link.
+- Sync runs on demand, when an enabled employee opens Calendar after a stale interval, and in a bounded batch via /api/cron/google-calendar with Authorization: Bearer CRON_SECRET. The existing daily job also attempts a small batch. Configure a frequent external scheduler for unattended sync; daily jobs alone are not real time.
+- Tokens use PKCE, encrypted state and AES-256-GCM encryption at rest. Disconnect removes local imported snapshots and attempts revocation; existing exported calendar events remain. Changing calendars does not migrate prior exports.
+## Test
+Use a test calendar and two employee accounts. Verify consent denial, permission revocation, private events, event export, single-assignee reschedule, concurrent edits, shared assignment rejection, cancellation, meeting publication and Google invitation reception. Google Tasks API synchronization is not included.

@@ -1,4 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
+import {runGoogleSyncBatch} from '@/lib/syncGoogleCalendar';
+import {dispatchPushBatch} from '@/lib/devicePush';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongoose';
 import SystemJobRun from '@/models/SystemJobRun';
@@ -116,6 +118,7 @@ export async function GET(req: Request) {
     const now = new Date();
     let recurring: {scanned:number;created:number;paused:number} | {error:string};
     try { recurring = await runDueRecurringTasks(now); } catch (error) { console.error('Recurring task scheduler failed',error); recurring = {error:'Recurring task scheduler failed'}; }
+    after(async()=>{await Promise.allSettled([runGoogleSyncBatch(),dispatchPushBatch()]);});
     const horizon = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
     const tasks = await Task.collection
