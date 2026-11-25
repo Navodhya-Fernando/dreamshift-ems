@@ -10,7 +10,7 @@ import { hasWorkspaceAccess } from '@/lib/tenancy';
 
 function toDate(value: unknown) {
   if (!value) return null;
-  const parsed = new Date(String(value));
+  const parsed = value instanceof Date ? new Date(value.getTime()) : new Date(String(value));
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed;
 }

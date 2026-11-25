@@ -69,8 +69,8 @@ export async function managedEvents(token:string,calendarId:string,uid:string){
  for(let i=0;i<4;i++){const p=await googleGet<{items?:RemoteEvent[];nextPageToken?:string}>('calendars/'+encodeURIComponent(calendarId)+'/events',{privateExtendedProperty:'emsOwner='+uid,maxResults:'250',showDeleted:'true',...(pageToken?{pageToken}:{})},token);out.push(...p.items||[]);if(!p.nextPageToken)return out;pageToken=p.nextPageToken;}
  throw Error('Too many linked events. Use a smaller dedicated calendar.');
 }
-export async function writeEvent(token:string,calendarId:string,method:'POST'|'PATCH',body:Record<string,unknown>,event?:RemoteEvent){
- const url=new URL('https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(calendarId)+'/events'+(event?'/'+encodeURIComponent(event.id):''));url.searchParams.set('sendUpdates',event?.attendees?.length?'all':'none');
+export async function writeEvent(token:string,calendarId:string,method:'POST'|'PATCH',body:Record<string,unknown>,event?:RemoteEvent,notify=false){
+ const url=new URL('https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(calendarId)+'/events'+(event?'/'+encodeURIComponent(event.id):''));url.searchParams.set('sendUpdates',notify&&event?.attendees?.length?'all':'none');
  url.searchParams.set('conferenceDataVersion','1');
  const r=await fetch(url,{method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(event?.etag?{'If-Match':event.etag}:{})},body:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(10000)});
  if(r.status===409||r.status===412)return false;

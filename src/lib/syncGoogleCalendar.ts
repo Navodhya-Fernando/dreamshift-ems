@@ -72,7 +72,7 @@ export async function syncGoogle(uid:string,calendarId:string,writeEnabled:boole
    if(decision==='pull'&&rs){if(!await item.pull(rs)){conflicts++;continue;}target=rs;pulled++;}
    const body={summary:target.title,start:target.allDay?{date:target.start}:{dateTime:target.start},end:target.allDay?{date:target.end}:{dateTime:target.end},visibility:'private',extendedProperties:{private:{emsOwner:uid,emsEntity:item.id,emsBase:fingerprint(target)}}};
    mutations++;
-   const ok=await writeEvent(token,calendarId,r?'PATCH':'POST',r?body:{...body,id},r);
+   const ok=await writeEvent(token,calendarId,r?'PATCH':'POST',r?body:{...body,id},r,decision==='push');
    if(!ok){conflicts++;continue;}if(decision==='create')created++;else if(decision==='push')pushed++;
   }
  }
